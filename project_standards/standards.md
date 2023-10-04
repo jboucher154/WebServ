@@ -1,9 +1,13 @@
+<style>
+r { color: Red }
+o { color: Orange }
+g { color: Green }
+</style>
+
 # Coding Standards
 
 ## Contents
 
-- [Coding Standards](#coding-standards)
-- [Contents](#contents)
 - [Denomination](#denomination)
 - [Formatting](#formatting)
 - [Functions](#functions)
@@ -22,14 +26,14 @@ Naming convention by type.
 
 - Class names should be UpperCamelCase (aka PascalCase)
 - Struct: ??
-- A typedef’s name must start by <span style="color:green">t_</span>
-- A union’s name must start by <span style="color:green">u_</span>
-- An enum’s name must start by <span style="color:green">e_</span>
-- A global’s name must start by <span style="color:green">g_</span>
-- Function names should be <span style="color:green">camelCase</span>
-- Variables should be <span style="color:green">snake_case</span>
-- Private class attributes and member functions should be <span style="color:green">followed_by_an_underscore_</span>
-- Files and directories names can only contain <span style="color:green">lowercases, digits and ’_’ (snake_case)</span>
+- A typedef’s name must start by <g>t_</g>
+- A union’s name must start by <g>u_<g>
+- An enum’s name must start by <g>e_</g>
+- A global’s name must start by <g>g_</g>
+- Function names should be <g>camelCase</g>
+- Variables should be <g>snake_case</g>
+- Private class attributes and member functions should be <g>followed_by_an_underscore_</g>
+- Files and directories names can only contain <g>lowercases, digits and ’_’ (snake_case)</g>
 
 ## Formatting
 
