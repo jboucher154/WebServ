@@ -97,13 +97,13 @@ Example:
 ```	
 void	function( void ) { 
 
-		/*function body here*/
-		if (condtion) {
-			/*code here*/
-		}
-		std::cout << "long line of printing stuff here " << "more ..."
-			<< "even more ..." << std::endl;
+	/*function body here*/
+	if (condtion) {
+		/*code here*/
 	}
+	std::cout << "long line of printing stuff here " << "more ..."
+		<< "even more ..." << std::endl;
+}
 ```
 
 ## Functions
@@ -126,11 +126,11 @@ word "void" as the argument.
 ```	
 void	function( int num, std::string& input ) { 
 
-		/*function body here*/
-		if (condtion) {
-			/*code here*/
-		}
+	/*function body here*/
+	if (condtion) {
+		/*code here*/
 	}
+}
 ```
 
 ## Typedefs, enum, union
@@ -186,21 +186,24 @@ type
 
 - Comment should document the use of the code so that someone reading the comment without the code can understand the purpose and function.
 
+- Comments not for documentation should use the multiline format `/* COMMENT HERE */` and be used to indicate organization of a file.
+
+- Comments not for documentation should not be directly above a function. There should be at least one newline between them and the function definition.
+
 - Comments should be written following an agreed on Doxygen format. Example:
 
 ```	
-	/*! \brief Brief description.
-	*         Brief description continued.
-	*
-	*  Detailed description starts here.
-	*/
+/*! \brief Brief description.
+*         Brief description continued.
+*
+*  Detailed description starts here.
+*/
 ```
 
 
 ## Files
 
 - Do not include a `.cpp` file
-
 
 ## Makefile
 
