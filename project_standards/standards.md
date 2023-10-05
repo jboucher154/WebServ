@@ -69,7 +69,7 @@ Naming convention by type.
 - Non-class files and directories names can only contain lowercases, digits and ’_’ (snake_case)
 
 - Class files (`.cpp`, `.hpp`, `.tpp`) should have the same UpperCamelCase name as the class. 
-	- If the class definition is split into separate files the name should lead with the  followed by an underscore and an approriate description of the contentes. Example: ClassName_dates.cpp
+	- If the class definition is split into separate files the name should lead with the class name followed by an underscore and an approriate description of the contentes. Example: ClassName_dates.cpp
 
 ## Formatting
 
