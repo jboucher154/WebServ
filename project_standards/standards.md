@@ -89,13 +89,14 @@ Naming convention by type.
 	- Example: const return_type& func( const type& name );
 
 - Braces: Curly braces should open on the same line as the function declaration or control structure. 
-	- Example: void function( void ) { 
+	- Example: 
+`	void function( void ) { 
 
 		/*function body here*/
 		if (condtion) {
 			/*code here*/
 		}
-	}
+	}`
 
 ## Functions
 
@@ -155,11 +156,11 @@ word "void" as the argument.
 
 - Comments should be written following an agreed on Doxygen format. Example:
 
-	```/*! \brief Brief description.
+`	/*! \brief Brief description.
 	*         Brief description continued.
 	*
 	*  Detailed description starts here.
-	*/```
+	*/`
 
 
 ## Files
