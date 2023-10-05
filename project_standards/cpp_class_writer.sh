@@ -8,8 +8,8 @@ if [ $# -eq 0 ]; then
 fi
 
 CAPS_CLASS_NAME=$(echo "$1" | tr '[:lower:]' '[:upper:]')
-CLASS_FORMAT="class	$1 
-{
+CLASS_FORMAT="class	$1 {
+
 	private:
 		/* PRIVATE METHODS AND MEMBERS */
 
@@ -35,43 +35,40 @@ ${CLASS_FORMAT}
 
 INCLUDES="
 #include \"$1.hpp\"
-
 "
-DEFAULT_CONSTRUCTOR="$1::$1( void )
-{
+DEFAULT_CONSTRUCTOR="$1::$1( void ) {
+
 	/* default constructor */
 }
 "
 
-PARAMETERIZED_CONSTRUCTOR="$1::$1( /*add parameters*/ )
-{
+PARAMETERIZED_CONSTRUCTOR="$1::$1( /*add parameters*/ ) {
+
 	/* parameterized constructor */
 }
 "
 
-COPY_CONSTRUCTOR="$1::$1( const $1& to_copy )
-{
+COPY_CONSTRUCTOR="$1::$1( const $1& to_copy ) {
+
 	/* copy constructor */
-}
-"
+}"
 
-DESTRUCTOR="$1::~$1( void )
-{
+DESTRUCTOR="$1::~$1( void ) {
+
 	/* destructor */
-}
-"
+}"
 
-COPY_ASSIGNMENT="$1&	$1::operator=( const $1& to_copy )
-{
+COPY_ASSIGNMENT="$1&	$1::operator=( const $1& rhs ) {
+
 	/* copy assignment operator overload */
-}
-"
+}"
 
-SOURCE_FORMAT="${INCLUDES} 
-
+SOURCE_FORMAT="${INCLUDES}
 /* CONSTRUCTORS */
 
-${DEFAULT_CONSTRUCTOR}${PARAMETERIZED_CONSTRUCTOR}${COPY_CONSTRUCTOR} 
+${DEFAULT_CONSTRUCTOR}
+${PARAMETERIZED_CONSTRUCTOR}
+${COPY_CONSTRUCTOR} 
 
 /* DESTRUCTOR */
 
