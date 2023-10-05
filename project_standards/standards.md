@@ -77,7 +77,7 @@ Naming convention by type.
 
 - Function Length : As much as possible keep length of functions to a minimum. Follow DRY (dont repeat yourself) and SRP (single responsibility principle) whenever possible.
 
-- Column Length : Keep column lenght within reason. If you want to break up a line for readablity indent once on the new line.
+- Column Width : Keep column width within reason. If you want to break up a line for readablity indent once on the new line.
 
 - Space Between Functions : At least one newline should separate a function, preferably one.
 
@@ -88,7 +88,9 @@ Naming convention by type.
 - Order for parameter designations: Const should come first followed by type, followed by reference or pointer symbol. 
 	- Example: const return_type& func( const type& name );
 
-- Braces: Curly braces should open on the same line as the function declaration or control structure. Example: 
+- Braces: Curly braces should open on the same line as the function declaration or control structure. 
+
+Example: 
 
 ```	
 void	function( void ) { 
@@ -97,6 +99,8 @@ void	function( void ) {
 		if (condtion) {
 			/*code here*/
 		}
+		std::cout << "long line of printing stuff here " << "more ..."
+			<< "even more ..." << std::endl;
 	}
 ```
 
