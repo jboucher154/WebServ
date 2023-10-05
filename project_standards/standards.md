@@ -162,9 +162,10 @@ type
 
 ## Headers
 
-- Header files must be protected from double inclusions. If the file is ft_foo.h, its bystander macro is FT_FOO_H.
+- Header files must be protected from double inclusions with `#ifndef`, `#endif`. If the file is ft_foo.h, its bystander macro is FT_FOO_H.
 
 - Use forward declarations when possible
+
 
 ## Templates
 
@@ -172,7 +173,7 @@ type
 
 - If the template is a Class the class definition should be in an `.hpp` file and the function defintions should be written in a `.tpp` and included to the header.
 
-- Template use should always be explicit. Example: template<type>(params)
+- Template use should always be explicit. Example: `template<type>(params)`
 
 ## Macros and Pre-processors
 
