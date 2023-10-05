@@ -50,7 +50,7 @@ Naming convention by type.
 
 - Class names should be UpperCamelCase (aka PascalCase)
 
-- Struct: ??
+- Struct names should be preceeded by a s_ followed by UpperCamelCase name
 
 - A typedef’s name must start by t_
 
@@ -91,7 +91,7 @@ Naming convention by type.
 - Braces: Curly braces should open on the same line as the function declaration or control structure. Example: 
 
 ```	
-void function( void ) { 
+void	function( void ) { 
 
 		/*function body here*/
 		if (condtion) {
@@ -111,10 +111,32 @@ word "void" as the argument.
 
 - Each function must be separated from the next by an empty line.
 
+- Each function must have a single tabulation between its return type and its name.
+
+- Function parameters should have a leading and trailing space inside of the parenthesis `()`.
+
+- Each function should have a single space following the parameters, between the `)`  and `{`.
+
+```	
+void	function( int num, std::string& input ) { 
+
+		/*function body here*/
+		if (condtion) {
+			/*code here*/
+		}
+	}
+```
 
 ## Typedefs, enum, union
 
+- Do not declare enum or union in a `.cpp` file
 
+- Add a tabulation when declaring a struct, enum or union.
+
+- When declaring a variable of type struct, enum or union, add a single space in the
+type
+
+- You must indent all structures’ names on the same column for their scope.
 
 ## Classes
 
@@ -123,6 +145,8 @@ word "void" as the argument.
 ** The cpp_class_writer.sh script will be maintained to produce the intial desired format **
 
 - Class declarations should be in a `.hpp` file and defintions should be in a separate `.cpp` file named after the class
+
+- There should only be one class declaration per `.hpp` file unless the classes are nested.
 
 - Specified private member functions and attributes should be defined before public methods.
 
