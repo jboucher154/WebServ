@@ -27,6 +27,8 @@
 
 - Any external library and Boost libraries are forbidden.
 
+- Use of the `namespace` keyword is not allowed.
+
 - This document may be updated and a note will be made about the date of an update in the [Update Log](#update-log).
 
 ## Update Log
