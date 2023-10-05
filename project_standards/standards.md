@@ -29,7 +29,7 @@
 
 - Use of the `namespace` keyword is not allowed.
 
-- This document may be updated and a note will be made about the date of an update in the [Update Log](#update-log).
+- This document may be updated and a note will be made about content of the changes with the date in the [Update Log](#update-log).
 
 ## Update Log
 
