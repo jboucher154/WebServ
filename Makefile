@@ -5,7 +5,7 @@ SRC_DIR = $(sort $(dir $(wildcard srcs/*/))) srcs/
 OBJ_DIR = obj/
 INC_DIR = include/
 TARGET_DIR = ./
-CXX = g++
+CXX = c++
 C98FLAG = -std=c++98
 EXTRA =-Wall -Werror -Wextra
 DEP = -MP -MMD
