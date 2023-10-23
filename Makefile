@@ -21,7 +21,8 @@ CYAN = \033[0;96m
 
 # Sources
 SRCS = \
-	main.cpp
+	main.cpp \
+	ResponseCodes.cpp
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 DEPS = $(SRCS:%.cpp=$(OBJ_DIR)%.d)
