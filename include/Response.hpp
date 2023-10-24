@@ -4,8 +4,19 @@
 # include <string>
 # include "ResponseCodes.hpp"
 
-class Request;
+// class Request; //forward declaration for now
 
+/*! \brief Class for handling HTTP responses.
+*       
+*
+*  Response class handle HTTP responses. It is responsible for generating the response
+*  given a Request object.
+*  
+*  Methods:
+*  - generate: generate the response given a Request object
+*  - send: send the response to the client
+*  - clear: reset the response for next use
+*/
 class	Response {
 
 	private:
@@ -26,8 +37,8 @@ class	Response {
 
 		/* PUBLIC METHODS */
 
-		// void			generateResponse( Request& request );
-		std::string		send( /*socket to write to?*/ ) const;
+		// void			generate( Request& request );
+		const char*		get( /*socket to write to?*/ ) const;
 		void			clear( void ); /*reset for next use*/
 };
 
