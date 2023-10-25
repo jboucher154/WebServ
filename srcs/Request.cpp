@@ -9,11 +9,6 @@ Request::Request( void )
 	/* default constructor */
 }
 
-// Request::Request( /*add parameters*/ ) {
-
-// 	/* parameterized constructor */
-// }
-
 Request::Request( const Request& to_copy ) {
 
 	*this = to_copy;

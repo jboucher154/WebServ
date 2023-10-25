@@ -29,7 +29,6 @@ class	Request {
 
 	public:
 		Request( void ); // itialize to default values
-		// Request( /*add parameters*/ ); // no paramertized constructor for now
 		Request( const Request& to_copy );
 
 		~Request( void );
