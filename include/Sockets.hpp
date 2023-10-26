@@ -56,7 +56,7 @@ Defines structure addrinfo and functions getaddinfo() and freeaddrinfo().
 
 Don't need currently
 */
-// #include <netdb.h>
+#include <netdb.h>
 
 
 // MACROS
@@ -72,7 +72,7 @@ private:
 	uint16_t			listening_port_;
 	in_addr_t			host_;
 	std::string			server_name_;
-	struct sockaddr_in	server_address_;
+	struct sockaddr_in			server_address_;
 
 	// the rest of the data like locations etc...
 
@@ -123,12 +123,12 @@ int	Server::setupServer( void ) {
 	int	yes = 1;	// for setsockopt()
 
 	if ((listener_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "socket failure: %s, %s", strerror(errno), this->getServerIdforLog());
+		Logger::log(E_ERROR, COLOR_RED, "socket failure: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		return -1;
 	}
 
 	if (fcntl(listener_fd, F_SETFL, O_NONBLOCK) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "fcntl failure: %s, %s", strerror(errno), this->getServerIdforLog());
+		Logger::log(E_ERROR, COLOR_RED, "fcntl failure: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		close(listener_fd);
 		return -1;
 	}
@@ -141,17 +141,17 @@ int	Server::setupServer( void ) {
 	setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));	// supresses error message if port is reused
 
 	if (bind(listener_fd, (struct sockaddr *)&this->server_address_, sizeof this->server_address_) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "bind failure: %s, %s", strerror(errno), this->getServerIdforLog());
+		Logger::log(E_ERROR, COLOR_RED, "bind failure: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		close(listener_fd);
 		return -1;
 	}
 
 	if (listen(listener_fd, LISTEN_BACKLOG) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "listen failure: %s, %s", strerror(errno), this->getServerIdforLog());
+		Logger::log(E_ERROR, COLOR_RED, "listen failure: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		close(listener_fd);
 		return -1;
 	}
-	Logger::log(E_INFO, COLOR_WHITE, "%s ready!", this->getServerIdforLog());
+	Logger::log(E_INFO, COLOR_WHITE, "%s ready!", this->getServerIdforLog().c_str());
 	return listener_fd;
 }
 
