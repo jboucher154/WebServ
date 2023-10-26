@@ -38,6 +38,7 @@ Request&	Request::operator=( const Request& rhs ) {
 
 /* CLASS PUBLIC METHODS */
 
+/* EXAMPLES */
 /* Request */
 // Get /mysite/index.html HTTP/1.1\r\n
 // Host: 10.101.101.10\r\n
@@ -94,9 +95,10 @@ void	Request::clear( void ) { //clear all data in the request
 	this->headers_.clear();
 	this->body_.clear();
 }
+
 /* CLASS PRIVATE METHODS */
 
-void	Request::parseRequestLine_( std::string to_parse ) {
+void	Request::parseRequestLine_( std::string& to_parse ) {
 
 	std::cout << "REQUEST LINE: " << to_parse << std::endl;
 	this->request_line_["test"] = to_parse;
@@ -104,12 +106,12 @@ void	Request::parseRequestLine_( std::string to_parse ) {
 
 //save specific values for easy access
 
-void	Request::parseHeader_( std::string to_parse ) {
+void	Request::parseHeader_( std::string& to_parse ) {
 
 	std::cout << "HEADER: " << to_parse << std::endl;
 }
 
-void	Request::parseBody_( std::string to_parse ) {
+void	Request::parseBody_( std::string& to_parse ) {
 
 	std::cout << "BODY: " << to_parse << std::endl;
 }

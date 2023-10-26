@@ -21,9 +21,9 @@ class	Request {
 		std::map<std::string, std::string>	body_; //body of the request, should it be a map?
 		//no footers for now
 
-		void	parseRequestLine_( std::string to_parse );
-		void	parseHeader_( std::string to_parse );
-		void	parseBody_( std::string to_parse );
+		void	parseRequestLine_( std::string& to_parse );
+		void	parseHeader_( std::string& to_parse );
+		void	parseBody_( std::string& to_parse );
 
 
 
