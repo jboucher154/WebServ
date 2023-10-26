@@ -24,7 +24,9 @@ SRCS = \
 	main.cpp \
 	ResponseCodes.cpp	\
 	Logger.cpp			\
-	TimeUtils.cpp		
+	TimeUtils.cpp		\
+	Server.cpp			\
+	ft_stoi.cpp
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 DEPS = $(SRCS:%.cpp=$(OBJ_DIR)%.d)
