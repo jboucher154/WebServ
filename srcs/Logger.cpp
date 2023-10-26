@@ -1,6 +1,7 @@
 
 #include "Logger.hpp"
 #include "TimeUtils.hpp"
+#include "Color.hpp"
 
 bool	Logger::log_to_console_ = true;
 bool	Logger::log_to_files_ = true;
@@ -51,12 +52,9 @@ void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
 
 	va_end(args);
 
-	// set the color stuff later
-	(void)msg_color;
-
 	if (msg_type == E_ERROR) {
 		if (Logger::log_to_console_) {
-			std::cerr << "[" << timestamp << "]\t[ERROR]\t" << buffer << std::endl;
+			std::cerr << msg_color << "[" << timestamp << "]\t[ERROR]\t" << buffer << COLOR_RESET << std::endl;
 		}
 		if (Logger::log_to_files_) {
 			Logger::all_log_file_ << "[" << timestamp << "]\t[ERROR]\t" << buffer << std::endl;
@@ -65,7 +63,7 @@ void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
 	}
 	if (msg_type == E_INFO) {
 		if (Logger::log_to_console_) {
-			std::cout << "[" << timestamp << "]\t[INFO]\t" << buffer << std::endl;
+			std::cout << msg_color << "[" << timestamp << "]\t[INFO]\t" << buffer << COLOR_RESET << std::endl;
 		}
 		if (Logger::log_to_files_) {
 			Logger::all_log_file_ << "[" << timestamp << "]\t[INFO]\t" << buffer << std::endl;

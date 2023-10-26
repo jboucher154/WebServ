@@ -2,6 +2,7 @@
 #define	TIMEUTILS_HPP
 
 #include <ctime>
+#include <time.h>
 
 // rm later
 #include <string>

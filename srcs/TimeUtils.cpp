@@ -14,3 +14,4 @@ std::string	getTimestampString( void ) {
 	strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
 	return buf;
 }
+

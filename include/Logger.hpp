@@ -26,6 +26,12 @@ enum	e_where_to_log {
 # define LOG_ERROR		"error_log.txt"
 # define LOG_INFO		"info_log.txt"
 
+/*! \brief Brief description.
+*         Brief description continued.
+*
+*  Detailed description starts here.
+*/
+
 class	Logger {
 
 	private:
