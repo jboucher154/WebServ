@@ -23,7 +23,15 @@ CYAN = \033[0;96m
 SRCS = \
 	main.cpp \
 	ResponseCodes.cpp \
+<<<<<<< HEAD
 	Response.cpp \
+=======
+	Request.cpp \
+	Logger.cpp			\
+	TimeUtils.cpp		\
+	Server.cpp			\
+	ft_stoi.cpp
+>>>>>>> develop
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 DEPS = $(SRCS:%.cpp=$(OBJ_DIR)%.d)
