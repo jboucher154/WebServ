@@ -22,7 +22,9 @@ CYAN = \033[0;96m
 # Sources
 SRCS = \
 	main.cpp \
-	ResponseCodes.cpp	\
+	ResponseCodes.cpp \
+	Response.cpp \
+	Request.cpp \
 	Logger.cpp			\
 	TimeUtils.cpp		\
 	Server.cpp			\
