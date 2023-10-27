@@ -84,6 +84,7 @@ void Server::setLocation(std::string locationBlockKey, std::string key, std::vec
 /*************ssalmi's functions for server management*************/
 
 int	Server::setupServer( void ) {
+
 	int	listener_fd;
 	int	yes = 1;	// for setsockopt()
 
@@ -116,11 +117,13 @@ int	Server::setupServer( void ) {
 		close(listener_fd);
 		return -1;
 	}
+
 	Logger::log(E_INFO, COLOR_WHITE, "%s initialized successfully...", this->getServerIdforLog().c_str());
 	return listener_fd;
 }
 
 std::string	Server::getServerIdforLog( void ) const {
+	
 	std::string	id;
 
 	id += "server ";

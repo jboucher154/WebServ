@@ -60,17 +60,37 @@ int	Client::getServerFd( void ) const {
 	return this->server_fd_;
 }
 
-std::string	Client::getFullClientIdForLog() const {
-	char		client_ip[INET_ADDRSTRLEN];
-	std::string	id;
+std::string	Client::getClientHost() const {
 
-	id += "CLIENT[SOCKET: ";
-	id += this->fd_;
-	id += ", IP: ";
-	id += inet_ntop(this->address_.sin_family, (struct sockaddr*)&this->address_, client_ip, INET_ADDRSTRLEN);
-	id += "]";
-
-	return id;
+	char		client_host[INET_ADDRSTRLEN];
+	
+	inet_ntop(this->address_.sin_family, (struct sockaddr*)&this->address_, client_host, INET_ADDRSTRLEN);
+	return client_host;
 }
+
+std::string	Client::getClientResponse( void ) {
+
+	if (this->request_.getComplete())
+		return this->response_.get();
+	else
+		return ("");
+}
+
+void	Client::addToRequest( std::string message ) {
+
+	std::cout << "in addToRequest" << std::endl;
+	this->request_.add(message);
+}
+
+void	Client::resetResponse( void ) {
+	
+	this->response_.clear();
+}
+
+void	Client::resetRequest( void ) {
+
+	this->request_.clear();
+}
+
 
 /* CLASS PRIVATE METHODS */

@@ -1,6 +1,9 @@
 #ifndef CLIENT_HPP
 #define	CLIENT_HPP
 
+#include "Request.hpp"
+#include "Response.hpp"
+
 // my old server-functions
 // #include "Sockets.hpp"
 #include <Server.hpp>
@@ -18,9 +21,9 @@ class	Client {
 		time_t				latest_time_;			// time of client's latest action (used for disconneting and server automatic shutdown)
 		Server*				server_;				// pointer to the server the client is connected to
 		int					server_fd_;				// file (socket) descriptor of the server the client is connected to 
-		// request_
-		// response_
-		
+		Request				request_;
+		Response			response_;
+
 	public:
 		Client( void );
 		Client( int server_fd, Server* server );
@@ -39,7 +42,13 @@ class	Client {
 		time_t				getLatestTime( void ) const;
 		Server*				getServer( void ) const;
 		int					getServerFd( void ) const;
-		std::string			getFullClientIdForLog( void ) const;
+		std::string			getClientHost( void ) const;
+
+
+		std::string			getClientResponse( void );
+		void				addToRequest( std::string message );
+		void				resetResponse( void );
+		void				resetRequest( void );
 };
 
 #endif

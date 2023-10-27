@@ -48,11 +48,15 @@ class	ServerManager {
 		void	closeClientSockets( void );
 		void	closeAllSockets( void );
 		bool	checkLastClientTime( void );
+		void	receiveFromClient( int client_fd );
+		void	sendResponseToClient( int client_fd );
+
 
 		bool	SELECT_initializeServers( void );
 		void	SELECT_initializeFdSets( void );
 		int		SELECT_runServers( void );
 		void	SELECT_acceptNewClientConnection( int server_fd );
+		void	SELECT_removeClient( int client_fd );
 
 		// bool	POLL_initializeServers( void );
 

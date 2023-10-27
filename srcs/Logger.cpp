@@ -13,6 +13,7 @@ std::ofstream	Logger::info_log_file_;
 Logger::Logger( void ) {}
 
 Logger::Logger( const Logger& to_copy ) {
+
 	*this = to_copy;
 } 
 
@@ -23,12 +24,14 @@ Logger::~Logger( void ) {}
 /* OPERATOR OVERLOADS */
 
 Logger&	Logger::operator=( const Logger& rhs ) {
+
 	(void)rhs;
 	return *this;
 }
 
 /* CLASS PUBLIC METHODS */
 void	Logger::initLogger( void ) {
+
 	if (LOG_LOCATION == E_LOG_ONLY_TO_FILES)
 		Logger::log_to_console_ = false;
 	else if (LOG_LOCATION == E_LOG_ONLY_TO_CONSOLE)
@@ -40,6 +43,7 @@ void	Logger::initLogger( void ) {
 }
 
 void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
+
 	std::string	timestamp = getTimestampString();
 
 	va_list	args;
@@ -71,6 +75,7 @@ void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
 }
 
 void	Logger::closeLogFiles( void ) {
+
 	if (Logger::all_log_file_.is_open()) {
 		Logger::all_log_file_.close();
 	}
@@ -84,6 +89,7 @@ void	Logger::closeLogFiles( void ) {
 
 /* CLASS PRIVATE METHODS */
 bool	Logger::checkIfToLogInFiles( void ) {
+
 	struct stat info;
 
 	if (stat(LOG_DIR, &info) == 0 && S_ISDIR(info.st_mode)) {
@@ -114,6 +120,7 @@ bool	Logger::checkIfToLogInFiles( void ) {
 }
 
 void	Logger::initLogFiles( void ) {
+
 	if (!Logger::log_dir_already_exists_) {
 		if (mkdir(LOG_DIR, 0777) == -1) {
 			std::cerr << "Error creating log directory: " << strerror(errno) << std::endl
@@ -134,6 +141,7 @@ void	Logger::initLogFiles( void ) {
 }
 
 bool	Logger::openLogFiles( void ) {
+	
 	bool opening_success = true;
 
 	Logger::all_log_file_.open(LOG_DIR "/" LOG_ALL, std::ios::out | std::ios::trunc);

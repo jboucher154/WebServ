@@ -4,7 +4,7 @@
 /* CONSTRUCTORS */
 
 Request::Request( void ) 
-: size_(0), chunked_(false), keep_alive_(false), headers_complete(false) {
+: size_(0), chunked_(false), keep_alive_(false), headers_complete(false), complete_(false) {
 
 	/* default constructor */
 }
@@ -32,6 +32,7 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->request_line_ = rhs.request_line_;
 		this->headers_ = rhs.headers_;
 		this->body_ = rhs.body_;
+		this->complete_ = rhs.complete_;
 	}
 	return (*this);
 }
@@ -83,6 +84,7 @@ void	Request::add( std::string to_add ) { //add to any part of the Request, will
 		}
 	}
 	std::cout << "Parsing complete!!!!" << std::endl;//
+	this->complete_ = true;
 }
 
 void	Request::clear( void ) { //clear all data in the request
@@ -94,6 +96,7 @@ void	Request::clear( void ) { //clear all data in the request
 	this->request_line_.clear();
 	this->headers_.clear();
 	this->body_.clear();
+	this->complete_ = false;
 }
 
 /* CLASS PRIVATE METHODS */
@@ -114,4 +117,10 @@ void	Request::parseHeader_( std::string& to_parse ) {
 void	Request::parseBody_( std::string& to_parse ) {
 
 	std::cout << "BODY: " << to_parse << std::endl;
+}
+
+
+bool	Request::getComplete( void ) const {
+
+	return (this->complete_);
 }

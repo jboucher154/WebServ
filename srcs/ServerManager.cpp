@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 ServerManager::ServerManager( void ) {
+	
 	FD_ZERO(&this->master_fd_set_);
 	FD_ZERO(&this->read_fd_set_);
 	FD_ZERO(&this->write_fd_set_);
@@ -19,6 +20,7 @@ ServerManager::ServerManager( void ) {
 }
 
 ServerManager::ServerManager( std::vector<Server>& server_vector ) {
+
 	FD_ZERO(&this->master_fd_set_);
 	FD_ZERO(&this->read_fd_set_);
 	FD_ZERO(&this->write_fd_set_);
@@ -154,7 +156,9 @@ ServerManager::~ServerManager( void ) {}
 // }
 
 void	ServerManager::closeServerSockets( void ) {
+
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all server sockets...");
+
 	for (std::map<int, Server*>::iterator it = this->server_map_.begin(); it != this->server_map_.end(); ++it) {
 		Logger::log(E_INFO, COLOR_WHITE, "Closing socket of %s", it->second->getServerIdforLog().c_str());
 		close(it->first);
@@ -162,7 +166,9 @@ void	ServerManager::closeServerSockets( void ) {
 }
 
 void	ServerManager::closeClientSockets( void ) {
+
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all remaining client sockets...");
+
 	for (std::map<int, Client>::iterator it = this->client_map_.begin(); it != this->client_map_.end(); ++it) {
 		Logger::log(E_INFO, COLOR_WHITE, "Closing client %i connection", it->first);
 		close(it->first);
@@ -170,12 +176,15 @@ void	ServerManager::closeClientSockets( void ) {
 }
 
 void	ServerManager::closeAllSockets( void ) {
+
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all sockets...");
+
 	this->closeServerSockets();
 	this->closeClientSockets();
 }
 
 bool	ServerManager::checkLastClientTime( void ) {
+
 	time_t	now;
 
 	for (std::map<int, Client>::iterator it = this->client_map_.begin(); it != this->client_map_.end(); ++it) {
@@ -185,6 +194,57 @@ bool	ServerManager::checkLastClientTime( void ) {
 	if (time(&now) >= this->last_client_time_ + SERVER_SHUTDOWN_TIME_SEC)
 		return true;
 	return false;
+}
+
+void	ServerManager::receiveFromClient( int client_fd ) {
+	
+	char	client_msg[4000];
+
+	memset(client_msg, '\0', 4000);
+	int bytes_received = recv(client_fd, &client_msg, 3999, 0);
+
+	std::cout << "bytes received: " << bytes_received << std::endl;
+	std::cout << "messge:  " << client_msg << std::endl;
+
+	if (bytes_received == -1)
+		Logger::log(E_ERROR, COLOR_RED, "recv error, from client %d to server %s",
+			client_fd, this->client_map_[client_fd].getServer()->getServerIdforLog().c_str());
+	else if (bytes_received == 0)
+		this->SELECT_removeClient(client_fd);
+	else
+		this->client_map_[client_fd].addToRequest(client_msg);
+}
+
+void	ServerManager::sendResponseToClient( int client_fd ) {
+
+	std::string	response_string = this->client_map_[client_fd].getClientResponse();
+	if (response_string.empty())
+		return;
+
+	int	bytes_sent = send(client_fd, &response_string, response_string.length(), 0);
+	if (bytes_sent == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to client %d",
+			this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
+	}
+	else if (bytes_sent == 0) {
+
+	}
+	else {
+		if (bytes_sent < static_cast<int>(response_string.length()))
+			Logger::log(E_ERROR, COLOR_RED, "send incomplete response from server %s to client %d ",
+				this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
+		else
+			std::cout << "full response sent to client!" << std::endl;
+	}
+	// if bytes_sent == 0 do something?
+
+	this->client_map_[client_fd].resetResponse();
+	this->client_map_[client_fd].resetRequest();
+
+	if (FD_ISSET(client_fd, &this->write_fd_set_))
+		FD_CLR(client_fd, &this->write_fd_set_);
+	if (!FD_ISSET(client_fd, &this->read_fd_set_))
+		FD_SET(client_fd, &this->read_fd_set_);
 }
 
 
@@ -206,6 +266,7 @@ bool	ServerManager::checkLastClientTime( void ) {
 */
 
 bool	ServerManager::SELECT_initializeServers( void ) {
+
 	int	server_amount = this->servers_.size();
 
 	int server_socket;
@@ -257,15 +318,17 @@ void	ServerManager::SELECT_initializeFdSets( void ) {
 */
 
 int	ServerManager::SELECT_runServers( void ) {
+
 	struct timeval	select_timeout;
 	int				select_result;
 
 	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting!");
-	std::cout << "biggest fd is " << this->biggest_fd_ << std::endl;
-	for (int i = 0; i <= this->biggest_fd_; i++) {
-		if (FD_ISSET(i, &this->read_fd_set_))
-			std::cout << "fd " << i << " is in set" << std::endl;
-	}
+
+	// std::cout << "biggest fd is " << this->biggest_fd_ << std::endl;
+	// for (int i = 0; i <= this->biggest_fd_; i++) {
+	// 	if (FD_ISSET(i, &this->read_fd_set_))
+	// 		std::cout << "fd " << i << " is in set" << std::endl;
+	// }
 
 	this->last_client_time_ = time(NULL);	// get the start time
 
@@ -273,6 +336,9 @@ int	ServerManager::SELECT_runServers( void ) {
 	while (true) {	//	MAIN LOOP
 
 		this->read_fd_set_ = this->master_fd_set_; // add all of the server's back to the read_set_; might have to change later...
+		this->write_fd_set_ = this->master_fd_set_;
+		this->biggest_fd_ = getBiggestFdOfSet(FD_SETSIZE - 1, &this->master_fd_set_);
+
 		select_timeout.tv_sec = TIMEOUT_SEC;
 		select_timeout.tv_usec = TIMEOUT_USEC;
 	
@@ -281,21 +347,19 @@ int	ServerManager::SELECT_runServers( void ) {
 		}
 		for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
 			if (FD_ISSET(fd, &this->read_fd_set_)) {
-				if (this->server_map_.count(fd)) {}
-					this->SELECT_acceptNewClientConnection(fd);
-				if (this->client_map_.count(fd)) {}
-					// client request
+				if (this->server_map_.count(fd))
+					this->SELECT_acceptNewClientConnection(fd);	// new client connection
+				if (this->client_map_.count(fd))
+					this->receiveFromClient(fd);				// client request or disconnection
 			}
 			if (FD_ISSET(fd, &this->write_fd_set_)) {
 				if (this->server_map_.count(fd)) {}
 					// server receiving stuff from client?
-				if (this->client_map_.count(fd)) {}
-					// client response
-
+				if (this->client_map_.count(fd))
+					this->sendResponseToClient(fd);
 			}
 		}
-
-
+	
 		if (this->checkLastClientTime())	// if the haven't been any client activity in the server shutdown time end run
 			break;
 	}
@@ -306,23 +370,21 @@ int	ServerManager::SELECT_runServers( void ) {
 }
 
 void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
+
 	int			client_fd;
 	sockaddr_in client_address;
-	socklen_t	address_size;
+	socklen_t	client_address_size;
+	char		client_host[INET_ADDRSTRLEN];
 	Server*		server = this->server_map_.at(server_fd);
-
-	std::cout << "SELECT_acceptNewClientConnection" << std::endl;
 	
-	address_size = sizeof(sockaddr_in);
-	if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &address_size)) == -1) {
+	client_address_size = sizeof(sockaddr_in);
+	if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &client_address_size)) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "accept: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
 		return;
 	}
-	std::cout <<  server->getServerName() << std::endl;
-	std::cout <<  server->getListeningPortInt() << std::endl;
-	std::cout <<  client_fd << std::endl;
 
-	Logger::log(E_INFO, COLOR_BLUE, "New connection to server %s on port %d, client assigned to socket %d", server->getServerName().c_str(), server->getListeningPortInt(), client_fd);
+	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d, client assigned to socket %d [host: %s]",
+		server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
 
 	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, client %d rejected", client_fd);
@@ -331,8 +393,21 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 
 	this->client_map_.insert(std::make_pair(client_fd, Client(server_fd, server)));
 
-	// FD_SET(client_fd, &this->master_fd_set_);
+	FD_SET(client_fd, &this->master_fd_set_);
+	FD_SET(client_fd, &this->read_fd_set_);
 	// FD_SET(client_fd, &this->write_fd_set_); // because of request? talk with Jenny
+}
+
+void	ServerManager::SELECT_removeClient( int client_fd ) {
+
+	Logger::log(E_INFO, COLOR_MAGENTA, "Client %d connection lost, removing client...", client_fd);
+	if (FD_ISSET(client_fd, &this->master_fd_set_))
+		FD_CLR(client_fd, &this->master_fd_set_);
+	if (FD_ISSET(client_fd, &this->read_fd_set_))
+		FD_CLR(client_fd, &this->read_fd_set_);
+	if (FD_ISSET(client_fd, &this->write_fd_set_)) // is this unnecessary?
+		FD_CLR(client_fd, &this->write_fd_set_);
+	this->client_map_.erase(client_fd);
 }
 
 /********************************************** POLL functions **********************************************************/
