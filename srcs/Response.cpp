@@ -81,7 +81,8 @@ Response&	Response::operator=( const Response& rhs ) {
 const char*	Response::get( /*socket to write to?*/ ) const {
 
 	// return (ResponseCodes::getCombinedStatusLineAndBody(501).c_str());//default response for now
-	return (ResponseCodes::getCombinedStatusLineAndBody(this->status_code_).c_str());
+	// return (ResponseCodes::getCombinedStatusLineAndBody(this->status_code_).c_str());
+	return (ResponseCodes::getCodeStatusLine(this->status_code_).c_str());
 }
 
 /*! \brief clear method resets the response for next use

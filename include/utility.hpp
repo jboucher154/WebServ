@@ -5,6 +5,7 @@
 # include <string>
 # include <sstream>
 
-int ft_stoi(const std::string& str);
+int 		ft_stoi(const std::string& str);
+std::string	int_to_string(int integer);
 
 #endif

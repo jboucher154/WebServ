@@ -16,6 +16,7 @@ class	Request {
 		bool 								chunked_;
 		bool								keep_alive_;
 		bool								headers_complete;
+		bool								complete_;
 		std::map<std::string, std::string>	request_line_; // method, uri, version
 		std::map<std::string, std::string>	headers_; //host, content-type, user-agent, content-egth, last-modified, PRAGMA, accept-encoding accept, connection, reffer, etc.
 		std::map<std::string, std::string>	body_; //body of the request, should it be a map?
@@ -43,6 +44,7 @@ class	Request {
 		int		getSize( void ) const;
 		bool	getChunked( void ) const;
 		bool	getKeepAlive( void ) const;
+		bool	getComplete( void ) const;
 };
 
 #endif
