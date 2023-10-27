@@ -1,7 +1,9 @@
 #ifndef	SERVERMANAGER_HPP
 #define	SERVERMANAGER_HPP
 
-#include "Sockets.hpp"
+// my old 
+// #include "Sockets.hpp"
+#include "Server.hpp"
 #include "Client.hpp"
 
 // for timing out of select() or poll()
@@ -35,10 +37,11 @@ class	ServerManager {
 
 	public:
 		ServerManager( void );
-		ServerManager( const ServerManager& other );
+		ServerManager( std::vector<Server>& server_vector );
+		// ServerManager( const ServerManager& other );
 		~ServerManager( void );
 
-		ServerManager&	operator=( const ServerManager& rhs );
+		// ServerManager&	operator=( const ServerManager& rhs );
 
 		// int		getServerListenerSocket( Server& server );
 		void	closeServerSockets( void );
@@ -48,10 +51,10 @@ class	ServerManager {
 
 		bool	SELECT_initializeServers( void );
 		void	SELECT_initializeFdSets( void );
-		int		SELECT_runServers( std::vector<Server>& server_vector );
+		int		SELECT_runServers( void );
 		void	SELECT_acceptNewClientConnection( int server_fd );
 
-		bool	POLL_initializeServers( void );
+		// bool	POLL_initializeServers( void );
 
 };
 

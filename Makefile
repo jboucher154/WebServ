@@ -7,7 +7,7 @@ INC_DIR = include/
 TARGET_DIR = ./
 CXX = c++
 C98FLAG = -std=c++98
-EXTRA =-Wall -Werror -Wextra
+EXTRA =-Wall -Werror -Wextra -g
 DEP = -MP -MMD
 
 # Colors
@@ -28,7 +28,10 @@ SRCS = \
 	Logger.cpp			\
 	TimeUtils.cpp		\
 	Server.cpp			\
-	ft_stoi.cpp
+	ft_stoi.cpp			\
+	int_to_string.cpp	\
+	ServerManager.cpp	\
+	Client.cpp
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 DEPS = $(SRCS:%.cpp=$(OBJ_DIR)%.d)

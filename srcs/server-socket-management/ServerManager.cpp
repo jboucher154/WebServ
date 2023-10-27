@@ -3,6 +3,11 @@
 #include "TimeUtils.hpp"
 #include "Color.hpp"
 
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 ServerManager::ServerManager( void ) {
 	FD_ZERO(&this->master_fd_set_);
 	FD_ZERO(&this->read_fd_set_);
@@ -13,15 +18,26 @@ ServerManager::ServerManager( void ) {
 	
 }
 
-ServerManager::ServerManager( const ServerManager& other ) {
+ServerManager::ServerManager( std::vector<Server>& server_vector ) {
+	FD_ZERO(&this->master_fd_set_);
+	FD_ZERO(&this->read_fd_set_);
+	FD_ZERO(&this->write_fd_set_);
+	this->servers_.clear();
+	this->server_map_.clear();
+	this->client_map_.clear();
 
+	this->servers_ = server_vector;
 }
+
+// ServerManager::ServerManager( const ServerManager& other ) {
+
+// }
 
 ServerManager::~ServerManager( void ) {}
 
-ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
+// ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 
-}
+// }
 
 /*! \brief Get a server listening socket.
 *         This is function takes a reference of the server
@@ -140,7 +156,7 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 void	ServerManager::closeServerSockets( void ) {
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all server sockets...");
 	for (std::map<int, Server*>::iterator it = this->server_map_.begin(); it != this->server_map_.end(); ++it) {
-		Logger::log(E_INFO, COLOR_WHITE, "Closing socket of %s", it->second->getServerIdforLog());
+		Logger::log(E_INFO, COLOR_WHITE, "Closing socket of %s", it->second->getServerIdforLog().c_str());
 		close(it->first);
 	}
 }
@@ -190,7 +206,7 @@ bool	ServerManager::checkLastClientTime( void ) {
 */
 
 bool	ServerManager::SELECT_initializeServers( void ) {
-	size_t	server_amount = this->servers_.size();
+	int	server_amount = this->servers_.size();
 
 	int server_socket;
 
@@ -240,44 +256,50 @@ void	ServerManager::SELECT_initializeFdSets( void ) {
 *
 */
 
-int	ServerManager::SELECT_runServers( std::vector<Server>& server_vector ) {
-	this->servers_ = server_vector;	// copy the vector of servers to the ServerManager
-	if (!this->SELECT_initializeServers())	//initialize server sockets
-		return 1;
-
+int	ServerManager::SELECT_runServers( void ) {
 	struct timeval	select_timeout;
 	int				select_result;
 
+	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting!");
+	std::cout << "biggest fd is " << this->biggest_fd_ << std::endl;
+	for (int i = 0; i <= this->biggest_fd_; i++) {
+		if (FD_ISSET(i, &this->read_fd_set_))
+			std::cout << "fd " << i << " is in set" << std::endl;
+	}
+
 	this->last_client_time_ = time(NULL);	// get the start time
+
+
 	while (true) {	//	MAIN LOOP
 
+		this->read_fd_set_ = this->master_fd_set_; // add all of the server's back to the read_set_; might have to change later...
 		select_timeout.tv_sec = TIMEOUT_SEC;
 		select_timeout.tv_usec = TIMEOUT_USEC;
 	
 		if ((select_result = select(this->biggest_fd_ + 1, &this->read_fd_set_, &this->write_fd_set_, NULL, &select_timeout)) == -1) {
 			Logger::log(E_ERROR, COLOR_RED, "select: %s", strerror(errno));
 		}
-		// if (select_result == 0) // remove this? will never reach checkLastClientTime
-		// 	continue;
-		for (int i = 0; i <= this->biggest_fd_; ++i) {
-			if (FD_ISSET(i, &this->read_fd_set_)) {
-				if (this->server_map_.count(i)) {}
-					// new connection!
-				if (this->client_map_.count(i)) {}
+		for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
+			if (FD_ISSET(fd, &this->read_fd_set_)) {
+				if (this->server_map_.count(fd)) {}
+					this->SELECT_acceptNewClientConnection(fd);
+				if (this->client_map_.count(fd)) {}
 					// client request
 			}
-			if (FD_ISSET(i, &this->write_fd_set_)) {
-				if (this->server_map_.count(i)) {}
+			if (FD_ISSET(fd, &this->write_fd_set_)) {
+				if (this->server_map_.count(fd)) {}
 					// server receiving stuff from client?
-				if (this->client_map_.count(i)) {}
+				if (this->client_map_.count(fd)) {}
 					// client response
 
 			}
 		}
 
+
 		if (this->checkLastClientTime())	// if the haven't been any client activity in the server shutdown time end run
 			break;
 	}
+
 	Logger::log(E_INFO, COLOR_GREEN, "Successful end; server shutting down...");
 	this->closeAllSockets();
 	return 0;
@@ -288,13 +310,19 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 	sockaddr_in client_address;
 	socklen_t	address_size;
 	Server*		server = this->server_map_.at(server_fd);
+
+	std::cout << "SELECT_acceptNewClientConnection" << std::endl;
 	
 	address_size = sizeof(sockaddr_in);
 	if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &address_size)) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "accept: %s, tried to connect to server on port ", strerror(errno), server->getListenerPort());
+		Logger::log(E_ERROR, COLOR_RED, "accept: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
 		return;
 	}
-	Logger::log(E_INFO, COLOR_BLUE, "New connection to server %s on port %i, client assigned to socket %s", server->getServerName(), server->getListenerPort(), client_fd);
+	std::cout <<  server->getServerName() << std::endl;
+	std::cout <<  server->getListeningPortInt() << std::endl;
+	std::cout <<  client_fd << std::endl;
+
+	Logger::log(E_INFO, COLOR_BLUE, "New connection to server %s on port %d, client assigned to socket %d", server->getServerName().c_str(), server->getListeningPortInt(), client_fd);
 
 	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, client %d rejected", client_fd);
@@ -303,8 +331,8 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 
 	this->client_map_.insert(std::make_pair(client_fd, Client(server_fd, server)));
 
-	FD_SET(client_fd, &this->master_fd_set_);
-	FD_SET(client_fd, &this->write_fd_set_); // because of request? talk with Jenny
+	// FD_SET(client_fd, &this->master_fd_set_);
+	// FD_SET(client_fd, &this->write_fd_set_); // because of request? talk with Jenny
 }
 
 /********************************************** POLL functions **********************************************************/
@@ -324,30 +352,30 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 *
 */
 
-bool	ServerManager::POLL_initializeServers() {
-	int	newfd;	// for newly accept()ed socket descriptors
-	struct sockaddr_storage	remoteaddr; // client address, may not be needed
+// bool	ServerManager::POLL_initializeServers() {
+// 	int	newfd;	// for newly accept()ed socket descriptors
+// 	struct sockaddr_storage	remoteaddr; // client address, may not be needed
 	
 
-	size_t	serverAmount = this->servers_.size();	// get the amount of servers
+// 	size_t	serverAmount = this->servers_.size();	// get the amount of servers
 
-	int listenerSockets[serverAmount]; // an array for the listener socket descriptors
+// 	int listenerSockets[serverAmount]; // an array for the listener socket descriptors
 
-	for (int i = 0; i < serverAmount; i++) {	// set up listener sockets
-		listenerSockets[i] = this->servers_.at(i).setupServer();	// get listener socket
-		if (listenerSockets[i] == -1)
-			return false;
+// 	for (int i = 0; i < serverAmount; i++) {	// set up listener sockets
+// 		listenerSockets[i] = this->servers_.at(i).setupServer();	// get listener socket
+// 		if (listenerSockets[i] == -1)
+// 			return false;
 
-		if (fcntl(listenerSockets[i], F_SETFL, O_NONBLOCK) == -1) {	// make socket non-blocking
-			perror("fcntl");
-			return false;
-		}
+// 		if (fcntl(listenerSockets[i], F_SETFL, O_NONBLOCK) == -1) {	// make socket non-blocking
+// 			perror("fcntl");
+// 			return false;
+// 		}
 		
-		this->pollfds_.push_back(pollfd{listenerSockets[i], POLLIN});	// push a new pollfd into the pollfds_ -vector
-		this->server_map_[listenerSockets[i]] = &this->servers_[i];		// add fd and the server to the server_map_
-	}
-	return true;
-}
+// 		this->pollfds_.push_back(pollfd{listenerSockets[i], POLLIN});	// push a new pollfd into the pollfds_ -vector
+// 		this->server_map_[listenerSockets[i]] = &this->servers_[i];		// add fd and the server to the server_map_
+// 	}
+// 	return true;
+// }
 
 /********************************************** NOT CLASS functions **********************************************************/
 

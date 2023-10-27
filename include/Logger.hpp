@@ -20,7 +20,7 @@ enum	e_where_to_log {
 	E_LOG_TO_BOTH_CONSOLE_AND_FILES
 };
 
-# define LOG_LOCATION	E_LOG_TO_BOTH_CONSOLE_AND_FILES
+# define LOG_LOCATION	E_LOG_ONLY_TO_CONSOLE
 # define LOG_DIR		"webserv_log"
 # define LOG_ALL		"all_log.txt"
 # define LOG_ERROR		"error_log.txt"

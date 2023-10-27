@@ -1,4 +1,14 @@
 #include "Server.hpp"
+#include "Logger.hpp"
+#include "Color.hpp"
+#include "utility.hpp"
+
+// put these in its own file? Used by Client class as well
+#include <fcntl.h>
+#include <unistd.h>
+
+// Macro used for listen()
+#define	LISTEN_BACKLOG	20
 
 Server::Server(){
 }
@@ -71,6 +81,59 @@ void Server::setLocation(std::string locationBlockKey, std::string key, std::vec
     }
 }
 
+/*************ssalmi's functions for server management*************/
+
+int	Server::setupServer( void ) {
+	int	listener_fd;
+	int	yes = 1;	// for setsockopt()
+
+	if ((listener_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "server socket error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
+		return -1;
+	}
+
+	if (fcntl(listener_fd, F_SETFL, O_NONBLOCK) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "server fcntl error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
+		close(listener_fd);
+		return -1;
+	}
+
+	this->address_.sin_family = AF_INET;
+	this->address_.sin_port = htons(this->listening_port_);
+	this->address_.sin_addr.s_addr = inet_addr(this->host_.c_str());
+	memset(this->address_.sin_zero, '\0', sizeof this->address_.sin_zero);
+
+	setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));	// supresses error message if port is reused
+
+	if (bind(listener_fd, (struct sockaddr *)&this->address_, sizeof this->address_) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "server bind error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
+		close(listener_fd);
+		return -1;
+	}
+
+	if (listen(listener_fd, LISTEN_BACKLOG) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "server listern error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
+		close(listener_fd);
+		return -1;
+	}
+	Logger::log(E_INFO, COLOR_WHITE, "%s initialized successfully...", this->getServerIdforLog().c_str());
+	return listener_fd;
+}
+
+std::string	Server::getServerIdforLog( void ) const {
+	std::string	id;
+
+	id += "server ";
+	id += this->server_name_;
+	id += " [HOST: ";
+	id += this->host_;
+	id += ", PORT: ";
+	id += int_to_string(this->listening_port_);
+	id += "]"; 
+	return id;
+}
+
+/**************************/
 
 int	Server::getListeningPortInt( void ) const{
 

@@ -34,10 +34,8 @@ void	Logger::initLogger( void ) {
 	else if (LOG_LOCATION == E_LOG_ONLY_TO_CONSOLE)
 		Logger::log_to_files_ = false;
 	if (Logger::log_to_files_) {
-		if (Logger::checkIfToLogInFiles()) {
-			std::cout << "will go to init log files" << std::endl;
+		if (Logger::checkIfToLogInFiles())
 			initLogFiles();
-		}
 	}
 }
 
