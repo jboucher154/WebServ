@@ -221,7 +221,7 @@ void	ServerManager::sendResponseToClient( int client_fd ) {
 	if (response_string.empty())
 		return;
 
-	int	bytes_sent = send(client_fd, &response_string, response_string.length(), 0);
+	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to client %d",
 			this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
