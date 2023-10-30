@@ -3,6 +3,13 @@
 
 # include <string>
 # include "ResponseCodes.hpp"
+# include "utility.hpp"
+#include <ctime>
+#include <time.h>
+
+# ifndef CRLF
+#  define CRLF "\r\n"
+# endif
 
 // class Request; //forward declaration for now
 
@@ -27,6 +34,7 @@ class	Response {
 		int				status_code_;
 		// int				http_version_;
 		// int				content_length_;
+		std::string		timeStampHeader( void ) const;
 
 	public:
 		Response( void );
@@ -39,7 +47,7 @@ class	Response {
 		/* PUBLIC METHODS */
 
 		// void			generate( Request& request );
-		const char*		get( /*socket to write to?*/ ) const;
+		const char*		get( /*socket to write to?*/ );
 		void			clear( void ); /*reset for next use*/
 };
 
