@@ -36,6 +36,10 @@ public:
 	void						setIndex( std::string index );
 	void						setErrorPage( std::string errorPage );
 	void						setLocation( std::string locationBlockKey, std::string key, std::vector<std::string> values );
+	
+	// added by ssalmi for server management
+	int							setupServer();
+	std::string					getServerIdforLog() const;
 
 	int							getListeningPortInt( void ) const;
 	std::string					getListeningPortString( void ) const;
