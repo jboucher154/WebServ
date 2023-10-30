@@ -78,11 +78,18 @@ Response&	Response::operator=( const Response& rhs ) {
 *  More details to be filled as project progresses.
 *  
 */
-const char*	Response::get( /*socket to write to?*/ ) const {
+const char*	Response::get( /*socket to write to?*/ ) {
 
-	// return (ResponseCodes::getCombinedStatusLineAndBody(501).c_str());//default response for now
-	// return (ResponseCodes::getCombinedStatusLineAndBody(this->status_code_).c_str());
-	return (ResponseCodes::getCodeStatusLine(this->status_code_).c_str());
+	std::string response;
+	
+	response = ResponseCodes::getCodeStatusLine(this->status_code_);
+	this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
+	response += this->timeStampHeader() + CRLF;
+	response += "Content-Length : ";
+	response += int_to_string(this->body_.length());
+	response += "\r\n\r\n";
+	response += this->body_ + CRLF + CRLF;
+	return (response.c_str());
 }
 
 /*! \brief clear method resets the response for next use
@@ -99,3 +106,17 @@ void	Response::clear( void ) { 	/* reset for next use */
 }
 
 /* CLASS PRIVATE METHODS */
+
+//check if logging time stamp can do the same thing
+std::string		Response::timeStampHeader( void ) const{
+
+	time_t	now = time(0);
+	struct tm tstruct;
+	std::string	time_stamp("Date: ");
+	char	buffer[100];
+
+	tstruct = *gmtime(&now);
+	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %X GMT", &tstruct);
+	time_stamp += buffer;
+	return time_stamp;
+}
