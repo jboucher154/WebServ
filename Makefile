@@ -58,6 +58,10 @@ fclean: clean
 # Debug
 debug:
 			make fclean
+			make all FLAGS="-D GET_DEBUG_LOG=true"
+
+debugsan:
+			make fclean
 			make all FLAGS="-g -fsanitize=address"
 
 re: 		fclean all
@@ -68,7 +72,7 @@ $(OBJ_DIR) $(TARGET_DIR):
 
 -include $(DEPS)
 
-.PHONY: all clean fclean re debug
+.PHONY: all clean fclean re debug debugsan
 
 vpath %.cpp $(SRC_DIR)
 override FLAGS += $(C98FLAG) $(EXTRA) $(DEP) $(INC_DIR:%=-I%)

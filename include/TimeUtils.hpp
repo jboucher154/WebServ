@@ -1,11 +1,9 @@
 #ifndef TIMEUTILS_HPP
-#define	TIMEUTILS_HPP
+# define TIMEUTILS_HPP
 
-#include <ctime>
-#include <time.h>
-
-// rm later
-#include <string>
+# include <ctime>
+# include <time.h>
+# include <string>
 
 std::string	getTimestampString( void );
 
