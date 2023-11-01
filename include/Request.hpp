@@ -56,10 +56,10 @@ class	Request {
 
 		void		printRequest( void ) const;
 
-		std::string											getRequestLineValue( std::string& key ) const;
+		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderEnd( void ) const;
-		std::string											getHeaderValueByKey( std::string& key ) const;
+		std::string											getHeaderValueByKey( std::string key ) const;
 		std::vector<std::string>::iterator	getBodyBegin( void );
 		std::vector<std::string>::iterator	getBodyEnd( void );
 		// const std::string&	getBody() const;
