@@ -30,8 +30,9 @@ enum	e_where_to_log {
 # define LOG_DEBUG		"log_debug.txt"
 
 // SET THIS TO TRUE IF YOU WANT DEBUG LOGGING (extra info)
-# define GET_DEBUG_LOG	false
-
+# ifndef GET_DEBUG_LOG
+#  define GET_DEBUG_LOG	false
+# endif
 
 
 /*! \brief Brief description.
