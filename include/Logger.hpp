@@ -2,16 +2,17 @@
 # define LOGGER_HPP
 
 // rm later
-#include <iostream>
-#include <fstream>
-#include <sstream>
+# include <iostream>
+# include <fstream>
+# include <sstream>
 
 // keep here?
-#include <sys/stat.h>
+# include <sys/stat.h>
 
 enum	e_log_msg_type {
 	E_ERROR,
-	E_INFO
+	E_INFO,
+	E_DEBUG
 };
 
 enum	e_where_to_log {
@@ -25,6 +26,7 @@ enum	e_where_to_log {
 # define LOG_ALL		"all_log.txt"
 # define LOG_ERROR		"error_log.txt"
 # define LOG_INFO		"info_log.txt"
+# define LOG_DEBUG		"debug_log.txt"
 
 /*! \brief Brief description.
 *         Brief description continued.
@@ -42,6 +44,7 @@ class	Logger {
 		static std::ofstream	all_log_file_;
 		static std::ofstream	error_log_file_;
 		static std::ofstream	info_log_file_;
+		static std::ofstream	debug_log_file_;
 
 		Logger( void );
 		Logger( const Logger& to_copy );

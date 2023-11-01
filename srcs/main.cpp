@@ -1,7 +1,6 @@
 // rm later; testing
 #include "Logger.hpp"
 #include "Color.hpp"
-// #include "Sockets.hpp"
 #include "Server.hpp"
 #include "ServerManager.hpp"
 
@@ -29,11 +28,29 @@ int  main( int argc, char *argv[]) {
   server2.setServerName("Server-2");
   server_vector.push_back(server2);
 
-  ServerManager server_manager(server_vector);
-  if (!server_manager.SELECT_initializeServers()) {
-    server_manager.closeServerSockets();
-    return 1;
+  //SELECT VERSION
+  while (true) {
+    ServerManager server_manager(server_vector);
+    if (!server_manager.SELECT_initializeServers()) {  
+      server_manager.closeServerSockets();
+      return 1;
+    }
+    if (server_manager.SELECT_runServers())
+      break;
+    Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an error, RESTARTING SERVERS!!!");
   }
-  server_manager.SELECT_runServers();
+
+  // POLL VERSION
+  //  while (true) {
+  //   ServerManager server_manager(server_vector);
+  //   if (!server_manager.POLL_initializeServers()) {  
+  //     server_manager.closeServerSockets();
+  //     return 1;
+  //   }
+  //   if (server_manager.POLL_runServers())
+  //     break;
+  //   Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an error, RESTARTING SERVERS!!!");
+  // }
+
   return 0;
 }

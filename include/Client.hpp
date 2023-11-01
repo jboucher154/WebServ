@@ -3,10 +3,7 @@
 
 #include "Request.hpp"
 #include "Response.hpp"
-
-// my old server-functions
-// #include "Sockets.hpp"
-#include <Server.hpp>
+#include "Server.hpp"
 
 /*! \brief Brief description.
 *         Brief description continued.

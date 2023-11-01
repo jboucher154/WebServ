@@ -83,7 +83,7 @@ void	Request::add( std::string to_add ) { //add to any part of the Request, will
 			this->parseBody_(line);
 		}
 	}
-	std::cout << "Parsing complete!!!!" << std::endl;//
+	// std::cout << "Parsing complete!!!!" << std::endl;//
 	this->complete_ = true;
 }
 
@@ -103,7 +103,7 @@ void	Request::clear( void ) { //clear all data in the request
 
 void	Request::parseRequestLine_( std::string& to_parse ) {
 
-	std::cout << "REQUEST LINE: " << to_parse << std::endl;
+	// std::cout << "REQUEST LINE: " << to_parse << std::endl;
 	this->request_line_["test"] = to_parse;
 }
 
@@ -111,12 +111,14 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 
 void	Request::parseHeader_( std::string& to_parse ) {
 
-	std::cout << "HEADER: " << to_parse << std::endl;
+	(void)to_parse;
+	// std::cout << "HEADER: " << to_parse << std::endl;
 }
 
 void	Request::parseBody_( std::string& to_parse ) {
 
-	std::cout << "BODY: " << to_parse << std::endl;
+	(void)to_parse;
+	// std::cout << "BODY: " << to_parse << std::endl;
 }
 
 
