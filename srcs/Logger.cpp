@@ -73,13 +73,13 @@ void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
 			Logger::info_log_file_ << "[" << timestamp << "]\t[INFO]\t" << buffer << std::endl;
 		}
 	}
-	if (msg_type == E_DEBUG) {
+	if (msg_type == E_DEBUG && GET_DEBUG_LOG == true) {
 		if (Logger::log_to_console_) {
 			std::cout << msg_color << "[" << timestamp << "]\t[DEBUG]\t" << buffer << COLOR_RESET << std::endl;
 		}
 		if (Logger::log_to_files_) {
 			Logger::all_log_file_ << "[" << timestamp << "]\t[DEBUG]\t" << buffer << std::endl;
-			Logger::info_log_file_ << "[" << timestamp << "]\t[DEBUG]\t" << buffer << std::endl;
+			Logger::debug_log_file_ << "[" << timestamp << "]\t[DEBUG]\t" << buffer << std::endl;
 		}
 	}
 }
@@ -109,8 +109,8 @@ bool	Logger::checkIfToLogInFiles( void ) {
 		Logger::log_dir_already_exists_ = true;
 
 		std::string	input;
-		std::cout << LOG_DIR << " -directory already exists; do you want to write over previous log files?" << std::endl
-				<< "(will overwrite files " << LOG_ALL << ", " << LOG_ERROR << ", " << LOG_INFO << " and " << LOG_DEBUG << ")" << std::endl;
+		std::cout << LOG_DIR << " -directory already exists; do you want to write over previous log files in the directory?" << std::endl
+				<< "(will overwrite log_*.txt files)" << std::endl;
 		while (true) {
 			std::cout << "answer y/n: ";
 			std::getline(std::cin, input);
@@ -160,21 +160,25 @@ bool	Logger::openLogFiles( void ) {
 	Logger::all_log_file_.open(LOG_DIR "/" LOG_ALL, std::ios::out | std::ios::trunc);
 	Logger::error_log_file_.open(LOG_DIR "/" LOG_ERROR, std::ios::out | std::ios::trunc);
 	Logger::info_log_file_.open(LOG_DIR "/" LOG_INFO, std::ios::out | std::ios::trunc);
-	Logger::info_log_file_.open(LOG_DIR "/" LOG_DEBUG, std::ios::out | std::ios::trunc);
+
+	if (GET_DEBUG_LOG == true) {
+		Logger::debug_log_file_.open(LOG_DIR "/" LOG_DEBUG, std::ios::out | std::ios::trunc);
+		if (Logger::debug_log_file_.fail()) {
+			std::cerr << "Error opening " << LOG_DEBUG << " for writing." << std::endl;
+			opening_success = false;
+		}
+	}
+
 	if (Logger::all_log_file_.fail()) {
-		std::cerr << "Error opening " << LOG_ALL << "for writing." << std::endl;
+		std::cerr << "Error opening " << LOG_ALL << " for writing." << std::endl;
 		opening_success = false;
 	}
 	if (Logger::error_log_file_.fail()) {
-		std::cerr << "Error opening " << LOG_ERROR << "for writing." << std::endl;
+		std::cerr << "Error opening " << LOG_ERROR << " for writing." << std::endl;
 		opening_success = false;
 	}
 	if (Logger::info_log_file_.fail()) {
-		std::cerr << "Error opening " << LOG_INFO << "for writing." << std::endl;
-		opening_success = false;
-	}
-	if (Logger::debug_log_file_.fail()) {
-		std::cerr << "Error opening " << LOG_DEBUG << "for writing." << std::endl;
+		std::cerr << "Error opening " << LOG_INFO << " for writing." << std::endl;
 		opening_success = false;
 	}
 	return opening_success;

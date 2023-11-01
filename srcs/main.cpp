@@ -33,11 +33,12 @@ int  main( int argc, char *argv[]) {
     ServerManager server_manager(server_vector);
     if (!server_manager.SELECT_initializeServers()) {  
       server_manager.closeServerSockets();
+      Logger::closeLogFiles();
       return 1;
     }
     if (server_manager.SELECT_runServers())
       break;
-    Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an error, RESTARTING SERVERS!!!");
+    Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an select error, RESTARTING SERVERS!!!");
   }
 
   // POLL VERSION
@@ -45,12 +46,15 @@ int  main( int argc, char *argv[]) {
   //   ServerManager server_manager(server_vector);
   //   if (!server_manager.POLL_initializeServers()) {  
   //     server_manager.closeServerSockets();
+  //     Logger::closeLogFiles();
   //     return 1;
   //   }
   //   if (server_manager.POLL_runServers())
   //     break;
   //   Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an error, RESTARTING SERVERS!!!");
   // }
+
+  Logger::closeLogFiles();
 
   return 0;
 }

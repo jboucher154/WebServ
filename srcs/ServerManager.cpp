@@ -194,10 +194,10 @@ bool	ServerManager::SELECT_runServers( void ) {
 
 		this->SELECT_runServersLoopStart(select_timeout, read_fd_set_copy, write_fd_set_copy);	//ready everything for select
 
-		this->SELECT_printSetData();
+		this->SELECT_printSetData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
 	
 		if ((select_result = select(this->biggest_fd_ + 1, &read_fd_set_copy, &write_fd_set_copy, NULL, &select_timeout)) == -1) {
-			Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s", strerror(errno));
+			Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s [WHAT ARE THE CHANCES?!]", strerror(errno));
 			this->closeAllSockets();
 			return false;
 		}
@@ -221,7 +221,7 @@ bool	ServerManager::SELECT_runServers( void ) {
 			break;
 	}
 
-	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout (no client activity in the defined timeframe); server shutting down...");
+	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
 	this->closeAllSockets();
 	return true;
 }
@@ -389,7 +389,7 @@ bool	ServerManager::POLL_runServers( void ) {
 
 	while (true) {	//	MAIN LOOP
 
-		// this->POLL_printData();
+		this->POLL_printData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
 	
 		if ((poll_result = poll(&this->pollfds_[0], this->pollfds_.size(), POLL_TIMEOUT_MILLISEC)) == -1) {
 			Logger::log(E_ERROR, COLOR_RED, "POLL ERROR: %s", strerror(errno));
@@ -421,7 +421,7 @@ bool	ServerManager::POLL_runServers( void ) {
 			break;
 	}
 
-	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout (no client activity in the defined timeframe); server shutting down...");
+	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout (no client activity in the defined timeframe); servers shutting down...");
 	this->closeAllSockets();
 	return true;
 }

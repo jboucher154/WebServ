@@ -23,10 +23,15 @@ enum	e_where_to_log {
 
 # define LOG_LOCATION	E_LOG_ONLY_TO_CONSOLE
 # define LOG_DIR		"webserv_log"
-# define LOG_ALL		"all_log.txt"
-# define LOG_ERROR		"error_log.txt"
-# define LOG_INFO		"info_log.txt"
-# define LOG_DEBUG		"debug_log.txt"
+# define LOG_ALL		"log_all.txt"
+# define LOG_ERROR		"log_error.txt"
+# define LOG_INFO		"log_info.txt"
+# define LOG_DEBUG		"log_debug.txt"
+
+// SET THIS TO TRUE IF YOU WANT DEBUG LOGGING (extra info)
+# define GET_DEBUG_LOG	false
+
+
 
 /*! \brief Brief description.
 *         Brief description continued.
