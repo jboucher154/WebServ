@@ -158,7 +158,7 @@ bool	Request::getServerError( void ) const {
 	return (this->sever_error_);
 }
 
-std::string	Request::getRequestLineValue( std::string& key ) const {
+std::string	Request::getRequestLineValue( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->request_line_.find(key);
 	if (value ==  this->request_line_.end()) {
@@ -180,7 +180,7 @@ std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void )
 	return (this->headers_.end());
 }
 
-std::string	Request::getHeaderValueByKey( std::string& key ) const {
+std::string	Request::getHeaderValueByKey( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->headers_.find(key);
 	if (value ==  this->headers_.end()) {
