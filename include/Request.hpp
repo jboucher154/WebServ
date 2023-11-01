@@ -4,6 +4,9 @@
 # include <iostream>
 # include <sstream>
 # include <map>
+# include <vector>
+# include "utility.hpp"
+# include "Logger.hpp"
 
 # define CRLF "\r\n" //make this project wide?
 
@@ -11,25 +14,28 @@ class	Request {
 
 	private:
 		/* PRIVATE METHODS AND MEMBERS */
-		// things I think will be good to have a s a quick reference for the request handling
-		int									size_;
+		size_t								body_size_;
+		size_t								body_len_received_;					
 		bool 								chunked_;
 		bool								keep_alive_;
 		bool								headers_complete;
 		bool								complete_;
-		std::map<std::string, std::string>	request_line_; // method, uri, version
-		std::map<std::string, std::string>	headers_; //host, content-type, user-agent, content-egth, last-modified, PRAGMA, accept-encoding accept, connection, reffer, etc.
-		std::map<std::string, std::string>	body_; //body of the request, should it be a map?
+		bool								sever_error_;
+		std::map<std::string, std::string>	request_line_;
+		std::map<std::string, std::string>	headers_;
+		std::vector<std::string>			body_;
 		//no footers for now
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
 		void	parseBody_( std::string& to_parse );
-
-
+		void	setBodySize( void );
+		void	setChunked( void );
+		void	setKeepAlive( void );
+		void	setRequestAttributes( void );
 
 	public:
-		Request( void ); // itialize to default values
+		Request( void );
 		Request( const Request& to_copy );
 
 		~Request( void );
@@ -37,14 +43,26 @@ class	Request {
 		Request&	operator=( const Request& to_copy );
 
 		/* PUBLIC METHODS */
-		void	add( std::string to_add ); //add to any part of the response, will direct to correct private parsing function
-		void	clear( void ); //clear all data in the request
+		void	add( std::string to_add );
+		void	clear( void );
 
 		/* GETTERS */
-		int		getSize( void ) const;
-		bool	getChunked( void ) const;
-		bool	getKeepAlive( void ) const;
-		bool	getComplete( void ) const;
+		size_t		getBodySize( void ) const;
+		size_t		getBodyLengthReceived( void ) const;
+		bool		getChunked( void ) const;
+		bool		getKeepAlive( void ) const;
+		bool		getComplete( void ) const;
+		bool		getServerError( void ) const;
+
+		void		printRequest( void ) const;
+
+		std::string											getRequestLineValue( std::string key ) const;
+		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
+		std::map<std::string, std::string>::const_iterator	getHeaderEnd( void ) const;
+		std::string											getHeaderValueByKey( std::string key ) const;
+		std::vector<std::string>::iterator	getBodyBegin( void );
+		std::vector<std::string>::iterator	getBodyEnd( void );
+		// const std::string&	getBody() const;
 };
 
 #endif

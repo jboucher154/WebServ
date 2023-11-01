@@ -7,7 +7,8 @@
 # include <sstream>
 
 // keep here?
-# include <sys/stat.h>
+#include <sys/stat.h>
+# include "Color.hpp"
 
 enum	e_log_msg_type {
 	E_ERROR,
