@@ -36,7 +36,7 @@ Client::~Client( void ) {
 // }
 
 void	Client::setLatestTime( void ) {
-
+	this->latest_time_ = time(0);
 }
 
 // getters
@@ -78,7 +78,8 @@ std::string	Client::getClientResponse( void ) {
 
 void	Client::addToRequest( std::string message ) {
 
-	std::cout << "in addToRequest" << std::endl;
+	// std::cout << "in addToRequest" << std::endl;
+	
 	this->request_.add(message);
 }
 

@@ -10,7 +10,7 @@
 
 ServerManager::ServerManager( void ) {
 	
-	FD_ZERO(&this->master_fd_set_);
+	// FD_ZERO(&this->master_fd_set_);
 	FD_ZERO(&this->read_fd_set_);
 	FD_ZERO(&this->write_fd_set_);
 	this->servers_.clear();
@@ -21,7 +21,7 @@ ServerManager::ServerManager( void ) {
 
 ServerManager::ServerManager( std::vector<Server>& server_vector ) {
 
-	FD_ZERO(&this->master_fd_set_);
+	// FD_ZERO(&this->master_fd_set_);
 	FD_ZERO(&this->read_fd_set_);
 	FD_ZERO(&this->write_fd_set_);
 	this->servers_.clear();
@@ -41,119 +41,7 @@ ServerManager::~ServerManager( void ) {}
 
 // }
 
-/*! \brief Get a server listening socket.
-*         This is function takes a reference of the server
-*			that needs a listening socket and returns either
-*			a working listening socket or -1 in case of error.
-*
-*  This function proceeds in the following way:
-*		1. 
-*		
-*
-*/
 
-// int	ServerManager::getServerListenerSocket( Server& server ) {
-// 	int	listener;
-
-// 	if (listener = socket(PF_INET, SOCK_STREAM, 0) == -1) {
-// 		Logger::log(E_ERROR, "RED here", "server socket: %s", strerror(errno)); // make better later!
-// 		return -1;
-// 	}
-
-// 	if (fcntl(listener, F_SETFL, O_NONBLOCK) == -1) {
-// 		Logger::log(E_ERROR, "RED here", "server fcntl: %s", strerror(errno)); // make better later!
-// 		close(listener);
-// 		return -1;
-// 	}
-
-// 	server.getServerAddress().sin_family = AF_INET;
-// 	server.getServerAddress().sin_port = htons(server.getListenerPort());
-// 	server.getServerAddress().sin_addr.s_addr = server.getHost();
-// 	memset(server.getServerAddress().sin_zero, '\0', sizeof server.getServerAddress().sin_zero);
-
-// 	int	yes = 1;	// for setsockopt()
-// 	setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-	
-// 	if (bind(listener, (struct sockaddr *)&server.getServerAddress(), sizeof server.getServerAddress()) == -1) {
-// 		Logger::log(E_ERROR, "RED here", "server bind: %s", strerror(errno)); // make better later!
-// 		close(listener);
-// 		return -1;
-// 	}
-	
-// 	if (listen(listener, LISTEN_BACKLOG) == -1) {
-// 		Logger::log(E_ERROR, "RED here", "server listen: %s", strerror(errno)); // make better later!
-// 		close(listener);
-// 		return -1;
-// 	}
-// 	Logger::log(E_INFO, "WHITE here", "server ready!"); // make better later!
-// 	return listener;
-// }
-
-/*! \brief Get a server listening socket.
-*
-*			THIS ONE USES ADDRINFO
-*			also the port was a std::string
-*
-*         This is function takes a reference of the server
-*			that needs a listening socket and returns either
-*			a working listening socket or -1 in case of error.
-*
-*  This function proceeds in the following way:
-*		1. Gets a pointer to addrinfo
-*		2. keeps looping until successfully creates a socket and binds it
-*		3. free addrinfo
-*		4. check that bounding was successful
-*		5. attempts to listen
-*		6. returns listening socket descriptor
-*
-*/
-
-// int	ServerManager::getServerListenerSocket( Server& server ) {
-// 	int	listener;
-// 	int	rv;
-// 	int	setsockopt_option = 1;	// for setsockopt()
-
-// 	struct addrinfo	hints, *addressInfo, *p;
-
-// 	memset(&hints, 0, sizeof hints);
-// 	hints.ai_family = AF_INET;
-// 	hints.ai_socktype = SOCK_STREAM;
-// 	hints.ai_flags = htons(server.getHost());
-
-// 	char	portString[server.getListenerPort().length()];		// convert from std::string to char*
-// 	std::strcpy(portString, server.getListenerPort().c_str());
-
-// 	if ((rv = getaddrinfo(NULL, portString, &hints, &addressInfo)) != 0) {
-// 		std::cerr << "getListenerSocket: " << gai_strerror(rv) << std::endl;
-// 		return -1;
-// 	}
-
-// 	for (p = addressInfo; p != NULL; p = p->ai_next) {
-
-// 		listener = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-// 		if (listener < 0)
-// 			continue;
-		
-// 		setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &setsockopt_option, sizeof(int));
-
-// 		if (bind(listener, p->ai_addr, p->ai_addrlen) < 0) {
-// 			close(listener);
-// 			continue;
-// 		}
-
-// 		break;
-// 	}
-
-// 	freeaddrinfo(addressInfo);
-
-// 	if (p == NULL)
-// 		return -1;
-
-// 	if (listen(listener, LISTEN_BACKLOG) == -1)
-// 		return -1;
-
-// 	return listener;
-// }
 
 void	ServerManager::closeServerSockets( void ) {
 
@@ -196,24 +84,32 @@ bool	ServerManager::checkLastClientTime( void ) {
 	return false;
 }
 
-void	ServerManager::receiveFromClient( int client_fd ) {
+
+bool	ServerManager::receiveFromClient( int client_fd ) {
 	
 	char	client_msg[4000];
 
-	memset(client_msg, '\0', 4000);
+	this->client_map_[client_fd].setLatestTime();
+	memset(client_msg, 0, 4000);
 	int bytes_received = recv(client_fd, &client_msg, 3999, 0);
 
-	std::cout << "bytes received: " << bytes_received << std::endl;
-	std::cout << "messge:  " << client_msg << std::endl;
+	// std::cout << "bytes received: " << bytes_received << std::endl;
+	// std::cout << "messge:  " << client_msg << std::endl;
 
 	if (bytes_received == -1)
-		Logger::log(E_ERROR, COLOR_RED, "recv error, from client %d to server %s",
+		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
 			client_fd, this->client_map_[client_fd].getServer()->getServerIdforLog().c_str());
-	else if (bytes_received == 0)
-		this->SELECT_removeClient(client_fd);
-	else
+	else if (bytes_received == 0)	// client has disconnected...
+		return false;
+	else {
 		this->client_map_[client_fd].addToRequest(client_msg);
+		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
+			this->client_map_[client_fd].getServer()->getServerName().c_str(), client_fd, NULL, NULL);
+	}
+
+	return true;
 }
+
 
 void	ServerManager::sendResponseToClient( int client_fd ) {
 
@@ -221,142 +117,103 @@ void	ServerManager::sendResponseToClient( int client_fd ) {
 	if (response_string.empty())
 		return;
 
+	this->client_map_[client_fd].setLatestTime();
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to client %d",
+		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to socket %d",
 			this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
 	}
 	else if (bytes_sent == 0) {
-
+		Logger::log(E_DEBUG, COLOR_YELLOW, " Server %s sent 0 bytes to socket %d",
+			this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
 	}
 	else {
 		if (bytes_sent < static_cast<int>(response_string.length()))
-			Logger::log(E_ERROR, COLOR_RED, "send incomplete response from server %s to client %d ",
+			Logger::log(E_ERROR, COLOR_RED, "incomplete response sent from server %s to socket %d ",
 				this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
 		else
-			std::cout << "full response sent to client!" << std::endl;
+			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
+				this->client_map_[client_fd].getServer()->getServerName().c_str(), client_fd, -42);
 	}
 	// if bytes_sent == 0 do something?
 
 	this->client_map_[client_fd].resetResponse();
 	this->client_map_[client_fd].resetRequest();
-
-	if (FD_ISSET(client_fd, &this->write_fd_set_))
-		FD_CLR(client_fd, &this->write_fd_set_);
-	if (!FD_ISSET(client_fd, &this->read_fd_set_))
-		FD_SET(client_fd, &this->read_fd_set_);
 }
 
 
 /********************************************** SELECT functions **********************************************************/
 
-
-/*! \brief Create server sockets (SELECT VERSION).
-*         This function initiates all of the server
-*			
-*			
-*			returns false in case of error
-*
-*  This function proceeds in the following way:
-*		1.		SETUP ONE LISTENER SOCKET PER SERVER
-*		1.1.	Make socket non-blocking
-*		1.2.	Add a pollfd to pollfd-vector and set listening socket's socket descriptor as its fd (set event as POLLIN) 
-*		...
-*
-*/
-
 bool	ServerManager::SELECT_initializeServers( void ) {
 
 	int	server_amount = this->servers_.size();
-
 	int server_socket;
+
+	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "Initializing servers...");
 
 	for (int i = 0; i < server_amount; i++) {
 		server_socket = this->servers_.at(i).setupServer();
-		if (server_socket == -1)
+		if (server_socket == -1) {
+			this->closeServerSockets();
 			return false;
+		}
 
-		
-		FD_SET(server_socket, &this->master_fd_set_);	// add server socket to master_fd_set_
 		FD_SET(server_socket, &this->read_fd_set_);		// add server socket to read_fd_set_
 
 		this->server_map_[server_socket] = &this->servers_[i];	// add server socket to server_map_
 	}
 
-	this->biggest_fd_ = getBiggestFdOfSet(FD_SETSIZE - 1, &this->master_fd_set_);
+	this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);	// get the biggest fd of the read set
+
+	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete");
 
 	return true;
 }
 
-/*! \brief initialize fd_sets for running the servers. 
-*			
-*			d
-*			
-*
-*  This function proceeds in the following way:
-*		1.		
-*		...
-*
-*/
+int		ServerManager::SELECT_getBiggestFd( int max_fd_size ) {
 
-void	ServerManager::SELECT_initializeFdSets( void ) {
-	for (std::map<int, Server*>::iterator it = this->server_map_.begin(); it != this->server_map_.end(); ++it) {
-		FD_SET(it->first, &this->read_fd_set_);
-	}
+	for (int fd = max_fd_size; fd >= 0; --fd) {
+        if (FD_ISSET(fd, &this->read_fd_set_) || FD_ISSET(fd, &this->write_fd_set_))
+            return fd;
+    }
+    return -1;	
 }
 
-/*! \brief run Servers; MAIN SERVER FUNCTION (SELECT VERSION).
-*         This function handles the running and management of servers and their clients.
-*			
-*			
-*			returns 0 on successful run and termination, else returns 1.
-*
-*  This function proceeds in the following way:
-*		1.		
-*		...
-*
-*/
-
-int	ServerManager::SELECT_runServers( void ) {
+bool	ServerManager::SELECT_runServers( void ) {
 
 	struct timeval	select_timeout;
 	int				select_result;
+	fd_set			read_fd_set_copy;
+	fd_set			write_fd_set_copy;
 
 	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting!");
 
-	// std::cout << "biggest fd is " << this->biggest_fd_ << std::endl;
-	// for (int i = 0; i <= this->biggest_fd_; i++) {
-	// 	if (FD_ISSET(i, &this->read_fd_set_))
-	// 		std::cout << "fd " << i << " is in set" << std::endl;
-	// }
-
-	this->last_client_time_ = time(NULL);	// get the start time
-
+	this->last_client_time_ = time(0);	// get the start time
 
 	while (true) {	//	MAIN LOOP
 
-		this->read_fd_set_ = this->master_fd_set_; // add all of the server's back to the read_set_; might have to change later...
-		this->write_fd_set_ = this->master_fd_set_;
-		this->biggest_fd_ = getBiggestFdOfSet(FD_SETSIZE - 1, &this->master_fd_set_);
+		this->SELECT_runServersLoopStart(select_timeout, read_fd_set_copy, write_fd_set_copy);	//ready everything for select
 
-		select_timeout.tv_sec = TIMEOUT_SEC;
-		select_timeout.tv_usec = TIMEOUT_USEC;
+		this->SELECT_printSetData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
 	
-		if ((select_result = select(this->biggest_fd_ + 1, &this->read_fd_set_, &this->write_fd_set_, NULL, &select_timeout)) == -1) {
-			Logger::log(E_ERROR, COLOR_RED, "select: %s", strerror(errno));
+		if ((select_result = select(this->biggest_fd_ + 1, &read_fd_set_copy, &write_fd_set_copy, NULL, &select_timeout)) == -1) {
+			Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s [WHAT ARE THE CHANCES?!]", strerror(errno));
+			this->closeAllSockets();
+			return false;
 		}
+	
 		for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
-			if (FD_ISSET(fd, &this->read_fd_set_)) {
+			if (FD_ISSET(fd, &read_fd_set_copy)) {
 				if (this->server_map_.count(fd))
 					this->SELECT_acceptNewClientConnection(fd);	// new client connection
 				if (this->client_map_.count(fd))
-					this->receiveFromClient(fd);				// client request or disconnection
+					this->SELECT_receiveFromClient(fd);				// client request or disconnection
 			}
-			if (FD_ISSET(fd, &this->write_fd_set_)) {
+			if (FD_ISSET(fd, &write_fd_set_copy)) {
 				if (this->server_map_.count(fd)) {}
-					// server receiving stuff from client?
+					// server receiving stuff from client?		// I don't think anything happens here, remove
 				if (this->client_map_.count(fd))
-					this->sendResponseToClient(fd);
+					this->SELECT_sendResponseToClient(fd);				// send a response to client
 			}
 		}
 	
@@ -364,10 +221,27 @@ int	ServerManager::SELECT_runServers( void ) {
 			break;
 	}
 
-	Logger::log(E_INFO, COLOR_GREEN, "Successful end; server shutting down...");
+	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
 	this->closeAllSockets();
-	return 0;
+	return true;
 }
+
+// this function is called in the beginning of the runServer Loop.
+// 1. sets timeout values
+// 2. copy the Webserver's sets to the pointed to sets
+// 3.  get the biggest fd in the master_fd_set_
+// expand on this more later!
+void	ServerManager::SELECT_runServersLoopStart( timeval& select_timeout, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy ) {
+
+	select_timeout.tv_sec = SELECT_TIMEOUT_SEC;
+	select_timeout.tv_usec = SELECT_TIMEOUT_USEC;
+
+	read_fd_set_copy = this->read_fd_set_;
+	write_fd_set_copy = this->write_fd_set_;
+
+	this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+}
+
 
 void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 
@@ -379,86 +253,281 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 	
 	client_address_size = sizeof(sockaddr_in);
 	if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &client_address_size)) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "accept: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
+		Logger::log(E_ERROR, COLOR_RED, "accept error: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
 		return;
 	}
 
-	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d, client assigned to socket %d [host: %s]",
+	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
 		server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
 
 	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, client %d rejected", client_fd);
+		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
+		close(client_fd);
 		return;
 	}
 
 	this->client_map_.insert(std::make_pair(client_fd, Client(server_fd, server)));
+	this->client_map_[client_fd].setLatestTime();
 
-	FD_SET(client_fd, &this->master_fd_set_);
 	FD_SET(client_fd, &this->read_fd_set_);
-	// FD_SET(client_fd, &this->write_fd_set_); // because of request? talk with Jenny
 }
 
 void	ServerManager::SELECT_removeClient( int client_fd ) {
 
-	Logger::log(E_INFO, COLOR_MAGENTA, "Client %d connection lost, removing client...", client_fd);
-	if (FD_ISSET(client_fd, &this->master_fd_set_))
-		FD_CLR(client_fd, &this->master_fd_set_);
+	Logger::log(E_INFO, COLOR_MAGENTA, "Socket %d connection lost, clearing client data...", client_fd);
+	close(client_fd);
 	if (FD_ISSET(client_fd, &this->read_fd_set_))
 		FD_CLR(client_fd, &this->read_fd_set_);
-	if (FD_ISSET(client_fd, &this->write_fd_set_)) // is this unnecessary?
+	if (FD_ISSET(client_fd, &this->write_fd_set_))
 		FD_CLR(client_fd, &this->write_fd_set_);
+		if (client_fd == this->biggest_fd_)
+			this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
 	this->client_map_.erase(client_fd);
+}
+
+void	ServerManager::SELECT_switchClientToReadSet( int client_fd ) {
+
+	if (FD_ISSET(client_fd, &this->write_fd_set_))
+		FD_CLR(client_fd, &this->write_fd_set_);
+	if (!FD_ISSET(client_fd, &this->read_fd_set_))
+		FD_SET(client_fd, &this->read_fd_set_);
+}
+
+void	ServerManager::SELECT_switchClientToWriteSet( int client_fd ) {
+
+	if (FD_ISSET(client_fd, &this->read_fd_set_))
+		FD_CLR(client_fd, &this->read_fd_set_);
+	if (!FD_ISSET(client_fd, &this->write_fd_set_))
+		FD_SET(client_fd, &this->write_fd_set_);
+}
+
+/*	Use this function in the version that uses SELECT:
+	Will call the receiveFromClient function but handle it's
+	results in the correct SELECT way */
+void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
+
+	if (!this->receiveFromClient(client_fd))
+		this->SELECT_removeClient(client_fd);
+	else
+		this->SELECT_switchClientToWriteSet(client_fd);
+}
+
+/*	Use this function in the version that uses SELECT:
+	Will call the receiveFromClient function but handle it's
+	results in the correct SELECT way */
+void	ServerManager::SELECT_sendResponseToClient( int client_fd ) {
+
+	this->sendResponseToClient(client_fd);
+	this->SELECT_switchClientToReadSet(client_fd);
+}
+
+void	ServerManager::SELECT_printSetData( void ) {
+	
+	std::string	all_fds = "all fds currently handled: ";
+	std::string read_set = "read_fd_set: ";
+	std::string write_set = "write_fd_set: ";
+
+	std::string	fd_as_string;
+	int			fds_amount = 0;
+
+	for (int i = biggest_fd_; i >= 0; --i) {
+		if (FD_ISSET(i, &this->read_fd_set_)) {
+			fd_as_string = int_to_string(i);
+			all_fds += fd_as_string + " ";
+			read_set += fd_as_string + " ";
+			++fds_amount;
+		}
+		if (FD_ISSET(i, &this->write_fd_set_)) {
+			fd_as_string = int_to_string(i);
+			all_fds += fd_as_string + " ";
+			write_set += fd_as_string + " ";
+			++fds_amount;
+		}
+	}
+
+	Logger::log(E_DEBUG, COLOR_YELLOW, "fds amount: %d", fds_amount);
+	Logger::log(E_DEBUG, COLOR_YELLOW, "the biggest fd currently: %d", this->biggest_fd_);
+	Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
+	Logger::log(E_DEBUG, COLOR_YELLOW, read_set.c_str());
+	Logger::log(E_DEBUG, COLOR_YELLOW, write_set.c_str());
 }
 
 /********************************************** POLL functions **********************************************************/
 
-
-/*! \brief Create server sockets (POLL VERSION).
-*         This function creates the server listener sockets.
-*			
-*			
-*			returns false in case of error
-*
-*  This function proceeds in the following way:
-*		1.		SETUP ONE LISTENER SOCKET PER SERVER
-*		1.1.	Make socket non-blocking
-*		1.2.	Add a pollfd to pollfd-vector and set listening socket's socket descriptor as its fd (set event as POLLIN) 
-*		...
-*
-*/
-
-// bool	ServerManager::POLL_initializeServers() {
-// 	int	newfd;	// for newly accept()ed socket descriptors
-// 	struct sockaddr_storage	remoteaddr; // client address, may not be needed
+bool	ServerManager::POLL_initializeServers( void ) {
 	
+	int		server_amount = this->servers_.size();
+	int 	server_socket;
 
-// 	size_t	serverAmount = this->servers_.size();	// get the amount of servers
+	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initializing servers...");
 
-// 	int listenerSockets[serverAmount]; // an array for the listener socket descriptors
+	for (int i = 0; i < server_amount; i++) {
+		server_socket = this->servers_.at(i).setupServer();
+		if (server_socket == -1) {
+			this->closeServerSockets();
+			return false;
+		}
 
-// 	for (int i = 0; i < serverAmount; i++) {	// set up listener sockets
-// 		listenerSockets[i] = this->servers_.at(i).setupServer();	// get listener socket
-// 		if (listenerSockets[i] == -1)
-// 			return false;
+		pollfd new_pollfd = {server_socket, POLLIN, 0};
+		this->pollfds_.push_back(new_pollfd);					// push server socket to pollfds_ vector with POLLIN as event
 
-// 		if (fcntl(listenerSockets[i], F_SETFL, O_NONBLOCK) == -1) {	// make socket non-blocking
-// 			perror("fcntl");
-// 			return false;
-// 		}
-		
-// 		this->pollfds_.push_back(pollfd{listenerSockets[i], POLLIN});	// push a new pollfd into the pollfds_ -vector
-// 		this->server_map_[listenerSockets[i]] = &this->servers_[i];		// add fd and the server to the server_map_
-// 	}
-// 	return true;
-// }
+		this->server_map_[server_socket] = &this->servers_[i];	// add server socket and the server itself to server_map_
+	}
 
-/********************************************** NOT CLASS functions **********************************************************/
+	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete");
 
-int	getBiggestFdOfSet( int max_fd_size, fd_set* set ) {
-	for (int fd = max_fd_size; fd >= 0; --fd) {
-        if (FD_ISSET(fd, set)) {
-            return fd;
-        }
-    }
-    return -1;
+	return true;
+}
+
+bool	ServerManager::POLL_runServers( void ) {
+
+	int				poll_result;
+
+	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting!");
+
+	this->last_client_time_ = time(0);	// get the start time
+
+	while (true) {	//	MAIN LOOP
+
+		this->POLL_printData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
+	
+		if ((poll_result = poll(&this->pollfds_[0], this->pollfds_.size(), POLL_TIMEOUT_MILLISEC)) == -1) {
+			Logger::log(E_ERROR, COLOR_RED, "POLL ERROR: %s", strerror(errno));
+			this->closeAllSockets();
+			return false;
+		}
+
+		/*	This i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
+			the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
+			make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
+			a problem because of the looping. */
+		this->pollfds_size_ = this->pollfds_.size();
+		int	i = 0;
+
+		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); i < this->pollfds_size_ && it != this->pollfds_.end(); ++it, ++i) {
+			if (it->revents & POLLIN) {
+				if (this->server_map_.count(it->fd))
+					this->POLL_acceptNewClientConnection(it->fd);
+				if (this->client_map_.count(it->fd))
+					this->POLL_receiveFromClient(it->fd);
+			}
+			if (it->revents & POLLOUT) {
+				if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
+					this->POLL_sendResponseToClient(it->fd);
+			}
+		}
+	
+		if (this->checkLastClientTime())	// if the haven't been any client activity in the server shutdown time end run
+			break;
+	}
+
+	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout (no client activity in the defined timeframe); servers shutting down...");
+	this->closeAllSockets();
+	return true;
+}
+
+void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
+
+	int			client_fd;
+	sockaddr_in client_address;
+	socklen_t	client_address_size;
+	char		client_host[INET_ADDRSTRLEN];
+	Server*		server = this->server_map_.at(server_fd);
+	
+	client_address_size = sizeof(sockaddr_in);
+	if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &client_address_size)) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "accept error: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
+		return;
+	}
+
+	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
+		server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
+
+	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
+		close(client_fd);
+		return;
+	}
+
+	this->client_map_.insert(std::make_pair(client_fd, Client(server_fd, server)));
+	this->client_map_[client_fd].setLatestTime();
+
+	pollfd new_pollfd = {client_fd, POLLIN, 0};
+	this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
+}
+
+void	ServerManager::POLL_removeClient( int client_fd ) {
+
+	Logger::log(E_INFO, COLOR_MAGENTA, "Socket %d connection lost, clearing client data...", client_fd);
+	close(client_fd);
+	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+		if (it->fd == client_fd) {
+			this->pollfds_.erase(it);
+			break;
+		}
+	}
+	this->client_map_.erase(client_fd);
+}
+
+
+void	ServerManager::POLL_switchClientToPollin ( int client_fd ) {
+
+	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+		if (it->fd == client_fd) {
+			it->events = POLLIN;
+			break;
+		}
+	}
+}
+
+
+void	ServerManager::POLL_switchClientToPollout( int client_fd ) {
+
+	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+		if (it->fd == client_fd) {
+			it->events = POLLOUT;
+			break;
+		}
+	}
+}
+
+void	ServerManager::POLL_receiveFromClient( int client_fd ) {
+
+	if (!this->receiveFromClient(client_fd))
+	{
+		this->POLL_removeClient(client_fd);
+		--this->pollfds_size_;
+	} else
+		this->POLL_switchClientToPollout(client_fd);
+}
+
+
+void	ServerManager::POLL_sendResponseToClient( int client_fd ) {
+
+	this->sendResponseToClient(client_fd);
+	this->POLL_switchClientToPollin(client_fd);
+}
+
+
+void	ServerManager::POLL_printData( void ) {
+
+	std::string	all_fds = "all pollfds currently handled: ";
+	std::string pollin_fds = "pollfds with POLLIN: ";
+	std::string pollout_fds = "pollfds with POLLOUT: ";
+
+	std::string	fd_as_string;
+
+	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+		fd_as_string = int_to_string(it->fd) + " ";
+		all_fds += fd_as_string;
+		if (it->events == POLLIN)
+			pollin_fds += fd_as_string;
+		if (it->events == POLLOUT)
+			pollout_fds += fd_as_string;
+	}
+
+	Logger::log(E_DEBUG, COLOR_YELLOW, "the amount of pollfds: %d", this->pollfds_.size());
+	Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
+	Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
+	Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
 }
