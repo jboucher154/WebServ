@@ -7,6 +7,8 @@
 #include <iostream>
 #include <vector>
 
+#include <string>
+
 int  main( int argc, char *argv[]) {
 
   Logger::initLogger();
@@ -21,7 +23,10 @@ int  main( int argc, char *argv[]) {
   server1.setListeningPort(8080);
   server1.setServerName("Server-1");
   server_vector.push_back(server1);
-
+  std::vector<std::string> values;
+  values.push_back("GET");
+  values.push_back("HEAD"); 
+  server1.setLocation( "/blue", "allawed_method", values );
   Server  server2;
   server2.setHost("127.0.0.1");
   server2.setListeningPort(9090);
