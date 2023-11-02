@@ -10,36 +10,58 @@
 
 ServerManager::ServerManager( void ) {
 	
-	// FD_ZERO(&this->master_fd_set_);
+	this->servers_.clear();
+
 	FD_ZERO(&this->read_fd_set_);
 	FD_ZERO(&this->write_fd_set_);
-	this->servers_.clear();
+	this->biggest_fd_ = -1;
+
+	this->pollfds_.clear();
+	this->pollfds_size_ = -1;
+
 	this->server_map_.clear();
 	this->client_map_.clear();
-	
 }
 
 ServerManager::ServerManager( std::vector<Server>& server_vector ) {
 
-	// FD_ZERO(&this->master_fd_set_);
+	this->servers_.clear();
+
 	FD_ZERO(&this->read_fd_set_);
 	FD_ZERO(&this->write_fd_set_);
-	this->servers_.clear();
+	this->biggest_fd_ = -1;
+
+	this->pollfds_.clear();
+	this->pollfds_size_ = -1;
+
 	this->server_map_.clear();
 	this->client_map_.clear();
 
 	this->servers_ = server_vector;
 }
 
-// ServerManager::ServerManager( const ServerManager& other ) {
+ServerManager::ServerManager( const ServerManager& other ) {
 
-// }
+	*this = other;
+}
 
 ServerManager::~ServerManager( void ) {}
 
-// ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
+ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 
-// }
+	if (this != &rhs) {
+		this->servers_ = rhs.servers_;
+		this->read_fd_set_ = rhs.read_fd_set_;
+		this->write_fd_set_ = rhs.write_fd_set_;
+		this->biggest_fd_ = rhs.biggest_fd_;
+		this->pollfds_ = rhs.pollfds_;
+		this->pollfds_size_ = rhs.pollfds_size_;
+		this->server_map_ = rhs.server_map_;
+		this->client_map_ = rhs.client_map_;
+		this->last_client_time_ = rhs.last_client_time_;
+	}
+	return *this;
+}
 
 
 
@@ -87,9 +109,11 @@ bool	ServerManager::checkLastClientTime( void ) {
 
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
-	char	client_msg[4000];
+	char		client_msg[4000];
+	Client*		client = &this->client_map_[client_fd];
+	Server*		server = client->getServer();
 
-	this->client_map_[client_fd].setLatestTime();
+	client->setLatestTime();
 	memset(client_msg, 0, 4000);
 	int bytes_received = recv(client_fd, &client_msg, 3999, 0);
 
@@ -98,13 +122,13 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 
 	if (bytes_received == -1)
 		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
-			client_fd, this->client_map_[client_fd].getServer()->getServerIdforLog().c_str());
+			client_fd, server->getServerIdforLog().c_str());
 	else if (bytes_received == 0)	// client has disconnected...
 		return false;
 	else {
-		this->client_map_[client_fd].addToRequest(client_msg);
+		client->addToRequest(client_msg);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
-			this->client_map_[client_fd].getServer()->getServerName().c_str(), client_fd, NULL, NULL);
+			server->getServerName().c_str(), client_fd, NULL, NULL);
 	}
 
 	return true;
@@ -113,32 +137,35 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 
 void	ServerManager::sendResponseToClient( int client_fd ) {
 
-	std::string	response_string = this->client_map_[client_fd].getClientResponse();
+	Client*	client = &this->client_map_[client_fd];
+	Server*	server = client->getServer();
+
+	std::string	response_string = client->getClientResponse();
 	if (response_string.empty())
 		return;
 
-	this->client_map_[client_fd].setLatestTime();
+	client->setLatestTime();
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to socket %d",
-			this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
+			server->getServerIdforLog().c_str(), client_fd);
 	}
 	else if (bytes_sent == 0) {
 		Logger::log(E_DEBUG, COLOR_YELLOW, " Server %s sent 0 bytes to socket %d",
-			this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
+			server->getServerIdforLog().c_str(), client_fd);
 	}
 	else {
 		if (bytes_sent < static_cast<int>(response_string.length()))
 			Logger::log(E_ERROR, COLOR_RED, "incomplete response sent from server %s to socket %d ",
-				this->client_map_[client_fd].getServer()->getServerIdforLog().c_str(), client_fd);
+				server->getServerIdforLog().c_str(), client_fd);
 		else
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
-				this->client_map_[client_fd].getServer()->getServerName().c_str(), client_fd, -42);
+				server->getServerName().c_str(), client_fd, -42);
 	}
 	// if bytes_sent == 0 do something?
 
-	this->client_map_[client_fd].resetResponse();
-	this->client_map_[client_fd].resetRequest();
+	client->resetResponse();
+	client->resetRequest();
 }
 
 
@@ -165,7 +192,7 @@ bool	ServerManager::SELECT_initializeServers( void ) {
 
 	this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);	// get the biggest fd of the read set
 
-	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete");
+	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete!");
 
 	return true;
 }
@@ -186,7 +213,7 @@ bool	ServerManager::SELECT_runServers( void ) {
 	fd_set			read_fd_set_copy;
 	fd_set			write_fd_set_copy;
 
-	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting!");
+	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting...");
 
 	this->last_client_time_ = time(0);	// get the start time
 
@@ -197,7 +224,7 @@ bool	ServerManager::SELECT_runServers( void ) {
 		this->SELECT_printSetData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
 	
 		if ((select_result = select(this->biggest_fd_ + 1, &read_fd_set_copy, &write_fd_set_copy, NULL, &select_timeout)) == -1) {
-			Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s [WHAT ARE THE CHANCES?!]", strerror(errno));
+			Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
 			this->closeAllSockets();
 			return false;
 		}
@@ -374,7 +401,7 @@ bool	ServerManager::POLL_initializeServers( void ) {
 		this->server_map_[server_socket] = &this->servers_[i];	// add server socket and the server itself to server_map_
 	}
 
-	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete");
+	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete!");
 
 	return true;
 }
@@ -383,7 +410,7 @@ bool	ServerManager::POLL_runServers( void ) {
 
 	int				poll_result;
 
-	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting!");
+	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting...");
 
 	this->last_client_time_ = time(0);	// get the start time
 
@@ -392,7 +419,7 @@ bool	ServerManager::POLL_runServers( void ) {
 		this->POLL_printData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
 	
 		if ((poll_result = poll(&this->pollfds_[0], this->pollfds_.size(), POLL_TIMEOUT_MILLISEC)) == -1) {
-			Logger::log(E_ERROR, COLOR_RED, "POLL ERROR: %s", strerror(errno));
+			Logger::log(E_ERROR, COLOR_RED, "POLL ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
 			this->closeAllSockets();
 			return false;
 		}
@@ -417,11 +444,11 @@ bool	ServerManager::POLL_runServers( void ) {
 			}
 		}
 	
-		if (this->checkLastClientTime())	// if the haven't been any client activity in the server shutdown time end run
+		if (this->checkLastClientTime())	// if there hasn't been any client activity in the server shutdown time, end run
 			break;
 	}
 
-	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout (no client activity in the defined timeframe); servers shutting down...");
+	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
 	this->closeAllSockets();
 	return true;
 }

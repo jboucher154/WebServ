@@ -51,7 +51,7 @@ int  main( int argc, char *argv[]) {
   //   }
   //   if (server_manager.POLL_runServers())
   //     break;
-  //   Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an error, RESTARTING SERVERS!!!");
+  //   Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an poll error, RESTARTING SERVERS!!!");
   // }
 
   Logger::closeLogFiles();

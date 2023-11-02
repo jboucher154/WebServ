@@ -24,18 +24,16 @@ class	Client {
 	public:
 		Client( void );
 		Client( int server_fd, Server* server );
-		// Client( const Client& other );
+		Client( const Client& other );
 		~Client( void );
 
-		// Client&	operator=( const Client& rhs );
+		Client&	operator=( const Client& rhs );
 
 		// setters
-		// int					setupClient( void );
 		void				setLatestTime( void );
 
 		// getters
 		int					getFd( void ) const;
-		// struct sockaddr_in&	getAddress( void ) const;
 		time_t				getLatestTime( void ) const;
 		Server*				getServer( void ) const;
 		int					getServerFd( void ) const;

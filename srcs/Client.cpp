@@ -1,18 +1,40 @@
 #include "Client.hpp"
 
+// remove later?
+#include <cstring>
+
 /* CONSTRUCTORS */
 
-Client::Client( void ) {}
+Client::Client( void ) {
 
-Client::Client( int server_fd, Server* server ) {
-	this->server_fd_ = server_fd;
-	this->server_ = server;
+	this->fd_ = -1;
+	memset(&this->address_, 0, sizeof(this->address_));
+	this->latest_time_ = time(0);
+
+	this->resetRequest();
+	this->resetResponse();
+
+	this->server_ = NULL;
+	this->server_fd_ = -1;
 }
 
-// Client::Client( const Client& to_copy ) {
+Client::Client( int server_fd, Server* server ) {
 
-// 	/* copy constructor */
-// } 
+	this->fd_ = -1;
+	memset(&this->address_, 0, sizeof(this->address_));
+	this->latest_time_ = time(0);
+
+	this->resetRequest();
+	this->resetResponse();
+
+	this->server_ = server;
+	this->server_fd_ = server_fd;
+}
+
+Client::Client( const Client& to_copy ) {
+
+	*this = to_copy;
+} 
 
 /* DESTRUCTOR */
 
@@ -23,18 +45,23 @@ Client::~Client( void ) {
 
 /* OPERATOR OVERLOADS */
 
-// Client&	Client::operator=( const Client& rhs ) {
+Client&	Client::operator=( const Client& rhs ) {
 
-// 	/* copy assignment operator overload */
-// }
+	if (this != &rhs) {
+		this->fd_ = rhs.fd_;
+		this->address_ = rhs.address_;
+		this->latest_time_ = rhs.latest_time_;
+		this->server_ = rhs.server_;
+		this->server_fd_ = rhs.server_fd_;
+		this->request_ = rhs.request_;
+		this->response_ = rhs.response_;
+	}
+	return *this;
+}
 
 /* CLASS PUBLIC METHODS */
 
 // setters
-// int	Client::setupClient( void ) {
-
-// }
-
 void	Client::setLatestTime( void ) {
 	this->latest_time_ = time(0);
 }
@@ -43,10 +70,6 @@ void	Client::setLatestTime( void ) {
 int	Client::getFd( void ) const {
 	return this->fd_;
 }
-
-// struct sockaddr_in&	Client::getAddress( void ) const {
-// 	return this->address_;
-// }
 
 time_t	Client::getLatestTime( void ) const {
 	return this->latest_time_;
@@ -77,8 +100,6 @@ std::string	Client::getClientResponse( void ) {
 }
 
 void	Client::addToRequest( std::string message ) {
-
-	// std::cout << "in addToRequest" << std::endl;
 	
 	this->request_.add(message);
 }
