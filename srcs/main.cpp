@@ -26,7 +26,7 @@ int  main( int argc, char *argv[]) {
   std::vector<std::string> values;
   values.push_back("GET");
   values.push_back("HEAD"); 
-  server1.setLocation( "/blue", "allawed_method", values );
+  server1.setLocation( "/blue", "allow_methods", values );
   Server  server2;
   server2.setHost("127.0.0.1");
   server2.setListeningPort(9090);
