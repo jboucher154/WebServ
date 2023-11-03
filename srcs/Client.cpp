@@ -63,23 +63,28 @@ Client&	Client::operator=( const Client& rhs ) {
 
 // setters
 void	Client::setLatestTime( void ) {
+	
 	this->latest_time_ = time(0);
 }
 
 // getters
 int	Client::getFd( void ) const {
+
 	return this->fd_;
 }
 
 time_t	Client::getLatestTime( void ) const {
+
 	return this->latest_time_;
 }
 
 Server*	Client::getServer( void ) const {
+
 	return this->server_;
 }
 
 int	Client::getServerFd( void ) const {
+
 	return this->server_fd_;
 }
 
@@ -91,7 +96,17 @@ std::string	Client::getClientHost() const {
 	return client_host;
 }
 
-std::string	Client::getClientResponse( void ) {
+Request&	Client::getRequest( void ) {
+
+	return this->request_;
+}
+
+Response&	Client::getResponse( void ) {
+
+	return this->response_;
+}
+
+std::string	Client::getResponseString( void ) {
 
 	if (this->request_.getComplete())
 		return this->response_.get();

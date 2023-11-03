@@ -112,6 +112,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	char		client_msg[4000];
 	Client*		client = &this->client_map_[client_fd];
 	Server*		server = client->getServer();
+	Request&	request = client->getRequest();
 
 	client->setLatestTime();
 	memset(client_msg, 0, 4000);
@@ -128,7 +129,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	else {
 		client->addToRequest(client_msg);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
-			server->getServerName().c_str(), client_fd, NULL, NULL);
+			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
 	}
 
 	return true;
@@ -137,13 +138,15 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 
 void	ServerManager::sendResponseToClient( int client_fd ) {
 
-	Client*	client = &this->client_map_[client_fd];
-	Server*	server = client->getServer();
+	Client*		client = &this->client_map_[client_fd];
+	Server*		server = client->getServer();
+	Response&	response = client->getResponse();	
 
-	std::string	response_string = client->getClientResponse();
+	std::string	response_string = client->getResponseString();
 	if (response_string.empty())
 		return;
 
+	(void)response;
 	client->setLatestTime();
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
@@ -160,7 +163,7 @@ void	ServerManager::sendResponseToClient( int client_fd ) {
 				server->getServerIdforLog().c_str(), client_fd);
 		else
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
-				server->getServerName().c_str(), client_fd, -42);
+				server->getServerName().c_str(), client_fd, -42);										// ADD STAT CODE WHEN JENNY MAKES GETSTAT!
 	}
 	// if bytes_sent == 0 do something?
 
