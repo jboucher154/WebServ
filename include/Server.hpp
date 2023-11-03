@@ -41,23 +41,23 @@ public:
 	int							setupServer();
 	std::string					getServerIdforLog() const;
 
-	int							getListeningPortInt( void ) const;
-	std::string					getListeningPortString( void ) const;
-	std::string					getServerName( void ) const;
-	std::string					getRoot( void ) const;
-	std::string					getHost( void ) const;
-	in_addr_t					getHostInAddr_t( void ) const;
-	int							getClientMaxBodySize( void ) const;
-	std::string					getIndex( void ) const;
-	std::string					getErrorPage( void ) const;
-	struct sockaddr_in			getAddress( void ) const;
-	int							getLocationBlockCount( void ) const;
-	int							getLocationBlockCount( std::string locationBlockKey ) const;
-	std::vector<std::string>	getLocationBlockKeys( void ) const;
-	std::vector<std::string>	getLocationKeys( std::string locationBlockKey ) const;
-	std::vector<std::string>	getLocationValue( std::string locationBlockKey, std::string key ) const;
-	bool						isKeyInLocation( std::string locationBlockKey, std::string key ) const;
-	bool						isLocationInServer( std::string locationBlockKey ) const;
+	int								getListeningPortInt( void ) const;
+	std::string						getListeningPortString( void ) const;
+	std::string						getServerName( void ) const;
+	std::string						getRoot( void ) const;
+	std::string						getHost( void ) const;
+	in_addr_t						getHostInAddr_t( void ) const;
+	int								getClientMaxBodySize( void ) const;
+	std::string						getIndex( void ) const;
+	std::string						getErrorPage( void ) const;
+	struct sockaddr_in				getAddress( void ) const;
+	int								getLocationBlockCount( void ) const;
+	int								getLocationBlockCount( std::string locationBlockKey ) const;
+	std::vector<std::string>		getLocationBlockKeys( void ) const;
+	const std::vector<std::string>	getLocationKeys( std::string locationBlockKey ) const;
+	const std::vector<std::string>*	getLocationValue( std::string locationBlockKey, std::string key ) const;
+	bool							isKeyInLocation( std::string locationBlockKey, std::string key ) const;
+	bool							isLocationInServer( std::string locationBlockKey ) const;
 };
 
 #endif
