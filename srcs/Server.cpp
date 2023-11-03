@@ -68,6 +68,14 @@ void	Server::setErrorPage( std::string errorPage ){
 	this->error_page_ = errorPage;
 }
 
+/*! \brief add a new element to the location map
+*       
+*
+*  If the location exist and the key exist in the location block, updates the value'
+*  If the location exist and the key doesn't exist in the location block creats the key and value pair
+*  If the location block doesn't exist creats it and adds the key and value pair
+*/
+
 void Server::setLocation(std::string locationBlockKey, std::string key, std::vector<std::string> values) {
     std::map<std::string, std::map<std::string, std::vector<std::string> > >::iterator outerMapIt = this->location.find(locationBlockKey);
 
@@ -77,9 +85,16 @@ void Server::setLocation(std::string locationBlockKey, std::string key, std::vec
 
         if (innerMapIt != innerMap.end()) {
             innerMapIt->second = values;
+        } else {
+            innerMap[key] = values;
         }
+    } else {
+        std::map<std::string, std::vector<std::string> > newInnerMap;
+        newInnerMap[key] = values;
+        this->location[locationBlockKey] = newInnerMap;
     }
 }
+
 
 /*************ssalmi's functions for server management*************/
 
@@ -202,7 +217,7 @@ std::vector<std::string>	Server::getLocationBlockKeys( void ) const{
 
 	for ( std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator it = this->location.begin(); it != this->location.end(); it++ )
 		locationBlockKeys.push_back(it->first);
-	return (locationBlockKeys);
+	return locationBlockKeys;
 }
 
 
@@ -252,4 +267,18 @@ std::vector<std::string>	Server::getLocationValue( std::string locationBlockKey,
 			value = innerMapIt->second;
 	}
 	return value;
+}
+
+bool Server::isKeyInLocation( std::string locationBlockKey, std::string key ) const{
+	if ( !(this->getLocationValue( locationBlockKey, key).empty()) )
+		return true;
+	else return false;
+}
+
+bool	Server::isLocationInServer( std::string locationBlockKey ) const{
+
+	for ( std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator it = this->location.begin(); it != this->location.end(); it++ )
+		if ( locationBlockKey.compare( it->first ) == 0 )
+			return true;
+	return false;
 }

@@ -56,6 +56,8 @@ public:
 	std::vector<std::string>	getLocationBlockKeys( void ) const;
 	std::vector<std::string>	getLocationKeys( std::string locationBlockKey ) const;
 	std::vector<std::string>	getLocationValue( std::string locationBlockKey, std::string key ) const;
+	bool						isKeyInLocation( std::string locationBlockKey, std::string key ) const;
+	bool						isLocationInServer( std::string locationBlockKey ) const;
 };
 
 #endif
