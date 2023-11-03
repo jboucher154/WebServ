@@ -15,7 +15,7 @@ class	ResponseCodes {
 		/* PRIVATE METHODS AND MEMBERS */
 		static std::map<int, std::string>	codes_;
 
-		static void	intialize_codes( void );
+		static void	initialize_codes( void );
 
 	public:
 		/* PUBLIC METHODS */
