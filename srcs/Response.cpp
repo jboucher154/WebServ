@@ -94,15 +94,15 @@ void	Response::generate( Request* request ) {
 	}
 	if (!uriLocationValid_(this->request_->getRequestLineValue("uri"))) {
 		this->status_code_ = 404; //Not Found
-		Logger::log(E_DEBUG, COLOR_YELLOW, "404 Location not found: %s.", this->request_->getRequestLineValue("uri"));
+		Logger::log(E_DEBUG, COLOR_YELLOW, "404 Location not found: %s.", this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
 	if (!methodAllowed_(this->request_->getRequestLineValue("method"))) { //could hardcode GET
 		this->status_code_ = 405; // Method Not Allowed
-		Logger::log(E_DEBUG, COLOR_YELLOW, "405 Method not allowed, GET: %s.", this->request_->getRequestLineValue("uri"));
+		Logger::log(E_DEBUG, COLOR_YELLOW, "405 Method not allowed, GET: %s.", this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
-	for (int i = 0; i < (sizeof(possible_methods)/sizeof(std::string)); i++) {
+	for (unsigned long i = 0; i < (sizeof(possible_methods)/sizeof(std::string)); i++) {
 		if (this->request_->getRequestLineValue("method").compare(possible_methods[i])) {
 			(this->*methods[i])();
 			break ;
@@ -240,12 +240,12 @@ bool	Response::uriLocationValid_( std::string uri )  {
 bool	Response::methodAllowed_( std::string method ) {
 
 	//should get a reference or pointer to the vector
-	std::vector<std::string>	methods = this->server_->getLocationValue(this->request_->getRequestLineValue("uri"), method);
+	const std::vector<std::string>*	methods = this->server_->getLocationValue(this->request_->getRequestLineValue("uri"), method);
 	
-	if (methods.empty()) {
+	if (methods->empty()) {
 		return (false);
 	}
-	else if (std::find(methods.begin(), methods.end(), method) == methods.end()) {
+	else if (std::find(methods->begin(), methods->end(), method) == methods->end()) {
 		return (false);
 	}
 	else {
@@ -264,7 +264,7 @@ void	Response::getMethod_( void ) {
 
 	//build resource path
 	if (this->server_->isKeyInLocation(this->request_->getRequestLineValue("uri"), "root")) {
-		resource_path = this->server_->getLocationValue(this->request_->getRequestLineValue("uri"), "root")[0];
+		resource_path = (this->server_->getLocationValue(this->request_->getRequestLineValue("uri"), "root"))->front();
 	}
 	else {
 		resource_path = this->server_->getRoot();
@@ -288,7 +288,7 @@ void	Response::buildPlainTextBody_( std::string, std::ios_base::openmode mode ) 
 	
 	if (!resource.is_open() || resource.fail() || resource.bad()) {
 		this->status_code_ = 404;
-		Logger::log(E_DEBUG, COLOR_YELLOW, "404 cannot open resource: %s.", this->request_->getRequestLineValue("uri"));
+		Logger::log(E_DEBUG, COLOR_YELLOW, "404 cannot open resource: %s.", this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
 	while (std::getline(resource, line)) {
