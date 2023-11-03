@@ -221,7 +221,7 @@ std::vector<std::string>	Server::getLocationBlockKeys( void ) const{
 }
 
 
-std::vector<std::string> Server::getLocationKeys(std::string locationBlockKey) const {
+const std::vector<std::string> Server::getLocationKeys(std::string locationBlockKey) const {
 
     std::vector<std::string> locationKeys;
 
@@ -236,8 +236,6 @@ std::vector<std::string> Server::getLocationKeys(std::string locationBlockKey) c
     }
     return locationKeys;
 }
-
-
 
 int	Server::getLocationBlockCount( std::string locationBlockKey ) const{
 
@@ -255,22 +253,22 @@ int	Server::getLocationBlockCount( std::string locationBlockKey ) const{
     return locationKeysCout;
 }
 
-std::vector<std::string>	Server::getLocationValue( std::string locationBlockKey, std::string key ) const{
-
-	std::vector<std::string> value;
-
+const std::vector<std::string>*	Server::getLocationValue( std::string locationBlockKey, std::string key ) const{
+	
 	std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator outerMapIt = this->location.find(locationBlockKey);
 	if (outerMapIt != this->location.end()) {
-        const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
+		const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
 		std::map<std::string, std::vector<std::string> >::const_iterator innerMapIt = innerMap.find(key);
 		if ( innerMapIt != innerMap.end() )
-			value = innerMapIt->second;
+			return (&(innerMapIt->second));
+		else
+			return NULL;
 	}
-	return value;
+	return NULL;
 }
 
 bool Server::isKeyInLocation( std::string locationBlockKey, std::string key ) const{
-	if ( !(this->getLocationValue( locationBlockKey, key).empty()) )
+	if ( this->getLocationValue( locationBlockKey, key) )
 		return true;
 	else return false;
 }

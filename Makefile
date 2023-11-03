@@ -31,7 +31,8 @@ SRCS = \
 	ft_stoi.cpp			\
 	int_to_string.cpp	\
 	ServerManager.cpp	\
-	Client.cpp
+	Client.cpp			\
+	Validator.cpp
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 DEPS = $(SRCS:%.cpp=$(OBJ_DIR)%.d)

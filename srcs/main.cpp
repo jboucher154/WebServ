@@ -3,7 +3,7 @@
 #include "Color.hpp"
 #include "Server.hpp"
 #include "ServerManager.hpp"
-
+#include "Validator.hpp"
 #include <iostream>
 #include <vector>
 
@@ -14,7 +14,8 @@ int  main( int argc, char *argv[]) {
   Logger::initLogger();
   (void)argv;
   if (argc == 2) {
-    std::cout << "parse will be called!" << std::endl;
+    //std::cout << "parse will be called!" << std::endl;
+   Validator::validate(argv[1]);
   }
   std::vector<Server> server_vector;
 
@@ -32,7 +33,6 @@ int  main( int argc, char *argv[]) {
   server2.setListeningPort(9090);
   server2.setServerName("Server-2");
   server_vector.push_back(server2);
-
   //SELECT VERSION
   while (true) {
     ServerManager server_manager(server_vector);
