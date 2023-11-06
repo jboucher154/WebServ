@@ -13,6 +13,19 @@
 Server::Server(){
 }
 
+Server::Server( std::string serverName, int port,  std::string host ){
+	this->setServerName(serverName);
+	this->setHost(host);
+	this->setRoot("srcs/resources");
+	this->setClientMaxBodySize(30000);
+	this->setListeningPort(port);
+	std::string innerValues[] = {"HEAD", "GET"};
+	size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
+	std::vector<std::string> values(innerValues, innerValues + numValues);
+	this->setLocation( "/blue", "allow_methods", values );
+
+}
+
 Server::Server( const Server& src ){
 	*this = src;
 }
