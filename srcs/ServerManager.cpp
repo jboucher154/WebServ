@@ -505,8 +505,8 @@ void	ServerManager::POLL_removeClient( int client_fd ) {
 			break;
 		}
 	}
-	this->removeClient(client_fd);
 	this->pollfds_size_--;
+	this->removeClient(client_fd);
 }
 
 
