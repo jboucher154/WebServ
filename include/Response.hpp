@@ -28,6 +28,7 @@
 class	Response {
 
 	private:
+		Response( void );
 		/* PRIVATE METHODS AND MEMBERS */
 		std::string		response_;
 		std::string		body_;
@@ -37,7 +38,6 @@ class	Response {
 		std::string		timeStampHeader( void ) const;
 
 	public:
-		Response( void );
 		Response( const Response& to_copy );
 
 		~Response( void );
