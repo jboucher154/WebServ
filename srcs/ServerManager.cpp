@@ -415,6 +415,8 @@ bool	ServerManager::POLL_initializeServers( void ) {
 		this->server_map_[server_socket] = &this->servers_[i];	// add server socket and the server itself to server_map_
 	}
 
+	this->pollfds_size_ = this->pollfds_.size();
+
 	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete!");
 
 	return true;
