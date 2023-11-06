@@ -106,6 +106,13 @@ bool	ServerManager::checkLastClientTime( void ) {
 	return false;
 }
 
+void	ServerManager::removeClient( int client_fd ) {
+
+	Logger::log(E_INFO, COLOR_MAGENTA, "Socket %d connection lost, clearing client data...", client_fd);
+	close(client_fd);
+	this->client_map_.erase(client_fd);
+}
+
 
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
@@ -136,15 +143,17 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 }
 
 
-void	ServerManager::sendResponseToClient( int client_fd ) {
+bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 	Client*		client = &this->client_map_[client_fd];
 	Server*		server = client->getServer();
 	Response&	response = client->getResponse();	
 
+	bool	keep_alive = client->getRequest().getKeepAlive();
+
 	std::string	response_string = client->getResponseString();
 	if (response_string.empty())
-		return;
+		return keep_alive;
 
 	(void)response;
 	client->setLatestTime();
@@ -169,6 +178,8 @@ void	ServerManager::sendResponseToClient( int client_fd ) {
 
 	client->resetResponse();
 	client->resetRequest();
+
+	return keep_alive;
 }
 
 
@@ -304,15 +315,13 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 
 void	ServerManager::SELECT_removeClient( int client_fd ) {
 
-	Logger::log(E_INFO, COLOR_MAGENTA, "Socket %d connection lost, clearing client data...", client_fd);
-	close(client_fd);
 	if (FD_ISSET(client_fd, &this->read_fd_set_))
 		FD_CLR(client_fd, &this->read_fd_set_);
 	if (FD_ISSET(client_fd, &this->write_fd_set_))
 		FD_CLR(client_fd, &this->write_fd_set_);
 		if (client_fd == this->biggest_fd_)
 			this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
-	this->client_map_.erase(client_fd);
+	this->removeClient(client_fd);
 }
 
 void	ServerManager::SELECT_switchClientToReadSet( int client_fd ) {
@@ -347,8 +356,10 @@ void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
 	results in the correct SELECT way */
 void	ServerManager::SELECT_sendResponseToClient( int client_fd ) {
 
-	this->sendResponseToClient(client_fd);
-	this->SELECT_switchClientToReadSet(client_fd);
+	if (this->sendResponseToClient(client_fd))	// keep alive
+		this->SELECT_switchClientToReadSet(client_fd);
+	else	// don't keep alive
+		this->SELECT_removeClient(client_fd);
 }
 
 void	ServerManager::SELECT_printSetData( void ) {
@@ -488,15 +499,14 @@ void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
 
 void	ServerManager::POLL_removeClient( int client_fd ) {
 
-	Logger::log(E_INFO, COLOR_MAGENTA, "Socket %d connection lost, clearing client data...", client_fd);
-	close(client_fd);
 	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
 		if (it->fd == client_fd) {
 			this->pollfds_.erase(it);
 			break;
 		}
 	}
-	this->client_map_.erase(client_fd);
+	this->removeClient(client_fd);
+	this->pollfds_size_--;
 }
 
 
@@ -524,18 +534,18 @@ void	ServerManager::POLL_switchClientToPollout( int client_fd ) {
 void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 
 	if (!this->receiveFromClient(client_fd))
-	{
 		this->POLL_removeClient(client_fd);
-		--this->pollfds_size_;
-	} else
+	else
 		this->POLL_switchClientToPollout(client_fd);
 }
 
 
 void	ServerManager::POLL_sendResponseToClient( int client_fd ) {
 
-	this->sendResponseToClient(client_fd);
-	this->POLL_switchClientToPollin(client_fd);
+	if (this->sendResponseToClient(client_fd))	// keep alive 
+		this->POLL_switchClientToPollin(client_fd);
+	else	// don't keep alive
+		this->POLL_removeClient(client_fd);
 }
 
 

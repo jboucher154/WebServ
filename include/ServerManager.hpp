@@ -50,8 +50,9 @@ class	ServerManager {
 		void	closeClientSockets( void );
 		void	closeAllSockets( void );
 		bool	checkLastClientTime( void );
+		void	removeClient( int client_fd );
 		bool	receiveFromClient( int client_fd );
-		void	sendResponseToClient( int client_fd );
+		bool	sendResponseToClient( int client_fd );
 
 
 		bool	SELECT_initializeServers( void );
