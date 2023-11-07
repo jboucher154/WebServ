@@ -24,6 +24,7 @@ private:
 	std::map<std::string, std::map<std::string, std::vector<std::string> > >	location;
 public:
 	Server();
+	Server( std::string serverName, int port,  std::string host );
 	Server( const Server& src );
 	Server& operator=( const Server& rhs );
 	~Server();

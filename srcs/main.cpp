@@ -19,19 +19,9 @@ int  main( int argc, char *argv[]) {
   }
   std::vector<Server> server_vector;
 
-  Server  server1;
-  server1.setHost("127.0.0.1");
-  server1.setListeningPort(8080);
-  server1.setServerName("Server-1");
+  Server  server1("Server-1", 8080, "127.0.0.1");
   server_vector.push_back(server1);
-  std::vector<std::string> values;
-  values.push_back("GET");
-  values.push_back("HEAD"); 
-  server1.setLocation( "/blue", "allow_methods", values );
-  Server  server2;
-  server2.setHost("127.0.0.1");
-  server2.setListeningPort(9090);
-  server2.setServerName("Server-2");
+  Server  server2("Server-2", 9090, "127.0.0.1");
   server_vector.push_back(server2);
   //SELECT VERSION
   while (true) {
@@ -56,7 +46,7 @@ int  main( int argc, char *argv[]) {
   //   }
   //   if (server_manager.POLL_runServers())
   //     break;
-  //   Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an error, RESTARTING SERVERS!!!");
+  //   Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an poll error, RESTARTING SERVERS!!!");
   // }
 
   Logger::closeLogFiles();
