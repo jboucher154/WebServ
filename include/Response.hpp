@@ -3,12 +3,13 @@
 
 # include <string>
 # include "ResponseCodes.hpp"
-# include "utility.hpp"
 # include <ctime>
 # include <time.h>
 # include <ostream>
-// # include <multimap>
+# include <map>
+// # include <vector>
 
+# include "utility.hpp"
 # include "Server.hpp"
 # include "Request.hpp"
 # include "Logger.hpp"
@@ -17,19 +18,19 @@
 #  define CRLF "\r\n"
 # endif
 
-/*! \brief Holds relevant MIME type information for a given extension.
-*       
-*
-*  Hold MIME type information for a given extension including the mime_type notation
-*  and if the type should be sent as binary.
-*  
-*/
-struct s_mime
-{
-	std::string	extension;
-	std::string mime_type;
-	bool		binary;
-};
+// /*! \brief Holds relevant MIME type information for a given extension.
+// *       
+// *
+// *  Hold MIME type information for a given extension including the mime_type notation
+// *  and if the type should be sent as binary.
+// *  
+// */
+// struct s_mime
+// {
+// 	std::string	extension;
+// 	std::string mime_type;
+// 	bool		binary;
+// };
 
 
 /*! \brief Class for handling HTTP responses.
@@ -47,44 +48,56 @@ class	Response {
 
 	private:
 		Response( void );
-		Response( const Response& to_copy );
-		Response&	operator=( const Response& to_copy );
 
 		/* PRIVATE METHODS AND MEMBERS */
 		std::string		response_;
 		std::string		body_;
 		std::string		response_mime_;
+		std::string		resource_name_;
+		std::string		resource_location_;
 		int				status_code_;
 		Server*			server_;
 		Request*		request_;
 		
 
-		static	std::map<std::string, s_mime> mime_types_;
 
 		void	intializeMimeTypes( void );
 
 		/*HEADER GENERATORS*/
+		std::string&	addHeaders_( std::string& response) const;
 		std::string		timeStampHeader_( void ) const;
+		std::string		contentTypeHeader_( void ) const;
+		std::string 	contentLengthHeader_( void ) const;
 
 		void	getMethod_( void );
 		void	headMethod_( void );
 		void	deleteMethod_( void );
 		void	postMethod_( void );
 		bool	methodAllowed_( std::string method );
-		void	buildPlainTextBody_( std::string, std::ios_base::openmode mode );
-		// void	buildBinaryTextBody_( void );
-		bool	uriLocationValid_( std::string uri);
+		void	buildBody_( std::string& path, std::ios_base::openmode mode );
+		bool	uriLocationValid_( void );
+		void	setResourceLocationAndName( std::string uri );
+		// void	setResourceLocation( std::string& uri );
+		// void	setResourceName( std::string& uri );
+		void	setMimeType( void );
+
+		std::vector<std::string>	getAcceptedFormats( void );
+		std::string					buildResourcePath( void );
 
 		/*TYPEDEF*/
 		typedef	void	(Response::*response_methods_[]) ( void );
 
 	public:
+		static	std::map<std::string, std::string> mime_types_;
+		Response( const Response& to_copy );
 		Response( Server* server );
 		~Response( void );
 
+		Response&	operator=( const Response& to_copy );
+
 		/* PUBLIC METHODS */
 
-		void			generate( Request* request );
+		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
 		const char*		get();
 };
