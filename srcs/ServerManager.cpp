@@ -373,13 +373,13 @@ void	ServerManager::SELECT_printSetData( void ) {
 
 	for (int i = biggest_fd_; i >= 0; --i) {
 		if (FD_ISSET(i, &this->read_fd_set_)) {
-			fd_as_string = int_to_string(i);
+			fd_as_string = intToString(i);
 			all_fds += fd_as_string + " ";
 			read_set += fd_as_string + " ";
 			++fds_amount;
 		}
 		if (FD_ISSET(i, &this->write_fd_set_)) {
-			fd_as_string = int_to_string(i);
+			fd_as_string = intToString(i);
 			all_fds += fd_as_string + " ";
 			write_set += fd_as_string + " ";
 			++fds_amount;
@@ -560,7 +560,7 @@ void	ServerManager::POLL_printData( void ) {
 	std::string	fd_as_string;
 
 	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
-		fd_as_string = int_to_string(it->fd) + " ";
+		fd_as_string = intToString(it->fd) + " ";
 		all_fds += fd_as_string;
 		if (it->events == POLLIN)
 			pollin_fds += fd_as_string;

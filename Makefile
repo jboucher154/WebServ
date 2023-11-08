@@ -29,7 +29,7 @@ SRCS = \
 	TimeUtils.cpp		\
 	Server.cpp			\
 	ft_stoi.cpp			\
-	int_to_string.cpp	\
+	intToString.cpp		\
 	ServerManager.cpp	\
 	Client.cpp			\
 	Validator.cpp		\
