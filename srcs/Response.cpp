@@ -86,7 +86,7 @@ const char*	Response::get( /*socket to write to?*/ ) {
 	this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
 	response += this->timeStampHeader() + CRLF;
 	response += "Content-Length : ";
-	response += int_to_string(this->body_.length());
+	response += intToString(this->body_.length());
 	response += "\r\n\r\n";
 	response += this->body_ + CRLF + CRLF;
 	return (response.c_str());

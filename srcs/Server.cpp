@@ -159,7 +159,7 @@ std::string	Server::getServerIdforLog( void ) const {
 	id += " [HOST: ";
 	id += this->host_;
 	id += ", PORT: ";
-	id += int_to_string(this->listening_port_);
+	id += intToString(this->listening_port_);
 	id += "]"; 
 	return id;
 }

@@ -21,17 +21,18 @@ CYAN = \033[0;96m
 
 # Sources
 SRCS = \
-	main.cpp \
-	ResponseCodes.cpp \
-	Response.cpp \
-	Request.cpp \
-	Logger.cpp			\
-	TimeUtils.cpp		\
-	Server.cpp			\
-	ft_stoi.cpp			\
-	int_to_string.cpp	\
-	ServerManager.cpp	\
-	Client.cpp			\
+	main.cpp 				\
+	ResponseCodes.cpp 		\
+	Response.cpp 			\
+	Request.cpp 			\
+	Logger.cpp				\
+	TimeUtils.cpp			\
+	Server.cpp				\
+	ft_stoi.cpp				\
+	intToString.cpp			\
+	isValidIpAddress.cpp	\
+	ServerManager.cpp		\
+	Client.cpp				\
 	Validator.cpp
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
