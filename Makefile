@@ -29,11 +29,12 @@ SRCS = \
 	TimeUtils.cpp		\
 	Server.cpp			\
 	ft_stoi.cpp			\
-	intToString.cpp		\
+	int_to_string.cpp		\
 	ServerManager.cpp	\
 	Client.cpp			\
 	Validator.cpp		\
 	file_handling.cpp	\
+	is_valid_ip_address.cpp
 
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)

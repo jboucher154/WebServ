@@ -4,6 +4,12 @@
 # include <iostream>
 # include <vector>
 # include <string>
+# include "Logger.hpp"
+# include "Color.hpp"
+# include <fstream>
+# include <sstream>
+# include <limits>
+# include "utility.hpp"
 
 class Validator
 {

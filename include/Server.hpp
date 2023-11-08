@@ -9,6 +9,8 @@
 # include <iterator>
 # include <arpa/inet.h>
 # include "utility.hpp"
+# include "Logger.hpp"
+# include "Color.hpp"
 
 class Server
 {

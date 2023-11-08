@@ -1,6 +1,6 @@
 #include "utility.hpp"
 
-bool isValidIPAddress(const char* ipAddress) {
+bool isValidIpAddress(const char* ipAddress) {
 
     struct in_addr addr;
     

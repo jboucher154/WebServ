@@ -42,7 +42,7 @@ Server& Server::operator=( const Server& rhs ){
 		this->client_max_body_size_ = rhs.getClientMaxBodySize();
 		this->index_ = rhs.getIndex();
 		this->error_page_ = rhs.getErrorPage();
-		this->location = rhs.location;//
+		this->location = rhs.location;
 	}
 	return *this;
 }
