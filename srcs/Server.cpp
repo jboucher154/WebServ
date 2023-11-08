@@ -16,13 +16,15 @@ Server::Server(){
 Server::Server( std::string serverName, int port,  std::string host ){
 	this->setServerName(serverName);
 	this->setHost(host);
-	this->setRoot("srcs/resources");
+	this->setRoot("./resources");
+	this->setIndex("index.html");
 	this->setClientMaxBodySize(30000);
 	this->setListeningPort(port);
 	std::string innerValues[] = {"HEAD", "GET"};
 	size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
 	std::vector<std::string> values(innerValues, innerValues + numValues);
 	this->setLocation( "/blue", "allow_methods", values );
+	this->setLocation( "/", "allow_methods", values );
 
 }
 
@@ -289,8 +291,11 @@ bool Server::isKeyInLocation( std::string locationBlockKey, std::string key ) co
 
 bool	Server::isLocationInServer( std::string locationBlockKey ) const{
 
-	for ( std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator it = this->location.begin(); it != this->location.end(); it++ )
+	// if (this->location.empty())
+	// 	return false;
+	for ( std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator it = this->location.begin(); it != this->location.end(); it++ ) {
 		if ( locationBlockKey.compare( it->first ) == 0 )
 			return true;
+	}
 	return false;
 }

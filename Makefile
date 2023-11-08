@@ -32,7 +32,9 @@ SRCS = \
 	int_to_string.cpp	\
 	ServerManager.cpp	\
 	Client.cpp			\
-	Validator.cpp
+	Validator.cpp		\
+	file_handling.cpp	\
+
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 DEPS = $(SRCS:%.cpp=$(OBJ_DIR)%.d)

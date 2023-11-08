@@ -1,8 +1,6 @@
 #ifndef	SERVERMANAGER_HPP
 # define	SERVERMANAGER_HPP
 
-// my old 
-// #include "Sockets.hpp"
 # include "Server.hpp"
 # include "Client.hpp"
 
@@ -43,17 +41,18 @@ class	ServerManager {
 	public:
 		ServerManager( void );
 		ServerManager( std::vector<Server>& server_vector );
-		// ServerManager( const ServerManager& other );
+		ServerManager( const ServerManager& other );
 		~ServerManager( void );
 
-		// ServerManager&	operator=( const ServerManager& rhs );
+		ServerManager&	operator=( const ServerManager& rhs );
 
 		void	closeServerSockets( void );
 		void	closeClientSockets( void );
 		void	closeAllSockets( void );
 		bool	checkLastClientTime( void );
+		void	removeClient( int client_fd );
 		bool	receiveFromClient( int client_fd );
-		void	sendResponseToClient( int client_fd );
+		bool	sendResponseToClient( int client_fd );
 
 
 		bool	SELECT_initializeServers( void );
