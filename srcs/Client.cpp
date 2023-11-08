@@ -5,7 +5,7 @@
 
 /* CONSTRUCTORS */
 
-Client::Client( void ) {
+Client::Client( void ) : response_(NULL) {
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
@@ -18,7 +18,7 @@ Client::Client( void ) {
 	this->server_fd_ = -1;
 }
 
-Client::Client( int server_fd, Server* server ) {
+Client::Client( int server_fd, Server* server ) : response_(server) {
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
@@ -31,9 +31,10 @@ Client::Client( int server_fd, Server* server ) {
 	this->server_fd_ = server_fd;
 }
 
-Client::Client( const Client& to_copy ) {
+Client::Client( const Client& to_copy ) : response_(NULL) {
 
 	*this = to_copy;
+	/* copy constructor */
 } 
 
 /* DESTRUCTOR */
@@ -46,6 +47,17 @@ Client::~Client( void ) {
 /* OPERATOR OVERLOADS */
 
 Client&	Client::operator=( const Client& rhs ) {
+
+	if (this != &rhs) {
+		this->fd_ = rhs.fd_;
+		this->address_ = rhs.address_;
+		this->latest_time_ = rhs.latest_time_;
+		this->server_ = rhs.server_;
+		this->server_fd_ = rhs.server_fd_;
+		this->request_ = rhs.request_;
+		this->response_ = rhs.response_;
+	}
+	return *this;
 
 	if (this != &rhs) {
 		this->fd_ = rhs.fd_;
@@ -108,10 +120,12 @@ Response&	Client::getResponse( void ) {
 
 std::string	Client::getResponseString( void ) {
 
-	if (this->request_.getComplete())
-		return this->response_.get();
-	else
-		return ("");
+	this->response_.generate(&(this->request_));
+	return this->response_.get();
+	// if (this->request_.getComplete())
+	// 	return this->response_.get();
+	// else
+	// 	return ("");
 }
 
 void	Client::addToRequest( std::string message ) {

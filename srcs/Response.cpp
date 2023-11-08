@@ -95,6 +95,10 @@ void	Response::generate( Request* request ) {
 	response_methods_	methods = { &Response::getMethod_, &Response::headMethod_, &Response::postMethod_, &Response::deleteMethod_ };
 
 	this->request_ = request;
+	if (this->server_ == NULL) {
+		Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Oh shit no sever here!");
+		return ;
+	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
 		if (this->request_ != NULL && !this->request_->getComplete() && this->request_->getChunked()) {
 			this->status_code_ = 100;
@@ -107,19 +111,20 @@ void	Response::generate( Request* request ) {
 		return ;
 	}
 	setResourceLocationAndName(this->request_->getRequestLineValue("uri"));
-	// if (!uriLocationValid_()) {
-	// 	this->status_code_ = 404;
-	// 	Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found checking uriLocationValid: `%s'", this->request_->getRequestLineValue("uri").c_str());
-	// 	return ;
-	// }
-	// if (!methodAllowed_(this->request_->getRequestLineValue("method"))) {
-	// 	this->status_code_ = 405;
-	// 	Logger::log(E_DEBUG, COLOR_CYAN, "405 Method not allowed, %s, on server %s for uri: `%s'", this->request_->getRequestLineValue("method").c_str(), this->server_->getServerName().c_str() , this->request_->getRequestLineValue("uri").c_str());
-	// 	return ;
-	// }
+	if (!uriLocationValid_()) {
+		this->status_code_ = 404;
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found checking uriLocationValid: `%s'", this->request_->getRequestLineValue("uri").c_str());
+		return ;
+	}
+	if (!methodAllowed_(this->request_->getRequestLineValue("method"))) {
+		this->status_code_ = 405;
+		Logger::log(E_DEBUG, COLOR_CYAN, "405 Method not allowed, %s, on server %s for uri: `%s'", this->request_->getRequestLineValue("method").c_str(), this->server_->getServerName().c_str() , this->request_->getRequestLineValue("uri").c_str());
+		return ;
+	}
 	if (this->status_code_ < 400) {
 		for (unsigned long i = 0; i < (sizeof(possible_methods)/sizeof(std::string)); i++) {
-			if (this->request_->getRequestLineValue("method").compare(possible_methods[i])) {
+			std::cout << "DUBUGGING WITHOUT LOGGER -> METHOD: " << this->request_->getRequestLineValue("method") << " POSSIBLE METHOD: " << possible_methods[i]<< std::endl; 
+			if (this->request_->getRequestLineValue("method") == (possible_methods[i])) {
 				(this->*methods[i])();
 				break ;
 			}
@@ -173,7 +178,7 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->resource_name_ = "";
 	this->resource_location_ = "";
 	this->status_code_ = 0;
-	this->server_ = NULL;
+	// this->server_ = NULL;
 	this->request_ = NULL;
 }
 
@@ -207,7 +212,7 @@ void	Response::intializeMimeTypes( void ) {
 	//image
 	Response::mime_types_["bmp"] = "image/bmp";
 	Response::mime_types_["gif"] = "image/gif";
-	Response::mime_types_["jpeg"] = "image/jpeg";
+	Response::mime_types_["jpg"] = "image/jpeg";
 	Response::mime_types_["png"] = "image/png";
 	Response::mime_types_["tiff"] = "image/tiff";
 
@@ -295,8 +300,12 @@ void	Response::setResourceLocationAndName( std::string uri ) {
 	size_t	last_slash_pos = uri.find_last_of('/');
 
 	if (last_slash_pos != std::string::npos && (last_slash_pos != uri.length() || uri == "/")) { // is there and not at end of string
-		//build path with uri checkk if dir
-		std::string path = this->server_->getRoot(); //+ uri
+		//build path with uri check if dir
+		std::string path;
+		if (uri == "/")
+			path = this->server_->getRoot();
+		else
+			path = this->server_->getRoot() + uri;
 		if (isDirectory(path)) {
 			this->resource_location_ = uri;
 			//does the location exist in the server?
@@ -312,8 +321,8 @@ void	Response::setResourceLocationAndName( std::string uri ) {
 			}
 		}
 		else {
-			this->resource_location_ = uri.substr(0, last_slash_pos);
-			this->resource_name_ = uri.substr(last_slash_pos);
+			this->resource_location_ = uri.substr(0, last_slash_pos + 1);
+			this->resource_name_ = uri.substr(last_slash_pos + 1);
 		}
 	}
 }
@@ -321,7 +330,7 @@ void	Response::setResourceLocationAndName( std::string uri ) {
 //defalut to deny method if none entered
 bool	Response::methodAllowed_( std::string method ) {
 
-	const std::vector<std::string>*	methods = this->server_->getLocationValue(this->resource_location_, method);
+	const std::vector<std::string>*	methods = this->server_->getLocationValue(this->resource_location_, "allow_methods");
 	
 	if (!methods || methods->empty()) {
 		return (false);
@@ -336,6 +345,7 @@ bool	Response::methodAllowed_( std::string method ) {
 
 /*************************************************GET*************************************************/
 
+//ignore OWS tokens for now
 std::vector<std::string>	Response::getAcceptedFormats( void ) {
 
 	std::vector<std::string>	accepted_formats;
@@ -345,6 +355,9 @@ std::vector<std::string>	Response::getAcceptedFormats( void ) {
 	if (!accepted_formats_from_header.empty()) {
 		std::stringstream ss(accepted_formats_from_header);
 		while (getline(ss, format, ',')) {
+			if (format.find_first_of(';') != std::string::npos) {
+				format = format.substr(0, format.find_first_of(';'));
+			}
 			accepted_formats.push_back(format);
 		}
 	}
@@ -375,12 +388,12 @@ void	Response::setMimeType( void ) {
 		this->response_mime_ = Response::mime_types_["unknown"];
 	}
 	else {
-		std::string extension = this->resource_name_.substr(extension_start);
+		std::string extension = this->resource_name_.substr(extension_start + 1);
 		this->response_mime_ = Response::mime_types_[extension];
 	}
 	if (this->response_mime_.empty()) {
 		this->status_code_ = 415;
-		Logger::log(E_DEBUG, COLOR_CYAN, "415 File extension not supported media type: %s.", this->request_->getRequestLineValue("uri").c_str());
+		Logger::log(E_DEBUG, COLOR_CYAN, "415 File extension not supported media type: `%s'", this->request_->getRequestLineValue("uri").c_str());
 	}
 }
 
@@ -396,11 +409,14 @@ void	Response::getMethod_( void ) {
 		return ;
 	}
 	if (accepted_formats.empty() || std::count(accepted_formats.begin(), accepted_formats.end(), "*/*") || std::count(accepted_formats.begin(), accepted_formats.end(), this->response_mime_)) {
-		if (this->response_mime_.compare(0, 4, "text")) { //is this correct compare?
+		if (this->response_mime_.compare(0, 4, "text") == 0) {
 			buildBody_(resource_path, std::ifstream::in);
 		}
 		else {
-			buildBody_(resource_path, std::ifstream::binary);
+			buildBody_(resource_path, std::ifstream::in); //binary
+		}
+		if (this->status_code_ < 400) {
+			this->status_code_ = 200; //OK, everything worked!
 		}
 	}
 	else {
@@ -421,9 +437,9 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 cannot open resource: %s.", this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
-	while (std::getline(resource, line, '\0')) {
-		// if (!resource.eof())
-		// 	line += "\n";
+	while (std::getline(resource, line, '\n')) {
+		if (!resource.eof())
+			line += "\n";
 		this->body_ += line;
 	}
 	//check if body was too large 431 or 424
