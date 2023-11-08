@@ -9,6 +9,7 @@
 # include <fstream>
 # include <sstream>
 # include <limits>
+# include "utility.hpp"
 
 class Validator
 {

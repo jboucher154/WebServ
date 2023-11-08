@@ -57,31 +57,8 @@ bool Validator::host( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for host can not be empty!");
 		return false;
 	}
-	if ( value.compare("localhost") == 0 || value.compare("::1") == 0
-		|| value.compare("127.0.0.1") == 0){
-		//Logger::log(E_ERROR, COLOR_RED, "Server can not be hosted at %s", value);
-		//*value = "127.0.0.1";
-		return true;
-		}
-	//check if there are 3 dots
-	size_t first_dot = value.find(".");
-	size_t second_dot = value.find(".", first_dot + 1 );
-	size_t third_dot = value.find(".", second_dot + 1);
-	size_t forth_dot = value.find(".", third_dot + 1);
-	if ( first_dot == std::string::npos || second_dot == std::string::npos
-		|| third_dot == std::string::npos || forth_dot != std::string::npos ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for host has invalid value!");
-		return false;
-	}
-	//check if the value is only numbers beside the dots
-	if( value.find_first_not_of("0123456789.") != std::string::npos ){
-		Logger::log(E_ERROR, COLOR_RED, "Server name can not have chatacters other than digits alphabetical characters, undescore and dot!");
-		return false;
-	}
-	//reads the values before dots into a steing
-	// ft_stoi() the string into an int
-	//the int should be between 0 to 255
-	return true;
+	
+	return (isValidIpAddress(value.c_str()));
 }
 
 bool Validator::root( std::string value ){
@@ -181,6 +158,8 @@ bool Validator::validate(std::string	input){
     	if (startPos != std::string::npos) {
         line = line.substr(startPos);
     	}
+		if( line.empty() )
+			continue ;
 		lines.push_back(line);
 		std::string temp;
 		while (ss >> temp) {
@@ -192,7 +171,10 @@ bool Validator::validate(std::string	input){
 		string += "\n";
 		ss.str("");
 	}
-	
+	for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
+		std::cout << *it << std::endl;
+	}
+	//std::cout << string << std::endl;
 	//A list of valid keys for every block is saved in a private vector
 	//A list of valid values at the same index as their matching keys
 
