@@ -4,6 +4,7 @@
 # include <iostream>
 # include <vector>
 # include <string>
+# include <map>
 # include "Logger.hpp"
 # include "Color.hpp"
 # include <fstream>
@@ -14,6 +15,10 @@
 class Validator
 {
 private:
+	static std::string				string;
+	static std::vector<std::string>	lines;
+
+
 	static std::vector<std::string> valid_main_keys_;
 	static std::string valid_main_keys_array;
 	static std::vector<std::string> valid_location_keys_;
@@ -32,6 +37,7 @@ private:
 	static bool cgiExt( std::string value );
 	static bool clientBodyLimit( std::string value );
 	static bool cgiPath( std::string value );
+	static bool store_lines(std::string	input);
 	
 public:
 	Validator();
