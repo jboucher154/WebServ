@@ -7,6 +7,7 @@
 # include <map>
 # include "Logger.hpp"
 # include "Color.hpp"
+# include "Server.hpp"
 # include <fstream>
 # include <sstream>
 # include <limits>
@@ -45,6 +46,7 @@ public:
 	Validator& operator=( const Validator& rhs );
 	~Validator();
 
+	static std::vector<Server>			servers;
 	static bool validate( std::string	infile );
 	
 };

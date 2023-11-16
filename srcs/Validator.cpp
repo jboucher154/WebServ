@@ -11,6 +11,7 @@ std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_lo
 
 std::string					Validator::string = "";
 std::vector<std::string>	Validator::lines;
+std::vector<Server>			servers;
 
 Validator::Validator(){
 	
@@ -145,6 +146,7 @@ static int getServerLines(std::vector<std::string>*	lines){
 	while ( (*lines)[serverLines] != lines->back() && (*lines)[serverLines].compare("server") == 0 ){
 		serverLines++;
 	}
+	return serverLines;
 }
 
 /*! \brief checks if all open braces are closed
@@ -193,8 +195,11 @@ static bool checkBraces(std::vector<std::string>*	lines, int serverLines){
 }
 
 static bool checkLocationBlock(std::vector<std::string>*	lines, int serverLines){
+	(void) lines;
+	(void) serverLines;
 	return true;
 }
+
 static bool checkMainBlock(std::vector<std::string>*	lines, int serverLines){
 	int i = 2;
 	if ((*lines)[i] == lines->back() || (*lines)[i].compare("main") != 0){
@@ -208,9 +213,13 @@ static bool checkMainBlock(std::vector<std::string>*	lines, int serverLines){
 	}
 	i++;
 	std::map<std::string, std::vector<std::string> >	mainBlock;
+	std::cout << servers.size() << std::endl;
 	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines){
 			//store in the main block
+			mainBlock.pushback()
+			i++;
 	}
+	return true;
 }
 
 static bool validate_server(std::vector<std::string>*	lines, int serverLines){
