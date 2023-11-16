@@ -42,7 +42,7 @@ Server& Server::operator=( const Server& rhs ){
 		this->client_max_body_size_ = rhs.getClientMaxBodySize();
 		this->index_ = rhs.getIndex();
 		this->error_page_ = rhs.getErrorPage();
-		this->location = rhs.location;//
+		this->location = rhs.location;
 	}
 	return *this;
 }
@@ -162,7 +162,7 @@ std::string	Server::getServerIdforLog( void ) const {
 	id += " [HOST: ";
 	id += this->host_;
 	id += ", PORT: ";
-	id += int_to_string(this->listening_port_);
+	id += intToString(this->listening_port_);
 	id += "]"; 
 	return id;
 }

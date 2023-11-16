@@ -15,12 +15,14 @@ int  main( int argc, char *argv[]) {
   (void)argv;
   if (argc == 2) {
     //std::cout << "parse will be called!" << std::endl;
-   Validator::validate(argv[1]);
+    Validator::validate(argv[1]);
   }
   std::vector<Server> server_vector;
 
   Server  server1("Server-1", 8080, "127.0.0.1");
   server_vector.push_back(server1);
+  std::cout << (server1.isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
+  std::cout << (server_vector.front().isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
   Server  server2("Server-2", 9090, "127.0.0.1");
   server_vector.push_back(server2);
   //SELECT VERSION

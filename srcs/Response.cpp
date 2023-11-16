@@ -271,7 +271,7 @@ std::string	Response::contentTypeHeader_( void ) const {
 
 std::string Response::contentLengthHeader_( void ) const {
 	
-	return ("Content-Length: "  + int_to_string(this->body_.length()));
+	return ("Content-Length: "  + intToString(this->body_.length()));
 }
 
 std::string Response::contentLocationHeader_( void ) const {
