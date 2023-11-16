@@ -1,5 +1,6 @@
 
 #include "Response.hpp"
+#include "sstream"
 
 std::map<std::string, std::string>	Response::mime_types_;
 
@@ -20,7 +21,7 @@ Response::Response( void ) { /* default constructor */}
 *  More details to be filled as project progresses.
 */
 Response::Response( Server* server )
-: response_(""), body_(""), response_mime_(""), resource_name_(""), resource_location_(""), status_code_(0), server_(server), request_(NULL) {
+: response_(""), body_(""), binary_data_(), response_mime_(""), resource_name_(""), resource_location_(""), status_code_(0), server_(server), request_(NULL) {
 	
 	if (Response::mime_types_.empty()) {
 		intializeMimeTypes();
@@ -70,6 +71,7 @@ Response&	Response::operator=( const Response& rhs ) {
 		this->response_ = rhs.response_;
 		this->status_code_ = rhs.status_code_;
 		this->body_ = rhs.body_;
+		this->binary_data_ = rhs.binary_data_;
 		this->server_ = rhs.server_;
 		this->request_ = rhs.request_;
 		this->response_mime_ = rhs.response_mime_;
@@ -140,28 +142,22 @@ void	Response::generate( Request* request ) {
 *  More details to be filled as project progresses.
 *  
 */
-const char*	Response::get( /*socket to write to?*/ ) {
+std::string&	Response::get( /*socket to write to?*/ ) {
 
-	std::string response;
+	// std::string response;
 	
-	response = ResponseCodes::getCodeStatusLine(this->status_code_);
+	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400) {
 		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
 		this->response_mime_ = Response::mime_types_["html"];
 	}
-	response = addHeaders_(response);
+	this->response_ = addHeaders_(this->response_);
 	if (!this->body_.empty()) {
-		response += this->body_ + CRLF;
+		this->response_ += this->body_ + CRLF;
 	}
-	response += CRLF;
-	return (response.c_str());
-
-	//add response line based on code
-	//add additional headers (at least Date, content-length, content-type)
-	//add break line
-	//add body
-	//add end marker
-	//send
+	this->response_ += CRLF;
+	// this->response_ = response;
+	return (this->response_);
 }
 
 /*! \brief clear method resets the response for next use
@@ -174,6 +170,7 @@ void	Response::clear( void ) { 	/* reset for next use */
 
 	this->response_ = "";
 	this->body_ = "";
+	this->binary_data_.clear();
 	this->response_mime_ = "";
 	this->resource_name_ = "";
 	this->resource_location_ = "";
@@ -241,6 +238,7 @@ std::string&	Response::addHeaders_( std::string& response) const {
 	response += this->timeStampHeader_() + CRLF;
 	response += this->contentLengthHeader_() + CRLF;
 	response += this->contentTypeHeader_() + CRLF;
+	response += this->contentLocationHeader_() + CRLF;
 	//between headers and body
 	response += CRLF;
 	return ( response );
@@ -273,7 +271,12 @@ std::string	Response::contentTypeHeader_( void ) const {
 
 std::string Response::contentLengthHeader_( void ) const {
 	
-	return ("Content-Length : "  + int_to_string(this->body_.length()));
+	return ("Content-Length: "  + int_to_string(this->body_.length()));
+}
+
+std::string Response::contentLocationHeader_( void ) const {
+
+	return ("Content-Location: " + this->server_->getRoot() + this->resource_location_ + this->resource_name_);
 }
 
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
@@ -413,7 +416,7 @@ void	Response::getMethod_( void ) {
 			buildBody_(resource_path, std::ifstream::in);
 		}
 		else {
-			buildBody_(resource_path, std::ifstream::in); //binary
+			buildBody_(resource_path, std::ifstream::binary); //binary
 		}
 		if (this->status_code_ < 400) {
 			this->status_code_ = 200; //OK, everything worked!
@@ -430,20 +433,34 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 
 	//should set something else for resource_location incase it is diff than uri (specified file like index.html, not just `/`)
 	std::ifstream	resource(path, mode); // check it it exists or is a dir...
-	std::string		line;
 	
 	if (!resource.is_open() || resource.fail() || resource.bad()) {
 		this->status_code_ = 404;
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 cannot open resource: %s.", this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
-	while (std::getline(resource, line, '\n')) {
-		if (!resource.eof())
-			line += "\n";
-		this->body_ += line;
+	if (mode == std::ios::binary) {
+		std::cout << "Binary one here1" << std::endl;
+		std::stringstream		contents;
+		contents << resource.rdbuf();
+		this->body_ += contents.str();
+		// char	bin_char;
+		// while (!resource.eof()) {
+		// 	resource >> bin_char;
+		// 	this->binary_data_.push_back(bin_char);
+		// }
 	}
-	//check if body was too large 431 or 424
+	else {
+		std::cout << "Text one here2" << std::endl;
+		std::string line;
+		while (std::getline(resource, line, '\n')) {
+			if (!resource.eof())
+				line += "\n";
+			this->body_ += line;
+		}
+	}
 	resource.close();
+	//check if body was too large 431 or 424
 }
 
 void	Response::headMethod_( void ) {
