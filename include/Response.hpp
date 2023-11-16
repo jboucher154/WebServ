@@ -50,14 +50,15 @@ class	Response {
 		Response( void );
 
 		/* PRIVATE METHODS AND MEMBERS */
-		std::string		response_;
-		std::string		body_;
-		std::string		response_mime_;
-		std::string		resource_name_;
-		std::string		resource_location_;
-		int				status_code_;
-		Server*			server_;
-		Request*		request_;
+		std::string			response_;
+		std::string			body_;
+		std::vector<char>	binary_data_;
+		std::string			response_mime_;
+		std::string			resource_name_;
+		std::string			resource_location_;
+		int					status_code_;
+		Server*				server_;
+		Request*			request_;
 		
 
 
@@ -68,6 +69,7 @@ class	Response {
 		std::string		timeStampHeader_( void ) const;
 		std::string		contentTypeHeader_( void ) const;
 		std::string 	contentLengthHeader_( void ) const;
+		std::string		contentLocationHeader_( void ) const;
 
 		void	getMethod_( void );
 		void	headMethod_( void );
@@ -99,7 +101,7 @@ class	Response {
 
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
-		const char*		get();
+		std::string&		get();
 };
 
 #endif
