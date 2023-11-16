@@ -59,9 +59,8 @@ class	Response {
 		int					status_code_;
 		Server*				server_;
 		Request*			request_;
+		//maybe add map of headers, create them as I go?
 		
-
-
 		void	intializeMimeTypes( void );
 
 		/*HEADER GENERATORS*/
@@ -83,6 +82,11 @@ class	Response {
 		// void	setResourceName( std::string& uri );
 		void	setMimeType( void );
 
+		/*POST*/
+		std::string		getExtension_( void );
+		void			uploadFile_( std::string filepath );
+		std::string		createFile_( std::string& extension );
+
 		std::vector<std::string>	getAcceptedFormats( void );
 		std::string					buildResourcePath( void );
 
@@ -101,7 +105,7 @@ class	Response {
 
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
-		std::string&		get();
+		std::string&	get();
 };
 
 #endif

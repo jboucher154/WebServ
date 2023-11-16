@@ -125,7 +125,7 @@ void	Response::generate( Request* request ) {
 	}
 	if (this->status_code_ < 400) {
 		for (unsigned long i = 0; i < (sizeof(possible_methods)/sizeof(std::string)); i++) {
-			std::cout << "DUBUGGING WITHOUT LOGGER -> METHOD: " << this->request_->getRequestLineValue("method") << " POSSIBLE METHOD: " << possible_methods[i]<< std::endl; 
+			// std::cout << "DUBUGGING WITHOUT LOGGER -> METHOD: " << this->request_->getRequestLineValue("method") << " POSSIBLE METHOD: " << possible_methods[i]<< std::endl; 
 			if (this->request_->getRequestLineValue("method") == (possible_methods[i])) {
 				(this->*methods[i])();
 				break ;
@@ -197,7 +197,7 @@ void	Response::intializeMimeTypes( void ) {
 	//application
 	Response::mime_types_["unknown"] = "application/octet-stream";//unkown binary file
 	Response::mime_types_["pdf"] = "application/pdf";
-	Response::mime_types_["msword"] = "application/msword";
+	Response::mime_types_["msword"] = "application/msword";//?
 	Response::mime_types_["zip"] = "application/zip";
 
 	//audio
@@ -473,7 +473,71 @@ void	Response::deleteMethod_( void ) {
 	this->status_code_ = 501;
 }
 
+/****************************************** POST ******************************************/
+
+std::string	Response::getExtension_( void ) {
+
+	std::string	content_type = this->request_->getHeaderValueByKey("Content-Type");
+
+	if (content_type.empty()) {
+		this->status_code_ = 400;
+	}
+	for (std::map<std::string, std::string>::const_iterator it = this->mime_types_.begin(); it != this->mime_types_.end(); it++) {
+		if (it->second == content_type) {
+			return (it->first);
+		}
+	}
+	return ("unknown"); //return empty???
+}
+
+// should I check if it already exists? if it does should it be overwritten?
+// do I need to make my own file name?
+std::string	Response::createFile_( std::string& extension ) {
+	
+	std::string path;
+
+	if (extension == "unknown") {
+		extension = "";
+	}
+	path = buildResourcePath();
+	std::ofstream	newFile(path + extension);
+	if (newFile.fail() || newFile.bad()) {
+		this->status_code_ = 500;
+		return "";
+	}
+	else {
+		newFile.close();
+		return path + extension;
+	}
+}
+
+void	Response::uploadFile_( std::string filepath ) {
+
+	std::ofstream	upload(filepath, std::iostream::binary);// need open mode, lets do binary for now...
+
+	if (upload.fail() || upload.bad()) {
+		this->status_code_ = 500;
+		return ;
+	}
+	for (std::vector<char>::iterator it = this->request_->getBinaryBodyBegin(); it != this->request_->getBinaryBodyEnd(); it++) {
+		upload << *it;
+	}
+	upload.close();
+}
+
 void	Response::postMethod_( void ) {
 
-	this->status_code_ = 501;
+	std::string extension = getExtension_();
+	std::string	resource_location; // need to set this for response OR set the uri in request to location?
+	// make file 
+	resource_location = this->createFile_(extension);
+	std::cout << "resource Location for created file: " << resource_location << "resource name: " << this->resource_name_ << std::endl;
+	// put stuff into it
+	this->uploadFile_(resource_location);
+	//copy same into body to include in response
+	this->buildBody_(resource_location, std::iostream::binary);
+	if (this->status_code_ == 0) {
+		this->status_code_ = 201; //created
+	}
+	// this->status_code_ = 501;
 }

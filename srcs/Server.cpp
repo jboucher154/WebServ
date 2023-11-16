@@ -20,7 +20,7 @@ Server::Server( std::string serverName, int port,  std::string host ){
 	this->setIndex("index.html");
 	this->setClientMaxBodySize(30000);
 	this->setListeningPort(port);
-	std::string innerValues[] = {"HEAD", "GET"};
+	std::string innerValues[] = {"HEAD", "GET", "POST"};//
 	size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
 	std::vector<std::string> values(innerValues, innerValues + numValues);
 	this->setLocation( "/blue", "allow_methods", values );

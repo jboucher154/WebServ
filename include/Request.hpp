@@ -23,12 +23,14 @@ class	Request {
 		bool								sever_error_;
 		std::map<std::string, std::string>	request_line_;
 		std::map<std::string, std::string>	headers_;
-		std::vector<std::string>			body_;
+		std::vector<std::string>			text_body_;
+		std::vector<char>					binary_body_;//
 		//no footers for now
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
 		void	parseBody_( std::string& to_parse );
+		void 	storeBinaryBody_( std::string& to_parse);
 		void	setBodySize( void );
 		void	setChunked( void );
 		void	setKeepAlive( void );
@@ -53,6 +55,8 @@ class	Request {
 		bool		getKeepAlive( void ) const;
 		bool		getComplete( void ) const;
 		bool		getServerError( void ) const;
+		std::vector<char>::iterator	getBinaryBodyBegin( void );
+		std::vector<char>::iterator	getBinaryBodyEnd( void );
 
 		void		printRequest( void ) const;
 
