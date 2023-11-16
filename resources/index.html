@@ -3,28 +3,53 @@
   <head>
     <meta charset="utf-8">
     <link href="style.css" rel="stylesheet">
-   <!-- <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> -->
-  </head>  
+    <!-- <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> -->
+  </head>
   <body>
-      <title>My test page</title>
-      <!-- 4 heading levels: -->
-      <h1>This is a sample page</h1>
-      <h2>With Css that sets paragraphs as red</h2>
-      <h3>and a font source from google</h3>
-      <h4>and a firefox logo in the bottom</h4>
-  
-      <p>Here is a bunch of shit that form an ordered list</p>
-       <ol>
-         <li>HTML is a markup language that defines the structure of your content. </li>
-         <li>Like HTML, CSS is not a programming language. It's not a markup language either. CSS is a style sheet language</li>
-         <!-- <li><a href="https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/CSS_basics">Where I learnd about the CSS</a></li> -->
-         <!-- <li><a href="https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/HTML_basics">Where I learnd about the html</a></li> -->
-         <li>This is exercise 1 and 2 of part 0 done.</li>
-         <!-- <li><a href="https://github.com/mdn/learning-area/blob/main/html/introduction-to-html/getting-started/index.html">sample html template from here</a></li> -->
-       </ol>
+    <title>Our test page</title>
+    <!-- 4 heading levels: -->
+    <h1>This is a sample page to show case our web server</h1>
+    <h2>With Css that sets paragraphs as red</h2>
+    <h3>and a font source from google</h3>
+    <h4>and a photo of your choice in the bottom</h4>
 
-<p>Here comes the jenny photo:</p>
-      <img src="jenny.jpg" width="150" alt="Mozilla Firefox icon logo png" />
-      
-    </body>
-</html>
+    <p>Here are a bunch of useful links that form an ordered list</p>
+    <ol>
+      <li>HTML is a markup language that defines the structure of your content.
+      </li>
+      <li>Like HTML, CSS is not a programming language. It's not a markup
+        language either. CSS is a style sheet language</li>
+      <li><a
+          href="https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/CSS_basics">Where
+          I learnd about the CSS</a></li>
+      <li><a
+          href="https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/HTML_basics">Where
+          I learnd about the html</a></li>
+      <li>This is exercise 1 and 2 of part 0 done.</li>
+      <li><a
+          href="https://github.com/mdn/learning-area/blob/main/html/introduction-to-html/getting-started/index.html">sample
+          html template from here</a></li>
+    </ol>
+
+    <p>Here's a sample image:</p>
+    <img src="jenny.jpg" width="150" alt="Mozilla Firefox icon logo png" />
+    <p>leave a comment</p>
+    <form action="index.html" method="POST">
+      <div><lable for="name">name</div>
+        <div><input type="text"></div>
+        <div><label for="email">*Email</label></div>
+        <div><input type="email" required="required" name="email" id="email" /></div>
+        <div><label for="phone-number">Phone number</label></div>
+        <div class="phoneTypeDiv">
+          <ul>
+            <li><div><label><input type="radio" name="phoneType" value="cell">cell</label></div></li>
+            <li><div><label><input type="radio" name="phoneType" value="work">work</label></div></li>
+            <li> <div><label><input type="radio" name="phoneType" value="home">home</label></div></li>
+          </ul>
+        </div>
+        <div><input type="tel" name="phone-number" id="phone-number" /></div>
+        <div><lable for="comment">comment</div>
+          <div><input type="text"></div>
+        </form>
+      </body>
+    </html>
