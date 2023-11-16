@@ -81,6 +81,7 @@ void	Request::add( std::string to_add ) {
 		Logger::log(E_ERROR, COLOR_RED, e.what());
 		this->sever_error_ = true;
 	}
+	printRequest();//
 }
 
 /*! \brief clears all containers and resets all values to intial state
@@ -115,9 +116,11 @@ void	Request::printRequest( void ) const {
 	for (std::map<std::string, std::string>::const_iterator it = this->request_line_.begin(); it != this->request_line_.end(); it++) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
+	std::cout << "\nHeaders:\n";
 	for (std::map<std::string, std::string>::const_iterator it = this->headers_.begin(); it != this->headers_.end(); it++) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
+	std::cout << "\nBody:\n";
 	for (std::vector<std::string>::const_iterator it = this->body_.begin(); it != this->body_.end(); it++) {
 		std::cout << *it;;
 	}
