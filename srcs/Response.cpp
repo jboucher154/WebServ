@@ -539,5 +539,4 @@ void	Response::postMethod_( void ) {
 	if (this->status_code_ == 0) {
 		this->status_code_ = 201; //created
 	}
-	// this->status_code_ = 501;
 }
