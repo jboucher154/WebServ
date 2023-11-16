@@ -37,6 +37,7 @@ bool Validator::listen( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for listening port can not be empty!");
 		return false;
 	}
+	//check if in valid range
 	return true;
 }
 
@@ -203,7 +204,7 @@ static bool checkLocationBlock(std::vector<std::string>*	lines, int serverLines)
 static bool checkMainBlock(std::vector<std::string>*	lines, int serverLines){
 	int i = 2;
 	if ((*lines)[i] == lines->back() || (*lines)[i].compare("main") != 0){
-		Logger::log(E_ERROR, COLOR_RED, "Server block has to have a main block!");
+		Logger::log(E_ERROR, COLOR_RED, "Server block has to begin with a main block!");
 		return false;
 	}
 	i++;
@@ -213,12 +214,33 @@ static bool checkMainBlock(std::vector<std::string>*	lines, int serverLines){
 	}
 	i++;
 	std::map<std::string, std::vector<std::string> >	mainBlock;
-	std::cout << servers.size() << std::endl;
+	std::vector<std::string>							values;
+	//std::cout << servers.size() << std::endl;
+    std::string key;
+    std::string value;
 	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines){
+			std::stringstream    line((*lines)[i]);
 			//store in the main block
-			mainBlock.pushback()
+       		if ((std::getline(line, key, ' ') && (line >> value))){
+				std::stringstream    valuesVec(value);
+				while (std::getline(valuesVec, value, ' '))
+					values.push_back(value);
+			mainBlock[key] = values;
+			}
+			else{
+				Logger::log(E_ERROR, COLOR_RED, "Each line of the main block should have a key and values seperated by a space!");
+				return false;
+			}
 			i++;
 	}
+if (!mainBlock.empty()) {
+    for (std::map<std::string, std::vector<std::string> >::iterator outerIt = mainBlock.begin(); outerIt != mainBlock.end(); ++outerIt) {
+        std::cout << outerIt->first << std::endl;
+        for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
+            std::cout << *innerIt << std::endl;
+        }
+    }
+}
 	return true;
 }
 
@@ -236,7 +258,7 @@ static bool validate_server(std::vector<std::string>*	lines, int serverLines){
 *
 *  checks that the first element aka first line of the config file says server
 *  calls a function that returns how many lines there are in this server block
-*  calls a function that validates this server block and if valid pups the 
+*  calls a function that validates this server block and if valid pops the 
 *  elements from lines vector. If this block is valid and there are more 
 *  elements left in lines it calls itself to validate the rest of the config file. 
 */
@@ -248,8 +270,8 @@ static bool validate_lines(std::vector<std::string>*	lines){
 	int serverLines = getServerLines(lines);
 	if (!validate_server(lines, serverLines))
 		return false;
-	if ((*lines)[serverLines] != lines->back())
-		return (validate_lines(lines));
+	// if ((*lines)[serverLines] != lines->back())
+	// 	return (validate_lines(lines));
 	return true;
 }
 
