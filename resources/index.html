@@ -34,7 +34,7 @@
     <p>Here's a sample image:</p>
     <img src="one_pixel.png" alt="test png" />
     <p>leave a comment</p>
-    <form action="index.html" method="POST">
+    <form action="index.html" method="POST" enctype="multipart/form-data">
       <div><lable for="name">name</div>
         <div><input type="text"></div>
         <div><label for="email">*Email</label></div>
@@ -47,9 +47,15 @@
             <li> <div><label><input type="radio" name="phoneType" value="home">home</label></div></li>
           </ul>
         </div>
-        <div><input type="tel" name="phone-number" id="phone-number" /></div>
-        <div><lable for="comment">comment</div>
-          <div><input type="text"></div>
+        <div>
+			<input type="tel" name="phone-number" id="phone-number" /></div>
+        <div>
+			<lable for="comment">comment</div>
+          <div>
+			<input type="text"></div>
+		  <div>
+			<lable for="file1">Upload File</div>
+			<input type="file" name="file1"/>
           <input type="reset" value="Reset" />
           <input type="submit" value="request" />
         </form>
