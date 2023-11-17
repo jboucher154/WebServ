@@ -32,6 +32,14 @@
 // 	bool		binary;
 // };
 
+typedef struct	s_FormData
+{
+	std::string	name = "";
+	std::string	phone_type = "";
+	std::string	phone_number = "";
+	std::string	email = "";
+	std::string	filename = "";
+}				t_FormData;
 
 /*! \brief Class for handling HTTP responses.
 *       
@@ -86,6 +94,10 @@ class	Response {
 		std::string		getExtension_( void );
 		void			uploadFile_( std::string filepath );
 		std::string		createFile_( std::string& extension );
+		// std::string		getBoundry_( void );
+		// std::string 	MimeTypeFromContentType_( void );
+		std::vector<std::string> 	GetContentTypeValues_( void );
+
 
 		std::vector<std::string>	getAcceptedFormats( void );
 		std::string					buildResourcePath( void );

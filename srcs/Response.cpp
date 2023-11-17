@@ -295,6 +295,10 @@ bool	Response::uriLocationValid_( void )  {
 	}
 }
 
+// static void parseNameFromContentDisposition(std::string& content_disposition) {
+
+// }
+
 //sets resource location and name
 //do i want to separate these?
 //can set error code to not found
@@ -312,15 +316,20 @@ void	Response::setResourceLocationAndName( std::string uri ) {
 		if (isDirectory(path)) {
 			this->resource_location_ = uri;
 			//does the location exist in the server?
-			if (this->server_->isKeyInLocation(this->resource_location_, "index")) {
-				this->resource_name_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+			if (this->request_->getRequestLineValue("method") == "GET") {
+				if (this->server_->isKeyInLocation(this->resource_location_, "index")) {
+					this->resource_name_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+				}
+				else if (this->resource_location_ == "/") {
+					this->resource_name_ = this->server_->getIndex();
+				}
+				else {
+					this->status_code_ = 404;
+					Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+				}
 			}
-			else if (this->resource_location_ == "/") {
-				this->resource_name_ = this->server_->getIndex();
-			}
-			else {
-				this->status_code_ = 404;
-				Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+			else if (this->request_->getRequestLineValue("method") == "POST") {
+				this->resource_name_ = this->request_->getHeaderValueByKey("Content-Disposition");
 			}
 		}
 		else {
@@ -475,7 +484,7 @@ void	Response::deleteMethod_( void ) {
 
 /****************************************** POST ******************************************/
 
-std::string	Response::getExtension_( void ) {
+std::string	Response::getExtension_( void ) { //set extention for file upload
 
 	std::string	content_type = this->request_->getHeaderValueByKey("Content-Type");
 
@@ -525,18 +534,66 @@ void	Response::uploadFile_( std::string filepath ) {
 	upload.close();
 }
 
+// std::string	Response::getBoundry_( void ) {
+
+// }
+
+// std::string Response::MimeTypeFromContentType_( void ) {
+	
+// 	std::string content_type = this->request_->getHeaderValueByKey("Content-Type");
+// 	//ss
+// 	//mime
+// 	//boundary
+// }	
+
+std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
+	
+	std::string 				content_type = this->request_->getHeaderValueByKey("Content-Type");
+	std::stringstream			ss(content_type);
+	std::string					value;
+	std::vector<std::string>	values;
+
+	while (getline(ss, value, ';' )) {
+		if (value.front() == ' ') {
+			value.erase(0, 1);//removes ws
+		}
+		values.push_back(value);
+	}
+}
+
+//check that host is the refferer? 
 void	Response::postMethod_( void ) {
 
-	std::string extension = getExtension_();
-	std::string	resource_location; // need to set this for response OR set the uri in request to location?
-	// make file 
-	resource_location = this->createFile_(extension);
-	std::cout << "resource Location for created file: " << resource_location << "resource name: " << this->resource_name_ << std::endl;
-	// put stuff into it
-	this->uploadFile_(resource_location);
-	//copy same into body to include in response
-	this->buildBody_(resource_location, std::iostream::binary);
-	if (this->status_code_ == 0) {
-		this->status_code_ = 201; //created
+	std::vector<std::string>	content_type_values = this->GetContentTypeValues_();
+	
+	if (content_type_values.front() == "multipart/form-data") {
+		//handle form data
+		t_FormData	form_data;
+
 	}
+	else if (content_type_values.front() == "application/x-www-form-urlencoded") {
+		// send url encoded string to cgi
+	}
+	else {
+		//unsoported type
+	}
+	//parse the form data
+
+	// if (!this->request_->getHeaderValueByKey("Content-Disposition").empty()) {
+	// 	std::cout << "Content disoposition exists!!" << std::endl;
+	// } else {
+	// 	std::cout << "No Content disoposition. sad." << std::endl;
+	// }
+	// std::string extension = getExtension_();
+	// std::string	resource_location; // need to set this for response OR set the uri in request to location?
+	// // make file 
+	// resource_location = this->createFile_(extension);
+	// std::cout << "resource Location for created file: " << resource_location << "resource name: " << this->resource_name_ << std::endl;
+	// // put stuff into it
+	// this->uploadFile_(resource_location);
+	// //copy same into body to include in response
+	// this->buildBody_(resource_location, std::iostream::binary);
+	// if (this->status_code_ == 0) {
+	// 	this->status_code_ = 201; //created
+	// }
 }

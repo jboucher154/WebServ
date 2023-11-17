@@ -54,7 +54,7 @@ void	Request::add( std::string to_add ) {
 	std::string			line;
 
 	try {
-		while (getline(ss, line, '\n')) { // do I need my own getline??
+		while (getline(ss, line, '\n')) {
 			if (this->request_line_.empty()) {
 				this->parseRequestLine_(line);
 			}
@@ -67,14 +67,14 @@ void	Request::add( std::string to_add ) {
 					this->parseHeader_(line);
 				}
 			}
-			else if (this->headers_complete && line.compare("\r") == 0) {
-				break ;
-			}
+			// else if (this->headers_complete && line.compare("\r") == 0) {
+			// 	break ;
+			// }
 			else {
-				if (this->getRequestLineValue("method") == "POST")
-					this->storeBinaryBody_(line);
-				else
-					this->parseBody_(line);
+				// if (this->getRequestLineValue("method") == "POST")
+				// 	this->storeBinaryBody_(line);
+				// else
+				this->parseBody_(line);
 			}
 		}
 		this->setRequestAttributes();
@@ -86,6 +86,7 @@ void	Request::add( std::string to_add ) {
 		Logger::log(E_ERROR, COLOR_RED, e.what());
 		this->sever_error_ = true;
 	}
+	std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
 	printRequest();//
 }
 
@@ -127,11 +128,18 @@ void	Request::printRequest( void ) const {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	std::cout << "\nBody:" << std::endl;
-	for (std::vector<std::string>::const_iterator it = this->text_body_.begin(); it != this->text_body_.end(); it++) {
-		std::cout << *it;;
-	}
-	if (!this->text_body_.empty())
+	if (!this->text_body_.empty()) {
+		for (std::vector<std::string>::const_iterator it = this->text_body_.begin(); it != this->text_body_.end(); it++) {
+			std::cout << *it;;
+		}
 		std::cout << std::endl;
+	}
+	if (!this->binary_body_.empty()) {
+		for (std::vector<char>::const_iterator it = this->binary_body_.begin(); it != this->binary_body_.end(); it++) {
+			std::cout << *it;;
+		}
+		std::cout << std::endl;
+	}
 }
 
 /************** PUBLIC GETTERS **************/
@@ -307,7 +315,7 @@ void	Request::parseBody_( std::string& to_parse ) {
 
 	to_parse.pop_back();
 	this->text_body_.push_back(to_parse);
-	this->body_len_received_ += to_parse.length();
+	this->body_len_received_ += to_parse.length() + 2;
 }
 
 void	Request::storeBinaryBody_( std::string& to_parse) {

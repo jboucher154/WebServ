@@ -24,7 +24,7 @@ class	Request {
 		std::map<std::string, std::string>	request_line_;
 		std::map<std::string, std::string>	headers_;
 		std::vector<std::string>			text_body_;
-		std::vector<char>					binary_body_;//
+		std::vector<char>					binary_body_;//maybe take out, not currenlty using
 		//no footers for now
 
 		void	parseRequestLine_( std::string& to_parse );
