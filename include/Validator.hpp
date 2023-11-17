@@ -18,7 +18,7 @@ class Validator
 private:
 	static std::string				string;
 	static std::vector<std::string>	lines;
-
+	static std::map<std::string, std::vector<std::string> >	innerBlock;
 
 	static std::vector<std::string> valid_main_keys_;
 	static std::string valid_main_keys_array;
@@ -39,7 +39,11 @@ private:
 	static bool clientBodyLimit( std::string value );
 	static bool cgiPath( std::string value );
 	static bool store_lines(std::string	input);
-	
+	static bool checkMainBlock(std::vector<std::string>*	lines, int serverLines);
+	static bool validate_lines(std::vector<std::string>*	lines);
+	static bool validate_server(std::vector<std::string>*	lines, int serverLines);
+	static bool storeInnerBlock(std::vector<std::string>*	lines, int serverLines, int i);
+
 public:
 	Validator();
 	Validator( const Validator& src );
