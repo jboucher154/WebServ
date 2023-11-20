@@ -196,12 +196,13 @@ static bool checkBraces(std::vector<std::string>*	lines, int serverLines){
 	return true;
 }
 
-/*! \brief checks the mzin block
+/*! \brief checks the main block
 *       
 *
 *  If innerBlock is not empty loops through and earase all. 
 *  reading elements from opening braces on, which we pass the index for
-*  till the closing braces, splits the lines with spaces and saves
+*  till the closing braces,first checks that line ends in semicolon and
+*  has key and value seperated by a space. Then splits the lines with spaces and saves
 *  lines into the mainBlock map. 
 *  When innerBlock is saved in inner block map, removes the coresponding lines from lines
 */
@@ -211,24 +212,37 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 	while (!innerBlock.empty())
 		innerBlock.erase(innerBlock.begin());
 		
-	std::vector<std::string>							values;
     std::string key;
     std::string value;
 
 	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines){
+			//first checks that line ends in semicolon and has key and value seperated by a space 
+			if( (*lines)[i].find_last_of(';') != (*lines)[i].size() - 1){
+				Logger::log(E_ERROR, COLOR_RED, "Ending of each line of the main block should be marked by a semicolon!");
+				return false;
+			}
+			if( (*lines)[i].find(' ') == std::string::npos){
+				Logger::log(E_ERROR, COLOR_RED, "Each line of the main block should have a key and values seperated by a space");
+				return false;
+			}
+			std::vector<std::string>							values;
 			std::stringstream    line((*lines)[i]);
-			//store in the main block
-       		if ((std::getline(line, key, ' ') && (line >> value))){
+       		if ((std::getline(line, key, ' ') && std::getline(line, value, ';'))){
+				std::cout << "key " << key  << std::endl;
+				std::cout << "value " << value << std::endl;
 				std::stringstream    valuesVec(value);
-				std::cout << "key: " << key;
-				while (std::getline(valuesVec, value, ' ')){
+				while ( std::getline(valuesVec, value, ' ' )){
 					values.push_back(value);
-					std::cout << " value: " << value << std::endl;
 				} 
-				innerBlock[key] = values;
+				if ( innerBlock.find(key) == innerBlock.end() )
+					innerBlock[key] = values;
+				else{
+					Logger::log(E_ERROR, COLOR_RED, "repetative keys are not allowed in inner Blocks of the server!");
+					return false;
+				}
 			}
 			else{
-				Logger::log(E_ERROR, COLOR_RED, "Each line of the main block should have a key and values seperated by a space!");
+				Logger::log(E_ERROR, COLOR_RED, "Each line of the main block should have a key and values seperated by a space.");
 				return false;
 			}
 			i++;
@@ -249,7 +263,46 @@ static bool checkLocationBlock(std::vector<std::string>*	lines, int serverLines)
 	return true;
 }
 
-/*! \brief checks the mzin block
+/*! \brief checks the main block key and value
+*       
+*
+*  loops through the keys and ckecks if the key is a valid key.
+*  Then calls the coresponding validator for the key if it is a valid one.
+*  returns true if all the values for all the keys are valid and false otherwise.
+*/
+bool Validator::checkMainBlockKeyValues(void){
+
+	t_main_block_functs  mainFunct[] = { &Validator::listen, &Validator::serverName, &Validator::host, &Validator::root,
+				&Validator::clientMaxBodySize, &Validator::index, &Validator::errorPage};
+	// if (!lines.empty()){
+
+	// 	for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
+	// 		std::cout << *it << std::endl;
+	// 	}
+	// }
+
+	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
+		std::cout << "key : " << outerIt->first << std::endl;
+		//std::cout << "value : " << outerIt->second[0] << std::endl;
+		int i = 0;
+		while (i < 7 && valid_main_keys[i].compare(outerIt->first))
+			i++ ;
+		if (i == 7){
+			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key.", outerIt->first);
+			return false;
+		}
+		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
+			std::cout << "value : " << *innerIt << std::endl;
+			if (!mainFunct[i](*innerIt)){
+				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", *innerIt);
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+/*! \brief checks the main block
 *       
 *
 *  checks that the third element of config file aka the third line says main
@@ -270,21 +323,11 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines, int serverLines)
 		Logger::log(E_ERROR, COLOR_RED, "Main block should be enclosed in curly braces!");
 		return false;
 	}
-	storeInnerBlock(lines, serverLines, 4);
-	if (!lines->empty()){
+	if (!storeInnerBlock(lines, serverLines, 4))
+		return false;
 
-		for (std::vector<std::string>::iterator it = lines->begin(); it != lines->end(); it++){
-			std::cout << *it << std::endl;
-		}
-	}
-	std::cout << std::endl << std::endl;
 	if (!innerBlock.empty()) {
-		for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); ++outerIt) {
-			std::cout << outerIt->first << std::endl;
-			// for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
-			// 	std::cout << *innerIt << std::endl;
-			// }
-		}
+		return (checkMainBlockKeyValues());
 	}
 	else{
 		Logger::log(E_ERROR, COLOR_RED, "Main block can not be empty!");
@@ -377,8 +420,6 @@ bool Validator::store_lines(std::string	input){
 */
 bool Validator::validate(std::string	input){
 
-	// t_main_block_functs  mainFunct[] = { &Validator::listen, &Validator::serverName, &Validator::host, &Validator::root,
-	// 			&Validator::clientMaxBodySize, &Validator::index, &Validator::errorPage};
 	// t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::autoIndex, &Validator::returnKey,
 	// 			&Validator::alias, &Validator::cgiExt, &Validator::clientBodyLimit, &Validator::cgiPath};
 
@@ -386,12 +427,12 @@ bool Validator::validate(std::string	input){
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 		return false;
 	}
-	if (!lines.empty()){
+	// if (!lines.empty()){
 
-		for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
-			std::cout << *it << std::endl;
-		}
-	}
+	// 	for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
+	// 		std::cout << *it << std::endl;
+	// 	}
+	// }
 	return (validate_lines(&lines));
 	//1.check that the first line says server
 	// 2.check that the server block is opened and closed (this means that there are no unclosed curly braces)

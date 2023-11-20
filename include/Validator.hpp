@@ -43,6 +43,7 @@ private:
 	static bool validate_lines(std::vector<std::string>*	lines);
 	static bool validate_server(std::vector<std::string>*	lines, int serverLines);
 	static bool storeInnerBlock(std::vector<std::string>*	lines, int serverLines, int i);
+	static bool checkMainBlockKeyValues(void);
 
 public:
 	Validator();
