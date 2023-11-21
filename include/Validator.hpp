@@ -45,11 +45,12 @@ private:
 	static bool storeInnerBlock(std::vector<std::string>*	lines, int serverLines, int i);
 	static bool checkMainBlockKeyValues(void);
 
-public:
 	Validator();
 	Validator( const Validator& src );
 	Validator& operator=( const Validator& rhs );
 	~Validator();
+	
+public:
 
 	static std::vector<Server>			servers;
 	static bool validate( std::string	infile );

@@ -14,38 +14,82 @@ std::vector<std::string>	Validator::lines;
 std::map<std::string, std::vector<std::string> >	Validator::innerBlock;
 std::vector<Server>			servers;
 
+/*! \brief Validator's class constructor
+*       
+*  Doesn't do anything just constructs an instance of the class. 
+*  This constructor is private.
+*/
 Validator::Validator(){
 	
 }
 
+/*! \brief Validator's class destructor
+*       
+*  Doesn't do anything just destructs an instance of the class. 
+*  This destructor is private.
+*/
 Validator::~Validator(){
 }
 
+/*! \brief Validator's class copy constructor
+*       
+*  This copy constructor calls on the operator overload to copy the instance. 
+*  This copy constructor is private.
+*/
 Validator::Validator( const Validator& src ){
 
 	*this = src;
 }
 
+/*! \brief Validator's assignment operator overload
+*       
+*  Returns a pointer to the current instance. 
+*  This assignment operator overload is private.
+*/
 Validator& Validator::operator=( const Validator& rhs ){
 	
 	(void)rhs;
 	return *this;
 }
 
+/*! \brief validates listening port's value
+*       
+*  Checks if listening port has a value and that it is 
+*  a number and that number is an int and that it is within the valid range.
+*/
 bool Validator::listen( std::string value ){
 
 	if ( value.empty() ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for listening port can not be empty!");
 		return false;
 	}
-	//check if in valid range
+	if (!isAllDigit(value)){
+		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number!");
+		return false;
+	}
+	try{
+		if (ft_stoi(value) < 1024 || ft_stoi(value) > 65535 ){
+			Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
+			return false;
+		}
+	}
+	catch(std::exception &e){
+		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
+			return false;
+	}
 	return true;
+	
 }
 
+/*! \brief validates server name value
+*       
+*  Checks if listening port has a value and that it is
+*  a string consist of only ascii chatacters, digits, undescore and dot.
+*/
 bool Validator::serverName( std::string value ){
 
 	if ( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for server name can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for server name vallue can not be empty!");
 		return false;
 	}
 	if( value.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789.")
@@ -56,35 +100,79 @@ bool Validator::serverName( std::string value ){
 	return true;
 }
 
+/*! \brief validates host value
+*       
+*  Checks if host has a value and then calls on is valid ip address
+*  to check if the value is a valid ip address.
+*/
 bool Validator::host( std::string value ){
 
 	if ( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for host can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for host value can not be empty!");
 		return false;
 	}
-	
-	return (isValidIpAddress(value.c_str()));
-}
-
-bool Validator::root( std::string value ){
-
-	if ( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for host can not be empty!");
+	if (!isValidIpAddress(value.c_str())){
+		Logger::log(E_ERROR, COLOR_RED, "Host has to have a valid IP as it's value!");
 		return false;
 	}
-
 	return true;
 }
 
+/*! \brief validates root value
+*       
+*  Checks if root has a value and that it is a directory
+*/
+bool Validator::root( std::string value ){
+
+	if ( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for root value can not be empty!");
+		return false;
+	}
+	if (!isDirectory(value)){
+		Logger::log(E_ERROR, COLOR_RED, "Root has to be an existing directory!");
+		return false;
+	}
+	return true;
+}
+
+/*! \brief validates client max body size's value
+*       
+*  Checks if client max body size has a value and that it is 
+*  a number and that number is an int and that it is within the valid range.
+*/
 bool Validator::clientMaxBodySize( std::string value ){
 
-	(void)value;
+	if ( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for client max body size value can not be empty!");
+		return false;
+	}
+	if (!isAllDigit(value)){
+		Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a number!");
+		return false;
+	}
+	try{
+		if (ft_stoi(value) < 0 || ft_stoi(value) > 2147483647 ){
+			Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a number between 1025 and 65535!");
+			return false;
+		}
+	}
+	catch(std::exception &e){
+		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
+			return false;
+	}
 	return true;
 }
 
 bool Validator::index( std::string value ){
 
-	(void)value;
+	if ( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
+		return false;
+	}
+	if (!isFile(value)){
+		Logger::log(E_ERROR, COLOR_RED, "Root has to be an existing directory!");
+		return false;
+	}
 	return true;
 }
 
@@ -208,7 +296,7 @@ static bool checkBraces(std::vector<std::string>*	lines, int serverLines){
 */
 bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLines, int i){
 
-	//if innerBlock is not empty loop through and earase all 
+	//if innerBlock is not empty loop through and earases all 
 	while (!innerBlock.empty())
 		innerBlock.erase(innerBlock.begin());
 		
@@ -228,8 +316,6 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 			std::vector<std::string>							values;
 			std::stringstream    line((*lines)[i]);
        		if ((std::getline(line, key, ' ') && std::getline(line, value, ';'))){
-				std::cout << "key " << key  << std::endl;
-				std::cout << "value " << value << std::endl;
 				std::stringstream    valuesVec(value);
 				while ( std::getline(valuesVec, value, ' ' )){
 					values.push_back(value);
@@ -336,12 +422,21 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines, int serverLines)
 	return true;
 }
 
+
+/*! \brief validates one server
+*       
+*
+*  checks if the braces macht for this server block, then calls on
+*  main block validator and then location block validators if they
+*  return true then this server block is valid, otherwise it' not. 
+*/
 bool Validator::validate_server(std::vector<std::string>*	lines, int serverLines){
 	if (!checkBraces(lines, serverLines))
 		return false;
-	checkMainBlock(lines, serverLines);
-
-	checkLocationBlock(lines, serverLines);
+	if (!checkMainBlock(lines, serverLines))
+		return false;
+	if (!checkLocationBlock(lines, serverLines))
+		return false;
 	return true;
 }
 

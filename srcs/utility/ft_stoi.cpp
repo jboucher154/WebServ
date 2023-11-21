@@ -10,6 +10,6 @@ int ft_stoi(const std::string& str)
     std::stringstream checkSS;
 	checkSS << integer;
     if ( checkSS.str().compare ( str ) != 0 )
-        throw (std::invalid_argument ( "input should be whithin the range of unsigned int" ) );
+        throw (std::invalid_argument ( "input should be whithin the range of an int" ) );
     return num;
 }
