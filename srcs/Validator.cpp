@@ -68,6 +68,7 @@ bool Validator::listen( std::string value ){
 		return false;
 	}
 	try{
+		std::cout << ft_stoi(value) << std::endl;
 		if (ft_stoi(value) < 1024 || ft_stoi(value) > 65535 ){
 			Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
 			return false;
@@ -169,8 +170,9 @@ bool Validator::index( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
 		return false;
 	}
+	std::cout << value << std::endl;
 	if (!isFile(value)){
-		Logger::log(E_ERROR, COLOR_RED, "Root has to be an existing directory!");
+		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
 	}
 	return true;
@@ -302,6 +304,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 		
     std::string key;
     std::string value;
+	std::string	root = "";
 
 	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines){
 			//first checks that line ends in semicolon and has key and value seperated by a space 
@@ -319,7 +322,9 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 				std::stringstream    valuesVec(value);
 				while ( std::getline(valuesVec, value, ' ' )){
 					values.push_back(value);
-				} 
+				}
+				if (key.compare("root"))
+					root = values[0]; 
 				if ( innerBlock.find(key) == innerBlock.end() )
 					innerBlock[key] = values;
 				else{
@@ -333,7 +338,11 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 			}
 			i++;
 	}
-
+	//adds root directory to the begining of the index file
+	if ( innerBlock.find("index") != innerBlock.end() ){
+		root.append(innerBlock.find("index")->second[0]);
+		innerBlock.find("index")->second[0] = root;
+	}
 	//when innerBlock is saved in inner block map removes the coresponding lines from lines 
 	while (i >= 0){
 		lines->erase(lines->begin());
@@ -368,19 +377,19 @@ bool Validator::checkMainBlockKeyValues(void){
 	// }
 
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
-		std::cout << "key : " << outerIt->first << std::endl;
+		//std::cout << "key : " << outerIt->first << std::endl;
 		//std::cout << "value : " << outerIt->second[0] << std::endl;
 		int i = 0;
 		while (i < 7 && valid_main_keys[i].compare(outerIt->first))
 			i++ ;
 		if (i == 7){
-			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key.", outerIt->first);
+			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key.", (*outerIt).first.c_str());
 			return false;
 		}
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
-			std::cout << "value : " << *innerIt << std::endl;
+			//std::cout << "value : " << *innerIt << std::endl;
 			if (!mainFunct[i](*innerIt)){
-				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", *innerIt);
+				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
 				return false;
 			}
 		}

@@ -34,7 +34,9 @@ SRCS = \
 	Client.cpp			\
 	Validator.cpp		\
 	file_handling.cpp	\
-	is_valid_ip_address.cpp
+	is_valid_ip_address.cpp \
+	is_all_digit.cpp
+
 
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
