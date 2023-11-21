@@ -4,7 +4,7 @@
 /* CONSTRUCTORS */
 
 Request::Request( void ) 
-: body_size_(0), body_len_received_(0), chunked_(false), keep_alive_(false), headers_complete(false), 
+: body_size_(0), body_len_received_(0), chunked_(false), keep_alive_(false), cgi_flag_(false), headers_complete(false), 
 	complete_(false), sever_error_(false), text_body_(), binary_body_() {
 
 	/* default constructor */
@@ -36,6 +36,7 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->text_body_ = rhs.text_body_;
 		this->binary_body_ = rhs.binary_body_;
 		this->complete_ = rhs.complete_;
+		this->cgi_flag_ = rhs.cgi_flag_;
 	}
 	return (*this);
 }
@@ -102,6 +103,7 @@ void	Request::clear( void ) {
 	this->body_len_received_ = 0;
 	this->chunked_ = false;
 	this->keep_alive_ = false;
+	this->cgi_flag_ = false;
 	this->headers_complete = false;
 	this->request_line_.clear();
 	this->headers_.clear();
@@ -143,6 +145,12 @@ void	Request::printRequest( void ) const {
 }
 
 /************** PUBLIC GETTERS **************/
+
+bool	Request::getCgiFlag( void ) const {
+
+	return (this->cgi_flag_);
+}
+
 
 size_t		Request::getBodySize( void ) const {
 	
@@ -261,10 +269,22 @@ void	Request::setKeepAlive( void ) {
 	}
 }
 
+void	Request::setCgiFlag( void ) {
+
+	std::string	uri = this->getRequestLineValue("uri");
+	if (strncmp(uri.c_str(), "/cgi-bin", 8) == 0) {
+		this->cgi_flag_ = true;
+	}
+	else {
+		this->cgi_flag_ = false;
+	}
+}
+
+
 void	Request::setRequestAttributes( void ) {
 
-	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize };
-	for (int i = 0; i < 3; i++) { //get size of setters instead of 3
+	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize , &Request::setCgiFlag };
+	for (int i = 0; i < 4; i++) { //get size of setters instead of 3
 		(this->*setters[i])();
 	}
 }

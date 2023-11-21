@@ -18,6 +18,7 @@ class	Request {
 		size_t								body_len_received_;					
 		bool 								chunked_;
 		bool								keep_alive_;
+		bool								cgi_flag_;
 		bool								headers_complete;
 		bool								complete_;
 		bool								sever_error_;
@@ -35,6 +36,7 @@ class	Request {
 		void	setChunked( void );
 		void	setKeepAlive( void );
 		void	setRequestAttributes( void );
+		void	setCgiFlag( void );
 
 	public:
 		Request( void );
@@ -55,6 +57,7 @@ class	Request {
 		bool		getKeepAlive( void ) const;
 		bool		getComplete( void ) const;
 		bool		getServerError( void ) const;
+		bool		getCgiFlag( void ) const;
 		std::vector<char>::iterator	getBinaryBodyBegin( void );
 		std::vector<char>::iterator	getBinaryBodyEnd( void );
 
