@@ -123,9 +123,10 @@ void	Response::generate( Request* request ) {
 		Logger::log(E_DEBUG, COLOR_CYAN, "405 Method not allowed, %s, on server %s for uri: `%s'", this->request_->getRequestLineValue("method").c_str(), this->server_->getServerName().c_str() , this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
+	//validate resource existance and access
+	validateResource_();
 	if (this->status_code_ < 400) {
 		for (unsigned long i = 0; i < (sizeof(possible_methods)/sizeof(std::string)); i++) {
-			// std::cout << "DUBUGGING WITHOUT LOGGER -> METHOD: " << this->request_->getRequestLineValue("method") << " POSSIBLE METHOD: " << possible_methods[i]<< std::endl; 
 			if (this->request_->getRequestLineValue("method") == (possible_methods[i])) {
 				(this->*methods[i])();
 				break ;
@@ -133,6 +134,7 @@ void	Response::generate( Request* request ) {
 		}
 	}
 }
+
 
 //should it return a string?
 /*! \brief get method returns the response as a c string.
@@ -178,6 +180,18 @@ void	Response::clear( void ) { 	/* reset for next use */
 	// this->server_ = NULL;
 	this->request_ = NULL;
 }
+
+int	Response::getStatusCode( void ) const {
+
+	return (this->status_code_);
+}
+
+void	Response::setStatusCode( unsigned int	new_code ) {
+
+	this->status_code_ = new_code;
+}
+
+
 
 /* CLASS PRIVATE METHODS */
 
@@ -225,6 +239,31 @@ void	Response::intializeMimeTypes( void ) {
 	Response::mime_types_["raw"] = "video/raw";
 	Response::mime_types_["MPV"] = "video/MPV";
 
+}
+
+#include <unistd.h>
+// also check for execute for delete??? write and execute on the parent directory ...
+bool	Response::validateResource_( void ) {
+
+	std::string resource_path = buildResourcePath();
+	std::string	method = this->request_->getRequestLineValue("method");
+
+	if (access(resource_path.c_str(), F_OK) != 0) {
+		this->status_code_ = 404;
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->request_->getRequestLineValue("uri").c_str());
+		return (false);
+	}
+	else if (this->request_->getCgiFlag() && access(resource_path.c_str(), X_OK) != 0) {
+		this->status_code_ = 403;
+		Logger::log(E_DEBUG, COLOR_CYAN, "403 execution access not allowed for cgi file: `%s'", this->request_->getRequestLineValue("uri").c_str());
+		return (false);
+	}
+	else if (access(resource_path.c_str(), R_OK) != 0) {
+		this->status_code_ = 403;
+		Logger::log(E_DEBUG, COLOR_CYAN, "403 read access not allowed for resource file: `%s'", this->request_->getRequestLineValue("uri").c_str());
+		return (false);
+	}
+	return (true);
 }
 
 /****************************************** HEADER GENERATORS ******************************************/
@@ -295,12 +334,8 @@ bool	Response::uriLocationValid_( void )  {
 	}
 }
 
-// static void parseNameFromContentDisposition(std::string& content_disposition) {
-
-// }
-
+//can CGI be used for GET requests? other requests???
 //sets resource location and name
-//do i want to separate these?
 //can set error code to not found
 void	Response::setResourceLocationAndName( std::string uri ) {
 
@@ -316,20 +351,15 @@ void	Response::setResourceLocationAndName( std::string uri ) {
 		if (isDirectory(path)) {
 			this->resource_location_ = uri;
 			//does the location exist in the server?
-			if (this->request_->getRequestLineValue("method") == "GET") {
-				if (this->server_->isKeyInLocation(this->resource_location_, "index")) {
-					this->resource_name_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
-				}
-				else if (this->resource_location_ == "/") {
-					this->resource_name_ = this->server_->getIndex();
-				}
-				else {
-					this->status_code_ = 404;
-					Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
-				}
+			if (this->server_->isKeyInLocation(this->resource_location_, "index")) {
+				this->resource_name_ = this->server_->getLocationValue(this->resource_location_, "index")->front(); //could be empty
 			}
-			else if (this->request_->getRequestLineValue("method") == "POST") {
-				this->resource_name_ = this->request_->getHeaderValueByKey("Content-Disposition");
+			else if (this->resource_location_ == "/") {
+				this->resource_name_ = this->server_->getIndex();
+			}
+			else {
+				this->status_code_ = 404;
+				Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
 			}
 		}
 		else {
@@ -338,6 +368,7 @@ void	Response::setResourceLocationAndName( std::string uri ) {
 		}
 	}
 }
+
 
 //defalut to deny method if none entered
 bool	Response::methodAllowed_( std::string method ) {
@@ -376,6 +407,7 @@ std::vector<std::string>	Response::getAcceptedFormats( void ) {
 	return (accepted_formats);
 }
 
+//check for cgi
 //should check for redirection/ alias too
 std::string	Response::buildResourcePath( void ) {
 
@@ -484,6 +516,7 @@ void	Response::deleteMethod_( void ) {
 
 /****************************************** POST ******************************************/
 
+//maybe unneeded
 std::string	Response::getExtension_( void ) { //set extention for file upload
 
 	std::string	content_type = this->request_->getHeaderValueByKey("Content-Type");
@@ -499,53 +532,46 @@ std::string	Response::getExtension_( void ) { //set extention for file upload
 	return ("unknown"); //return empty???
 }
 
-// should I check if it already exists? if it does should it be overwritten?
-// do I need to make my own file name?
-std::string	Response::createFile_( std::string& extension ) {
-	
-	std::string path;
+//add query string to all constructors/ reset
+void	Response::parseMultiPartFormData( std::string& boundary ) {
 
-	if (extension == "unknown") {
-		extension = "";
-	}
-	path = buildResourcePath();
-	std::ofstream	newFile(path + extension);
-	if (newFile.fail() || newFile.bad()) {
-		this->status_code_ = 500;
-		return "";
-	}
-	else {
-		newFile.close();
-		return path + extension;
-	}
-}
-
-void	Response::uploadFile_( std::string filepath ) {
-
-	std::ofstream	upload(filepath, std::iostream::binary);// need open mode, lets do binary for now...
-
-	if (upload.fail() || upload.bad()) {
-		this->status_code_ = 500;
+	if (boundary.empty()) {
+		this->query_string = "invalid boundary found";
+		//invalid request??
 		return ;
 	}
-	for (std::vector<char>::iterator it = this->request_->getBinaryBodyBegin(); it != this->request_->getBinaryBodyEnd(); it++) {
-		upload << *it;
+	boundary = "--" + boundary;
+	std::string	file_datum;
+
+	for (std::vector<std::string>::iterator it = this->request_->getBodyBegin(); it != this->request_->getBodyEnd(); it++) {
+		if (*it != boundary) {
+			std::stringstream	ss(*it);
+			std::string	segment;
+
+			ss >> segment;
+			if (strncmp(it->c_str(), "Content-Disposition", 19) == 0) {
+				while (!ss.eof()) {
+					if (segment == "form_data")
+						query_string += "type=form_data ";
+					else 
+						query_string += segment + " ";
+				}
+			}
+			else if (strncmp(it->c_str(), "Content-Type", 12) == 0) {
+				ss >> segment;
+				query_string += "content-type=" + segment + " ";
+			}
+			else {
+				file_datum += *it;
+			}
+		}
 	}
-	upload.close();
+	if (!file_datum.empty()) {
+		this->file_data.push_back(file_datum);
+	}
 }
 
-// std::string	Response::getBoundry_( void ) {
-
-// }
-
-// std::string Response::MimeTypeFromContentType_( void ) {
-	
-// 	std::string content_type = this->request_->getHeaderValueByKey("Content-Type");
-// 	//ss
-// 	//mime
-// 	//boundary
-// }	
-
+//get header values in vector...
 std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
 	
 	std::string 				content_type = this->request_->getHeaderValueByKey("Content-Type");
@@ -557,43 +583,45 @@ std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
 		if (value.front() == ' ') {
 			value.erase(0, 1);//removes ws
 		}
+		while (*(value.end()) == '\r' || *(value.end()) == '\n') {
+			value.pop_back();
+		}
 		values.push_back(value);
 	}
+	return (values);
 }
 
 //check that host is the refferer? 
 void	Response::postMethod_( void ) {
 
 	std::vector<std::string>	content_type_values = this->GetContentTypeValues_();
+	bool						cgi_flag = this->request_->getCgiFlag();
 	
+	(void)cgi_flag;//
+	//prepare CGI data ..
 	if (content_type_values.front() == "multipart/form-data") {
 		//handle form data
-		t_FormData	form_data;
-
+		parseMultiPartFormData(content_type_values[1]);
+		this->query_string = urlEncode(this->query_string);
 	}
-	else if (content_type_values.front() == "application/x-www-form-urlencoded") {
+	else if (content_type_values.front() == "application/x-www-form-urlencoded") { //assume no data for now
 		// send url encoded string to cgi
+		if ((*(this->request_->getBodyBegin())).find("filename=") != std::string::npos) {
+			Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "File included in URL encoded string of POST request");
+		}
+		query_string = *(this->request_->getBodyBegin());
+		// check it includes data for a file.
 	}
 	else {
-		//unsoported type
+		//unsupported
+		// or do I just add the body to the query string and send it...
+		Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "POST request without form-data detected, not currently processed");
+		//set error code?
 	}
-	//parse the form data
-
-	// if (!this->request_->getHeaderValueByKey("Content-Disposition").empty()) {
-	// 	std::cout << "Content disoposition exists!!" << std::endl;
-	// } else {
-	// 	std::cout << "No Content disoposition. sad." << std::endl;
-	// }
-	// std::string extension = getExtension_();
-	// std::string	resource_location; // need to set this for response OR set the uri in request to location?
-	// // make file 
-	// resource_location = this->createFile_(extension);
-	// std::cout << "resource Location for created file: " << resource_location << "resource name: " << this->resource_name_ << std::endl;
-	// // put stuff into it
-	// this->uploadFile_(resource_location);
-	// //copy same into body to include in response
-	// this->buildBody_(resource_location, std::iostream::binary);
-	// if (this->status_code_ == 0) {
-	// 	this->status_code_ = 201; //created
-	// }
+	//for non cgi??
+	if (this->status_code_ == 0) {
+		std::string path = buildResourcePath();
+		buildBody_(path, std::ifstream::in);
+		this->status_code_ = 201; //created //not actually created right now
+	}
 }

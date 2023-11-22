@@ -18,28 +18,6 @@
 #  define CRLF "\r\n"
 # endif
 
-// /*! \brief Holds relevant MIME type information for a given extension.
-// *       
-// *
-// *  Hold MIME type information for a given extension including the mime_type notation
-// *  and if the type should be sent as binary.
-// *  
-// */
-// struct s_mime
-// {
-// 	std::string	extension;
-// 	std::string mime_type;
-// 	bool		binary;
-// };
-
-typedef struct	s_FormData
-{
-	std::string	name = "";
-	std::string	phone_type = "";
-	std::string	phone_number = "";
-	std::string	email = "";
-	std::string	filename = "";
-}				t_FormData;
 
 /*! \brief Class for handling HTTP responses.
 *       
@@ -67,6 +45,8 @@ class	Response {
 		int					status_code_;
 		Server*				server_;
 		Request*			request_;
+		std::string			query_string;
+		std::vector<std::string> file_data;
 		//maybe add map of headers, create them as I go?
 		
 		void	intializeMimeTypes( void );
@@ -89,14 +69,17 @@ class	Response {
 		// void	setResourceLocation( std::string& uri );
 		// void	setResourceName( std::string& uri );
 		void	setMimeType( void );
+		bool	validateResource_( void );
+
 
 		/*POST*/
 		std::string		getExtension_( void );
-		void			uploadFile_( std::string filepath );
-		std::string		createFile_( std::string& extension );
+		// void			uploadFile_( std::string filepath );
+		// std::string		createFile_( std::string& extension );
 		// std::string		getBoundry_( void );
 		// std::string 	MimeTypeFromContentType_( void );
 		std::vector<std::string> 	GetContentTypeValues_( void );
+		void						parseMultiPartFormData( std::string& boundary );
 
 
 		std::vector<std::string>	getAcceptedFormats( void );
@@ -118,6 +101,17 @@ class	Response {
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
 		std::string&	get();
+
+		int				getStatusCode( void ) const;
+		void			setStatusCode( unsigned int	new_code );
 };
 
 #endif
+
+
+
+/*
+- verify path to cgi script before handing over to cgi
+- check access/ permissions to the resource
+
+*/ 
