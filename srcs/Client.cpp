@@ -5,7 +5,7 @@
 
 /* CONSTRUCTORS */
 
-Client::Client( void ) : response_(NULL) {
+Client::Client( void ) : response_(NULL), cgi_flag_(false) {
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
@@ -18,7 +18,7 @@ Client::Client( void ) : response_(NULL) {
 	this->server_fd_ = -1;
 }
 
-Client::Client( int server_fd, Server* server ) : response_(server) {
+Client::Client( int server_fd, Server* server ) : response_(server), cgi_flag_(false) {
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
@@ -54,17 +54,7 @@ Client&	Client::operator=( const Client& rhs ) {
 		this->latest_time_ = rhs.latest_time_;
 		this->server_ = rhs.server_;
 		this->server_fd_ = rhs.server_fd_;
-		this->request_ = rhs.request_;
-		this->response_ = rhs.response_;
-	}
-	return *this;
-
-	if (this != &rhs) {
-		this->fd_ = rhs.fd_;
-		this->address_ = rhs.address_;
-		this->latest_time_ = rhs.latest_time_;
-		this->server_ = rhs.server_;
-		this->server_fd_ = rhs.server_fd_;
+		this->cgi_flag_ = rhs.cgi_flag_;
 		this->request_ = rhs.request_;
 		this->response_ = rhs.response_;
 	}
@@ -107,6 +97,13 @@ std::string	Client::getClientHost() const {
 	inet_ntop(this->address_.sin_family, (struct sockaddr*)&this->address_, client_host, INET_ADDRSTRLEN);
 	return client_host;
 }
+
+struct sockaddr_in&	Client::getAddress( void ) {
+
+	return this->address_;
+}
+
+
 
 Request&	Client::getRequest( void ) {
 

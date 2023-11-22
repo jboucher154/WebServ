@@ -301,7 +301,7 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
 		server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
 
-	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+	if (fcntl(client_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
 		close(client_fd);
 		return;
@@ -486,7 +486,7 @@ void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
 	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
 		server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
 
-	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+	if (fcntl(client_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
 		close(client_fd);
 		return;

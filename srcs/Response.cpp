@@ -179,6 +179,39 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->request_ = NULL;
 }
 
+/*! \brief start the handling of a request that involves cgi (POLL-version) 
+*
+*	Added by ssalmi
+*
+*/
+void	startCgiResponse( Client& client, ServerManager& server_manager ) {
+
+}
+
+/*! \brief start the handling of a request that involves cgi 
+*
+*	Added by ssalmi
+*
+*/
+void	Response::POLL_startCgiResponse( Client& client, ServerManager& server_manager ) {
+
+	int	cgi_result = this->cgi_handler_.POLL_initializeCgi(client, server_manager);
+
+	switch (cgi_result)
+	{	
+		case E_CGI_UNKNOWNMETHOD:
+			break;
+
+		case E_CGI_OK:
+			break;
+
+	// the rest of the possible results
+
+		default:
+			break;
+	}
+}
+
 /* CLASS PRIVATE METHODS */
 
 // https://www.iana.org/assignments/media-types/media-types.xhtml
@@ -398,6 +431,12 @@ void	Response::setMimeType( void ) {
 		this->status_code_ = 415;
 		Logger::log(E_DEBUG, COLOR_CYAN, "415 File extension not supported media type: `%s'", this->request_->getRequestLineValue("uri").c_str());
 	}
+}
+
+// added by ssalmi
+CgiHandler&	Response::getCgiHandler_( void ) {
+
+	return this->cgi_handler_;
 }
 
 //what to do if no accepted format specified? can take anything...

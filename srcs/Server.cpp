@@ -124,7 +124,7 @@ int	Server::setupServer( void ) {
 		return -1;
 	}
 
-	if (fcntl(listener_fd, F_SETFL, O_NONBLOCK) == -1) {
+	if (fcntl(listener_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "server fcntl error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		close(listener_fd);
 		return -1;

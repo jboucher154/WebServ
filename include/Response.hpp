@@ -10,9 +10,11 @@
 // # include <vector>
 
 # include "utility.hpp"
+# include "ServerManager.hpp"
 # include "Server.hpp"
 # include "Request.hpp"
 # include "Logger.hpp"
+# include "CgiHandler.hpp"
 
 # ifndef CRLF
 #  define CRLF "\r\n"
@@ -60,7 +62,7 @@ class	Response {
 		Server*				server_;
 		Request*			request_;
 		
-
+		CgiHandler			cgi_handler_;	// added by ssalmi
 
 		void	intializeMimeTypes( void );
 
@@ -83,6 +85,8 @@ class	Response {
 		// void	setResourceName( std::string& uri );
 		void	setMimeType( void );
 
+		CgiHandler&	getCgiHandler_( void ); // added by ssalmi
+
 		std::vector<std::string>	getAcceptedFormats( void );
 		std::string					buildResourcePath( void );
 
@@ -102,6 +106,11 @@ class	Response {
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
 		std::string&		get();
+		
+		// all under are added by ssalmi
+		void	SELECT_startCgiResponse(Client& client, ServerManager& server_manager);
+
+		void	POLL_startCgiResponse(Client& client, ServerManager& server_manager);
 };
 
 #endif
