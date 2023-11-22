@@ -20,8 +20,11 @@ int  main( int argc, char *argv[]) {
   else if (argc == 2 && !Validator::validate(argv[1])) {
     return 1;
   }
-  else 
+  else if (argc == 1){
+    std::cout << "here" << std::endl;
     Validator::validate("config/good/default.conf");
+  }
+    
   std::vector<Server> server_vector;
 
   Server  server1("Server-1", 8080, "127.0.0.1");
