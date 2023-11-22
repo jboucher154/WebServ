@@ -68,14 +68,8 @@ void	Request::add( std::string to_add ) {
 					this->parseHeader_(line);
 				}
 			}
-			// else if (this->headers_complete && line.compare("\r") == 0) {
-			// 	break ;
-			// }
 			else {
-				// if (this->getRequestLineValue("method") == "POST")
-				// 	this->storeBinaryBody_(line);
-				// else
-				this->parseBody_(line);
+				this->parseBody_(line, ss.eof());
 			}
 		}
 		this->setRequestAttributes();
@@ -240,7 +234,6 @@ std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
 
 /************** PRIVATE SETTERS **************/
 
-
 void	Request::setBodySize( void ) {
 
 	std::string	content_length = this->headers_["Content-Length"];
@@ -331,13 +324,19 @@ void	Request::parseHeader_( std::string& to_parse ) {
 	}
 }
 
-void	Request::parseBody_( std::string& to_parse ) {
+void	Request::parseBody_( std::string& to_parse, bool eof_marker ) {
 
-	to_parse.pop_back();
+	int	removed_chars = eof_marker ? 0:1;
+
+	if (to_parse.back() == '\r') {
+		to_parse.pop_back();
+		removed_chars++;
+	}
 	this->text_body_.push_back(to_parse);
-	this->body_len_received_ += to_parse.length() + 2;
+	this->body_len_received_ += to_parse.length() + removed_chars;
 }
 
+//may not be needed
 void	Request::storeBinaryBody_( std::string& to_parse) {
 
 	for (std::string::const_iterator it = to_parse.begin(); it != to_parse.end(); it++) {
