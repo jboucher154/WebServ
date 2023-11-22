@@ -39,12 +39,15 @@ private:
 	static bool clientBodyLimit( std::string value );
 	static bool cgiPath( std::string value );
 	static bool store_lines(std::string	input);
-	static bool checkMainBlock(std::vector<std::string>*	lines, int serverLines);
+	static bool checkMainBlock(std::vector<std::string>*	lines, size_t serverLines);
 	static bool validate_lines(std::vector<std::string>*	lines);
-	static bool validate_server(std::vector<std::string>*	lines, int serverLines);
-	static bool storeInnerBlock(std::vector<std::string>*	lines, int serverLines, int i);
+	static bool validate_server(std::vector<std::string>*	lines, size_t serverLines);
+	static bool storeInnerBlock(std::vector<std::string>*	lines, size_t serverLines, size_t i);
 	static bool checkMainBlockKeyValues(void);
-
+	static bool checkLocationBlock(std::vector<std::string>*	lines, size_t serverLines);
+	static bool checkBraces(std::vector<std::string>*	lines, size_t serverLines);
+	static size_t getServerLines(std::vector<std::string>*	lines);
+	
 	Validator();
 	Validator( const Validator& src );
 	Validator& operator=( const Validator& rhs );

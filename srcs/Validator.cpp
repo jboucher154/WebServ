@@ -68,7 +68,7 @@ bool Validator::listen( std::string value ){
 		return false;
 	}
 	try{
-		std::cout << ft_stoi(value) << std::endl;
+		//std::cout << ft_stoi(value) << std::endl;
 		if (ft_stoi(value) < 1024 || ft_stoi(value) > 65535 ){
 			Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
 			return false;
@@ -170,7 +170,7 @@ bool Validator::index( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
 		return false;
 	}
-	std::cout << value << std::endl;
+	//std::cout << value << std::endl;
 	if (!isFile(value)){
 		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
@@ -233,9 +233,9 @@ bool Validator::cgiPath( std::string value ){
 *  counts how many lines there are in this server block up until the
 *  next server block or the end. 
 */
-static int getServerLines(std::vector<std::string>*	lines){
-	int serverLines = 1;
-	while ( (*lines)[serverLines] != lines->back() && (*lines)[serverLines].compare("server") == 0 ){
+size_t Validator::getServerLines(std::vector<std::string>*	lines){
+	size_t serverLines = 1;
+	while ( (*lines).size() > serverLines || (*lines)[serverLines].compare("server") == 0 ){
 		serverLines++;
 	}
 	return serverLines;
@@ -248,18 +248,18 @@ static int getServerLines(std::vector<std::string>*	lines){
 *  checks that the open braces are closed. checks that no more than 2 braces are
 *  left open at any point. and checks that there are not more close braces than open ones.
 */
-static bool checkBraces(std::vector<std::string>*	lines, int serverLines){
-	int i = 1;
+bool Validator::checkBraces(std::vector<std::string>*	lines, size_t serverLines){
+	size_t i = 1;
 	if ((*lines)[i] == lines->back() || (*lines)[i].compare("{") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Server block should be enclosed in curly braces!");
 		return false;
 	}
 	int openBraces = 1;
-	while (i <= serverLines ){
-		if ((*lines)[serverLines].compare("{") != 0){
+	while (++i <= serverLines ){
+		if ((*lines)[i].compare("{") == 0){
 			openBraces++;
 		}
-		else if ((*lines)[serverLines].compare("}") != 0){
+		else if ((*lines)[i].compare("}") == 0){
 			openBraces--;
 		}
 		if (openBraces < 0){
@@ -267,13 +267,11 @@ static bool checkBraces(std::vector<std::string>*	lines, int serverLines){
 		return false;
 		}
 		if (openBraces > 2){
-			Logger::log(E_ERROR, COLOR_RED, "There could only be 2 layers of blocks in config file\
-			, the server block and the location block");
+			Logger::log(E_ERROR, COLOR_RED, "There could only be 2 layers of blocks in config file, the server block and the main/location block");
 		return false;
 		}
 		if (openBraces == 0)
 			break;
-		i++;
 	}
 	if (openBraces != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Opening curly braces don't match closing ones!");
@@ -296,7 +294,7 @@ static bool checkBraces(std::vector<std::string>*	lines, int serverLines){
 *  lines into the mainBlock map. 
 *  When innerBlock is saved in inner block map, removes the coresponding lines from lines
 */
-bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLines, int i){
+bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t serverLines, size_t i){
 
 	//if innerBlock is not empty loop through and earases all 
 	while (!innerBlock.empty())
@@ -323,7 +321,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 				while ( std::getline(valuesVec, value, ' ' )){
 					values.push_back(value);
 				}
-				if (key.compare("root") && values.size() >= 1) 
+				if (key.compare("root") == 0 && values.size() >= 1) 
 					root = values[0]; 
 				if ( innerBlock.find(key) == innerBlock.end() )
 					innerBlock[key] = values;
@@ -340,6 +338,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 	}
 	//adds root directory to the begining of the index file
 	if ( innerBlock.find("index") != innerBlock.end() ){
+		root.append("/");
 		root.append(innerBlock.find("index")->second[0]);
 		innerBlock.find("index")->second[0] = root;
 	}
@@ -352,7 +351,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 	return true;
 }
 
-static bool checkLocationBlock(std::vector<std::string>*	lines, int serverLines){
+bool Validator::checkLocationBlock(std::vector<std::string>*	lines, size_t serverLines){
 	(void) lines;
 	(void) serverLines;
 	return true;
@@ -412,7 +411,7 @@ bool Validator::checkMainBlockKeyValues(void){
 *  
 *   
 */
-bool Validator::checkMainBlock(std::vector<std::string>*	lines, int serverLines){
+bool Validator::checkMainBlock(std::vector<std::string>*	lines, size_t serverLines){
 
 	if ((*lines)[2] == lines->back() || (*lines)[2].compare("main") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to begin with a main block!");
@@ -444,9 +443,11 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines, int serverLines)
 *  main block validator and then location block validators if they
 *  return true then this server block is valid, otherwise it' not. 
 */
-bool Validator::validate_server(std::vector<std::string>*	lines, int serverLines){
-	if (!checkBraces(lines, serverLines))
+bool Validator::validate_server(std::vector<std::string>*	lines, size_t serverLines){
+	if (!checkBraces(lines, serverLines)){
+		Logger::log(E_ERROR, COLOR_RED, "Please note that lines with braces can not be followed by any charachters, even whitespace!");
 		return false;
+	}
 	if (!checkMainBlock(lines, serverLines))
 		return false;
 	if (!checkLocationBlock(lines, serverLines))
@@ -489,7 +490,7 @@ bool Validator::store_lines(std::string	input){
 
 	infile.open(input);
 	if(infile.fail() == true){
-		Logger::log(E_ERROR, COLOR_RED, "The field for host has invalid value!");
+		Logger::log(E_ERROR, COLOR_RED, "Failed to open config file!");
 		return false;
 	}
 	
