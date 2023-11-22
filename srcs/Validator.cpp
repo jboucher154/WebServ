@@ -235,7 +235,7 @@ bool Validator::cgiPath( std::string value ){
 */
 size_t Validator::getServerLines(std::vector<std::string>*	lines){
 	size_t serverLines = 1;
-	while ( (*lines).size() > serverLines || (*lines)[serverLines].compare("server") == 0 ){
+	while ( (*lines).size() > serverLines && (*lines)[serverLines].compare("server") != 0 ){
 		serverLines++;
 	}
 	return serverLines;
@@ -250,12 +250,18 @@ size_t Validator::getServerLines(std::vector<std::string>*	lines){
 */
 bool Validator::checkBraces(std::vector<std::string>*	lines, size_t serverLines){
 	size_t i = 1;
-	if ((*lines)[i] == lines->back() || (*lines)[i].compare("{") != 0){
-		Logger::log(E_ERROR, COLOR_RED, "Server block should be enclosed in curly braces!");
-		return false;
-	}
+	// if ((*lines)[i] == lines->back() || (*lines)[i].compare("{") != 0){
+	// 	Logger::log(E_ERROR, COLOR_RED, "Server block should be enclosed in curly braces!");
+	// 	return false;
+	// }
 	int openBraces = 1;
-	while (++i <= serverLines ){
+	// if (!lines->empty()){
+
+	// 	for (std::vector<std::string>::iterator it = lines->begin(); it != lines->end(); it++){
+	// 		std::cout << *it << std::endl;
+	// 	}
+	// }
+	while (++i < serverLines ){
 		if ((*lines)[i].compare("{") == 0){
 			openBraces++;
 		}
@@ -277,7 +283,7 @@ bool Validator::checkBraces(std::vector<std::string>*	lines, size_t serverLines)
 		Logger::log(E_ERROR, COLOR_RED, "Opening curly braces don't match closing ones!");
 		return false;
 	}
-	if (i != serverLines){
+	if (i != serverLines - 1){
 		Logger::log(E_ERROR, COLOR_RED, "There could not be anything in between servr blocks!");
 		return false;
 	}
@@ -304,7 +310,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t serverL
     std::string value;
 	std::string	root = "";
 
-	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines){
+	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines - 1){
 			//first checks that line ends in semicolon and has key and value seperated by a space 
 			if( (*lines)[i].find_last_of(';') != (*lines)[i].size() - 1){
 				Logger::log(E_ERROR, COLOR_RED, "Ending of each line of the main block should be marked by a semicolon!");
@@ -343,7 +349,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t serverL
 		innerBlock.find("index")->second[0] = root;
 	}
 	//when innerBlock is saved in inner block map removes the coresponding lines from lines 
-	while (i >= 0){
+	while (i != 0){
 		lines->erase(lines->begin());
 		i--;
 	}
@@ -445,7 +451,7 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines, size_t serverLin
 */
 bool Validator::validate_server(std::vector<std::string>*	lines, size_t serverLines){
 	if (!checkBraces(lines, serverLines)){
-		Logger::log(E_ERROR, COLOR_RED, "Please note that lines with braces can not be followed by any charachters, even whitespace!");
+		Logger::log(E_ERROR, COLOR_RED, "Please also note that lines with braces can not be followed by any charachters, even whitespace!");
 		return false;
 	}
 	if (!checkMainBlock(lines, serverLines))

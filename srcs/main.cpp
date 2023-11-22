@@ -21,7 +21,7 @@ int  main( int argc, char *argv[]) {
     return 1;
   }
   else 
-    Validator::validate("defaultConfigPath");
+    Validator::validate("config/good/default.conf");
   std::vector<Server> server_vector;
 
   Server  server1("Server-1", 8080, "127.0.0.1");
