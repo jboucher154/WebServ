@@ -1,7 +1,7 @@
 #include "Validator.hpp"
 
 std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
-		 "client_max_body_size", "index", "error_page"};
+		 "client_max_body_size", "index", "error_page_404", "error_page_405", "error_page_500"};
 std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_array
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
 std::string valid_location_keys_array[] = {"allow_methods", " autoindex", "index", "return",
@@ -323,7 +323,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, int serverLine
 				while ( std::getline(valuesVec, value, ' ' )){
 					values.push_back(value);
 				}
-				if (key.compare("root"))
+				if (key.compare("root") && values.size() >= 1) 
 					root = values[0]; 
 				if ( innerBlock.find(key) == innerBlock.end() )
 					innerBlock[key] = values;
@@ -368,7 +368,7 @@ static bool checkLocationBlock(std::vector<std::string>*	lines, int serverLines)
 bool Validator::checkMainBlockKeyValues(void){
 
 	t_main_block_functs  mainFunct[] = { &Validator::listen, &Validator::serverName, &Validator::host, &Validator::root,
-				&Validator::clientMaxBodySize, &Validator::index, &Validator::errorPage};
+				&Validator::clientMaxBodySize, &Validator::index, &Validator::errorPage, &Validator::errorPage, &Validator::errorPage};
 	// if (!lines.empty()){
 
 	// 	for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
@@ -380,12 +380,17 @@ bool Validator::checkMainBlockKeyValues(void){
 		//std::cout << "key : " << outerIt->first << std::endl;
 		//std::cout << "value : " << outerIt->second[0] << std::endl;
 		int i = 0;
-		while (i < 7 && valid_main_keys[i].compare(outerIt->first))
+		while (i < 9 && valid_main_keys[i].compare(outerIt->first))
 			i++ ;
-		if (i == 7){
+		if (i == 9){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key.", (*outerIt).first.c_str());
 			return false;
 		}
+		if ( outerIt->second.size() > 1 ){
+			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
+			return false;
+		}
+
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
 			//std::cout << "value : " << *innerIt << std::endl;
 			if (!mainFunct[i](*innerIt)){
