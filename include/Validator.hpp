@@ -46,7 +46,7 @@ private:
 	static bool checkMainBlockKeyValues(void);
 	static bool checkLocationBlock(std::vector<std::string>*	lines, size_t serverLines);
 	static bool checkBraces(std::vector<std::string>*	lines, size_t serverLines);
-	static size_t getServerLines(std::vector<std::string>*	lines);
+	static size_t countServerLines(std::vector<std::string>*	lines);
 	
 	Validator();
 	Validator( const Validator& src );

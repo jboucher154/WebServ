@@ -29,6 +29,7 @@ Validator::Validator(){
 *  This destructor is private.
 */
 Validator::~Validator(){
+
 }
 
 /*! \brief Validator's class copy constructor
@@ -60,7 +61,7 @@ Validator& Validator::operator=( const Validator& rhs ){
 bool Validator::listen( std::string value ){
 
 	if ( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for listening port can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for listening port value can not be empty!");
 		return false;
 	}
 	if (!isAllDigit(value)){
@@ -152,13 +153,13 @@ bool Validator::clientMaxBodySize( std::string value ){
 		return false;
 	}
 	try{
-		if (ft_stoi(value) < 0 || ft_stoi(value) > 2147483647 ){
-			Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a number between 1025 and 65535!");
+		if (ft_stoi(value) < 0 || ft_stoi(value) > INT_MAX ){ 
+			Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max int!");
 			return false;
 		}
 	}
 	catch(std::exception &e){
-		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
+		Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max int!");
 			return false;
 	}
 	return true;
@@ -170,7 +171,6 @@ bool Validator::index( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
 		return false;
 	}
-	//std::cout << value << std::endl;
 	if (!isFile(value)){
 		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
@@ -233,7 +233,7 @@ bool Validator::cgiPath( std::string value ){
 *  counts how many lines there are in this server block up until the
 *  next server block or the end. 
 */
-size_t Validator::getServerLines(std::vector<std::string>*	lines){
+size_t Validator::countServerLines(std::vector<std::string>*	lines){
 	size_t serverLines = 1;
 	while ( (*lines).size() > serverLines && (*lines)[serverLines].compare("server") != 0 ){
 		serverLines++;
@@ -450,6 +450,7 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines, size_t serverLin
 *  return true then this server block is valid, otherwise it' not. 
 */
 bool Validator::validate_server(std::vector<std::string>*	lines, size_t serverLines){
+
 	if (!checkBraces(lines, serverLines)){
 		Logger::log(E_ERROR, COLOR_RED, "Please also note that lines with braces can not be followed by any charachters, even whitespace!");
 		return false;
@@ -471,14 +472,15 @@ bool Validator::validate_server(std::vector<std::string>*	lines, size_t serverLi
 *  elements left in lines it calls itself to validate the rest of the config file. 
 */
 bool Validator::validate_lines(std::vector<std::string>*	lines){
+
 	if ( lines->front().compare("server") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Config file should start with a server block!");
 		return false;
 	}
-	int serverLines = getServerLines(lines);
+	int serverLines = countServerLines(lines);
 	if (!validate_server(lines, serverLines))
 		return false;
-	// if ((*lines)[serverLines] != lines->back())
+	// if (!(*lines).empty())
 	// 	return (validate_lines(lines));
 	return true;
 }
@@ -495,7 +497,7 @@ bool Validator::store_lines(std::string	input){
 	std::istringstream 			ss;
 
 	infile.open(input);
-	if(infile.fail() == true){
+	if(infile.fail() == true || infile.bad() == true){
 		Logger::log(E_ERROR, COLOR_RED, "Failed to open config file!");
 		return false;
 	}

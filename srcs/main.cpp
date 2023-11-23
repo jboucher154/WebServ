@@ -22,7 +22,11 @@ int  main( int argc, char *argv[]) {
   }
   else if (argc == 1){
     std::cout << "here" << std::endl;
-    Validator::validate("config/good/default.conf");
+    if (!Validator::validate("config/good/default.conf")){
+      Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
+      return 1;
+    }
+
   }
     
   std::vector<Server> server_vector;
