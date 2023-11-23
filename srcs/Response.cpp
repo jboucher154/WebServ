@@ -26,7 +26,6 @@ Response::Response( Server* server )
 	if (Response::mime_types_.empty()) {
 		intializeMimeTypes();
 	}
-
 }
 
 /*! \brief Copy constructor calls assignment operator.
@@ -98,7 +97,7 @@ void	Response::generate( Request* request ) {
 
 	this->request_ = request;
 	if (this->server_ == NULL) {
-		Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Oh shit no sever here!");
+		Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Response server is NULL");
 		return ;
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
@@ -108,11 +107,11 @@ void	Response::generate( Request* request ) {
 		}
 		else {
 			this->status_code_ = 400; //Bad Request
-			Logger::log(E_DEBUG, COLOR_CYAN, "Response Generated before request complete.");
+			Logger::log(E_DEBUG, COLOR_CYAN, "Bad request, Response Generated before request complete.");
 		}
 		return ;
 	}
-	setResourceLocationAndName(this->request_->getRequestLineValue("uri"));
+	setResourceLocationAndName(this->request_->getRequestLineValue("uri")); // might not be needed?
 	if (!uriLocationValid_()) {
 		this->status_code_ = 404;
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found checking uriLocationValid: `%s'", this->request_->getRequestLineValue("uri").c_str());
@@ -149,7 +148,8 @@ std::string&	Response::get( /*socket to write to?*/ ) {
 	// std::string response;
 	
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
-	if (this->status_code_ >= 400) {
+	if (this->status_code_ >= 400 || this->status_code_ == 0) { // any code that should trigger the mnimal response
+		//check it there is fancy error page in server
 		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
 		this->response_mime_ = Response::mime_types_["html"];
 	}
@@ -245,13 +245,15 @@ void	Response::intializeMimeTypes( void ) {
 // also check for execute for delete??? write and execute on the parent directory ...
 bool	Response::validateResource_( void ) {
 
-	std::string resource_path = buildResourcePath();
-	std::string	method = this->request_->getRequestLineValue("method");
+	std::string resource_path = buildResourcePath(); //adjust based on the new path from config
 
 	if (access(resource_path.c_str(), F_OK) != 0) {
 		this->status_code_ = 404;
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->request_->getRequestLineValue("uri").c_str());
 		return (false);
+	}
+	if (this->request_->getRequestLineValue("method") == "DELETE") {
+		return ;
 	}
 	else if (this->request_->getCgiFlag() && access(resource_path.c_str(), X_OK) != 0) {
 		this->status_code_ = 403;
@@ -263,6 +265,7 @@ bool	Response::validateResource_( void ) {
 		Logger::log(E_DEBUG, COLOR_CYAN, "403 read access not allowed for resource file: `%s'", this->request_->getRequestLineValue("uri").c_str());
 		return (false);
 	}
+	//check that the script is listed in cgi location
 	return (true);
 }
 
@@ -276,7 +279,7 @@ std::string&	Response::addHeaders_( std::string& response) const {
 	//always
 	response += this->timeStampHeader_() + CRLF;
 	response += this->contentLengthHeader_() + CRLF;
-	response += this->contentTypeHeader_() + CRLF;
+	response += this->contentTypeHeader_() + CRLF; //cgi test/html
 	response += this->contentLocationHeader_() + CRLF;
 	//between headers and body
 	response += CRLF;
@@ -358,13 +361,14 @@ void	Response::setResourceLocationAndName( std::string uri ) {
 				this->resource_name_ = this->server_->getIndex();
 			}
 			else {
-				this->status_code_ = 404;
-				Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+				this->resource_name_ = "index.html"; //might not be needed
+			// 	this->status_code_ = 404;
+			// 	Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
 			}
 		}
 		else {
-			this->resource_location_ = uri.substr(0, last_slash_pos + 1);
-			this->resource_name_ = uri.substr(last_slash_pos + 1);
+			this->resource_location_ = uri.substr(0, last_slash_pos + 1); //path only
+			this->resource_name_ = uri.substr(last_slash_pos + 1); //filename only | if index was specified by a location key or was root
 		}
 	}
 }
@@ -409,6 +413,7 @@ std::vector<std::string>	Response::getAcceptedFormats( void ) {
 
 //check for cgi
 //should check for redirection/ alias too
+//rewrite based on config
 std::string	Response::buildResourcePath( void ) {
 
 	std::string resource_path;
@@ -428,6 +433,10 @@ void	Response::setMimeType( void ) {
 
 	size_t	extension_start = this->resource_name_.find_last_of('.');
 
+	if (this->request_->getCgiFlag()) {
+		this->response_mime_ = Response::mime_types_["html"];
+		return ;
+	}
 	if (extension_start == std::string::npos) {
 		this->response_mime_ = Response::mime_types_["unknown"];
 	}
@@ -453,7 +462,12 @@ void	Response::getMethod_( void ) {
 		return ;
 	}
 	if (accepted_formats.empty() || std::count(accepted_formats.begin(), accepted_formats.end(), "*/*") || std::count(accepted_formats.begin(), accepted_formats.end(), this->response_mime_)) {
-		if (this->response_mime_.compare(0, 4, "text") == 0) {
+		
+		if (this->request_->getCgiFlag()) {
+			//call the cgi here to get the generated body
+			//need cgi to return or set the body of the response
+		}
+		else if (this->response_mime_.compare(0, 4, "text") == 0) {
 			buildBody_(resource_path, std::ifstream::in);
 		}
 		else {
@@ -565,9 +579,9 @@ void	Response::parseMultiPartFormData( std::string& boundary ) {
 				file_datum += *it;
 			}
 		}
-	}
-	if (!file_datum.empty()) {
-		this->file_data.push_back(file_datum);
+		if (!file_datum.empty()) {
+			this->file_data.push_back(file_datum);
+		}
 	}
 }
 
@@ -597,7 +611,10 @@ void	Response::postMethod_( void ) {
 	std::vector<std::string>	content_type_values = this->GetContentTypeValues_();
 	bool						cgi_flag = this->request_->getCgiFlag();
 	
-	(void)cgi_flag;//
+	if (!cgi_flag) {
+		this->status_code_ = 406; //not acceptable???
+		return ;
+	}
 	//prepare CGI data ..
 	if (content_type_values.front() == "multipart/form-data") {
 		//handle form data
@@ -618,7 +635,8 @@ void	Response::postMethod_( void ) {
 		Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "POST request without form-data detected, not currently processed");
 		//set error code?
 	}
-	//for non cgi??
+
+	//just for now
 	if (this->status_code_ == 0) {
 		std::string path = buildResourcePath();
 		buildBody_(path, std::ifstream::in);

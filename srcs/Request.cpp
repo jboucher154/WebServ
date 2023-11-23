@@ -81,8 +81,8 @@ void	Request::add( std::string to_add ) {
 		Logger::log(E_ERROR, COLOR_RED, e.what());
 		this->sever_error_ = true;
 	}
-	std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
-	printRequest();//
+	// std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
+	printRequest();//debugging
 }
 
 /*! \brief clears all containers and resets all values to intial state
@@ -145,7 +145,6 @@ bool	Request::getCgiFlag( void ) const {
 	return (this->cgi_flag_);
 }
 
-
 size_t		Request::getBodySize( void ) const {
 	
 	return (this->body_size_);
@@ -193,7 +192,6 @@ std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void
 	return (this->headers_.begin());
 }
 
-
 std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void ) const {
 
 	return (this->headers_.end());
@@ -237,7 +235,13 @@ std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
 void	Request::setBodySize( void ) {
 
 	std::string	content_length = this->headers_["Content-Length"];
-	this->body_size_ = ft_stoi(content_length);
+	try {
+		this->body_size_ = ft_stoi(content_length);
+	}
+	catch (std::exception& e){
+		Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on coversion.");
+		//413 content too large
+	}
 }
 
 void	Request::setChunked( void ) {
@@ -272,7 +276,6 @@ void	Request::setCgiFlag( void ) {
 		this->cgi_flag_ = false;
 	}
 }
-
 
 void	Request::setRequestAttributes( void ) {
 
