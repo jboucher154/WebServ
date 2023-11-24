@@ -57,6 +57,7 @@ Validator& Validator::operator=( const Validator& rhs ){
 *       
 *  Checks if listening port has a value and that it is 
 *  a number and that number is an int and that it is within the valid range.
+*  when listening port is checkd its value is pushed back to its server.
 */
 bool Validator::listen( std::string value ){
 
@@ -79,6 +80,8 @@ bool Validator::listen( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
 			return false;
 	}
+	//push back to its server
+	servers[servers.size() - 1].setListeningPort(ft_stoi(value));
 	return true;
 	
 }
@@ -87,6 +90,7 @@ bool Validator::listen( std::string value ){
 *       
 *  Checks if listening port has a value and that it is
 *  a string consist of only ascii chatacters, digits, undescore and dot.
+*  when server name is checkd its value is pushed back to its server.
 */
 bool Validator::serverName( std::string value ){
 
@@ -99,6 +103,8 @@ bool Validator::serverName( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "Server name can not have chatacters other than digits alphabetical characters, undescore and dot!");
 		return false;
 	}
+	//push back to its server
+	servers[servers.size() - 1].setServerName(value);
 	return true;
 }
 
@@ -106,6 +112,7 @@ bool Validator::serverName( std::string value ){
 *       
 *  Checks if host has a value and then calls on is valid ip address
 *  to check if the value is a valid ip address.
+*  when host is checkd its value is pushed back to its server.
 */
 bool Validator::host( std::string value ){
 
@@ -117,12 +124,15 @@ bool Validator::host( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "Host has to have a valid IP as it's value!");
 		return false;
 	}
+	//push back to its server
+	servers[servers.size() - 1].setHost(value);
 	return true;
 }
 
 /*! \brief validates root value
 *       
 *  Checks if root has a value and that it is a directory
+*  when root is checkd its value is pushed back to its server.
 */
 bool Validator::root( std::string value ){
 
@@ -134,6 +144,8 @@ bool Validator::root( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "Root has to be an existing directory!");
 		return false;
 	}
+	//push back to its server
+	servers[servers.size() - 1].setRoot(value);
 	return true;
 }
 
@@ -141,6 +153,7 @@ bool Validator::root( std::string value ){
 *       
 *  Checks if client max body size has a value and that it is 
 *  a number and that number is an int and that it is within the valid range.
+*  when client max body size is checkd its value is pushed back to its server.
 */
 bool Validator::clientMaxBodySize( std::string value ){
 
@@ -162,9 +175,16 @@ bool Validator::clientMaxBodySize( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max int!");
 			return false;
 	}
+	//push back to its server
+	servers[servers.size() - 1].setClientMaxBodySize(ft_stoi(value));
 	return true;
 }
 
+/*! \brief validates index's value
+*       
+*  Checks if the index is an existing
+*  when index is checkd its value is pushed back to its server.
+*/
 bool Validator::index( std::string value ){
 
 	if ( value.empty() ){
@@ -175,6 +195,8 @@ bool Validator::index( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
 	}
+	//push back to its server
+	servers[servers.size() - 1].setIndex(value);
 	return true;
 }
 
@@ -396,7 +418,9 @@ bool Validator::checkMainBlockKeyValues(void){
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
 		}
-
+		//push back one more server to the server vector
+		Server	server;
+		servers.push_back(server);
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
 			//std::cout << "value : " << *innerIt << std::endl;
 			if (!mainFunct[i](*innerIt)){
@@ -414,6 +438,8 @@ bool Validator::checkMainBlockKeyValues(void){
 	}
 	return true;
 }
+
+
 
 /*! \brief checks the main block
 *       
@@ -467,6 +493,13 @@ bool Validator::validate_server(std::vector<std::string>*	lines, size_t serverLi
 		return false;
 	if (!checkLocationBlock(lines, serverLines))
 		return false;
+	else{
+		//push back one more server to the server vector
+		Server	server;
+		servers.push_back(server);
+		//push back main block to it
+		servers[servers.size() - 1].setLocation(innerBlock, "main");
+	}
 	return true;
 }
 
@@ -572,3 +605,14 @@ bool Validator::validate(std::string	input){
 	//if there are more lines do step 2. to 3. again
 	//if there are more lines 
 }
+
+std::vector<Server>* Validator::parse(std::string	input){
+	if (Validator::validate(input))
+		return &servers;
+	return NULL;
+}
+//To do:
+//check if error pages exist.
+//check if files like index.html can be opened.
+//check if server values are set correctly
+//check if the compilation issue is due to server being a pointer

@@ -17,12 +17,12 @@ int  main( int argc, char *argv[]) {
     Logger::log(E_INFO, COLOR_GREEN, "Usage: ./Webserver config.conf or ./Webserver");
     return 1;
   }
-  else if (argc == 2 && !Validator::validate(argv[1])) {
+  else if (argc == 2 && Validator::parse(argv[1]) != NULL) {
     return 1;
   }
   else if (argc == 1){
     std::cout << "here" << std::endl;
-    if (!Validator::validate("config/good/default.conf")){
+    if (Validator::parse("config/good/default.conf") != NULL){
       Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
       return 1;
     }
@@ -31,11 +31,11 @@ int  main( int argc, char *argv[]) {
     
   std::vector<Server> server_vector;
 
-  Server  server1("Server-1", 8080, "127.0.0.1");
+  Server  server1("Server-1", 8080, "127.0.0.1", "./resources", "index,html", "2147483647");
   server_vector.push_back(server1);
   std::cout << (server1.isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
   std::cout << (server_vector.front().isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
-  Server  server2("Server-2", 9090, "127.0.0.1");
+  Server  server2("Server-2", 9090, "127.0.0.1", "./resources", "index,html", "2147483647");
   server_vector.push_back(server2);
   //SELECT VERSION
   while (true) {

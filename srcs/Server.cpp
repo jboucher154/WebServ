@@ -10,28 +10,50 @@
 // Macro used for listen()
 #define	LISTEN_BACKLOG	20
 
+/*! \brief Server class constructor
+*       
+*
+*  Server class constructor, This constructor is not public and it is advised that
+*  it is not used, since it leaves the required fields of a Server uninitialized.
+*/
 Server::Server(){
 }
 
-Server::Server( std::string serverName, int port,  std::string host ){
+/*! \brief Server class public constructor
+*       
+*
+*  Server class constructor. Constructs an instance and initializes the required values with passed values.
+*/
+Server::Server( std::string serverName, int port,  std::string host, std::string root
+		, std::string index, std::string client_max_body_size ){
 	this->setServerName(serverName);
 	this->setHost(host);
-	this->setRoot("./resources");
-	this->setIndex("index.html");
-	this->setClientMaxBodySize(30000);
+	this->setRoot(root);
+	this->setIndex(index);
+	this->setClientMaxBodySize(ft_stoi(client_max_body_size));
 	this->setListeningPort(port);
 	std::string innerValues[] = {"HEAD", "GET"};
 	size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
 	std::vector<std::string> values(innerValues, innerValues + numValues);
-	this->setLocation( "/blue", "allow_methods", values );
-	this->setLocation( "/", "allow_methods", values );
+	this->setKeyValueInLocation( "/blue", "allow_methods", values );
+	this->setKeyValueInLocation( "/", "allow_methods", values );
 
 }
 
+/*! \brief Server class copy constructor
+*       
+*
+*  Server class copy constructor, calls on assignment operator to asign the instance.
+*/
 Server::Server( const Server& src ){
 	*this = src;
 }
 
+/*! \brief Server class asignment operator
+*       
+*
+*  Server class asignment operator, initializes all existing values with passed values from rhs instance.
+*/
 Server& Server::operator=( const Server& rhs ){
 	if (this != &rhs ){
 		this->listening_port_ = rhs.getListeningPortInt();
@@ -41,47 +63,109 @@ Server& Server::operator=( const Server& rhs ){
 		this->address_ = rhs.getAddress();
 		this->client_max_body_size_ = rhs.getClientMaxBodySize();
 		this->index_ = rhs.getIndex();
-		this->error_page_ = rhs.getErrorPage();
+		this->error_page_404 = rhs.getErrorPage_404();
+		this->error_page_405 = rhs.getErrorPage_405();
+		this->error_page_500 = rhs.getErrorPage_500();
 		this->location = rhs.location;
 	}
 	return *this;
 }
 
+/*! \brief Server class destructor
+*       
+*
+*  Server class destructor, destroys the instance.
+*/
 Server::~Server(){
 }
 
+/*! \brief sets a vlaue for the listening port
+*       
+*
+*  sets a vlaue for the listening port.
+*/
 void	Server::setListeningPort( int port ){
 
 	this->listening_port_ = port;
 }
 
+/*! \brief sets a vlaue for the server name
+*       
+*
+*  sets a vlaue for the server name.
+*/
 void	Server::setServerName( std::string serverName ){
 
 	this->server_name_ = serverName;
 }
 
+/*! \brief sets a vlaue for the root
+*       
+*
+*  sets a vlaue for the root.
+*/
 void	Server::setRoot( std::string root ){
 	this->root_ = root;
 }
 
+/*! \brief sets a vlaue for the host
+*       
+*
+*  sets a vlaue for the host.
+*/
 void	Server::setHost( std::string host ){
 
 	this->host_ = host;
 }
 
+/*! \brief sets a vlaue for the client max body size
+*       
+*
+*  sets a vlaue for the client max body size.
+*/
 void	Server::setClientMaxBodySize( int clientMaxBodySize ){
 
 	this->client_max_body_size_ = clientMaxBodySize;
 }
 
+/*! \brief sets a vlaue for the index html
+*       
+*
+*  sets a vlaue for the index html.
+*/
 void	Server::setIndex( std::string index ){
 
 	this->index_ = index;
 }
 
-void	Server::setErrorPage( std::string errorPage ){
+/*! \brief sets a vlaue for error page 404
+*       
+*
+*  sets a vlaue for error page 404.
+*/
+void	Server::setErrorPage_404( std::string errorPage ){
 
-	this->error_page_ = errorPage;
+	this->error_page_404 = errorPage;
+}
+
+/*! \brief sets a vlaue for error page 405
+*       
+*
+*  sets a vlaue for error page 405.
+*/
+void	Server::setErrorPage_405( std::string errorPage ){
+
+	this->error_page_405 = errorPage;
+}
+
+/*! \brief sets a vlaue for error page 500
+*       
+*
+*  sets a vlaue for error page 500.
+*/
+void	Server::setErrorPage_500( std::string errorPage ){
+
+	this->error_page_500 = errorPage;
 }
 
 /*! \brief add a new element to the location map
@@ -92,7 +176,7 @@ void	Server::setErrorPage( std::string errorPage ){
 *  If the location block doesn't exist creats it and adds the key and value pair
 */
 
-void Server::setLocation(std::string locationBlockKey, std::string key, std::vector<std::string> values) {
+void Server::setKeyValueInLocation(std::string locationBlockKey, std::string key, std::vector<std::string> values) {
     std::map<std::string, std::map<std::string, std::vector<std::string> > >::iterator outerMapIt = this->location.find(locationBlockKey);
 
     if (outerMapIt != this->location.end()) {
@@ -111,6 +195,10 @@ void Server::setLocation(std::string locationBlockKey, std::string key, std::vec
     }
 }
 
+void	Server::setLocation( std::map<std::string, std::vector<std::string> >	innerBlock, std::string key ){
+
+	(this->location)[key] = innerBlock;
+}
 
 /*************ssalmi's functions for server management*************/
 
@@ -169,11 +257,21 @@ std::string	Server::getServerIdforLog( void ) const {
 
 /**************************/
 
+/*! \brief returns the listening port as an int
+*       
+*
+*  Returns the listening port as an int.
+*/
 int	Server::getListeningPortInt( void ) const{
 
 	return (this->listening_port_);
 }
 
+/*! \brief returns the listening port as a string
+*       
+*
+*  Returns the listening port as a string.
+*/
 std::string	Server::getListeningPortString( void ) const{
 
 	std::ostringstream strStream;
@@ -182,51 +280,117 @@ std::string	Server::getListeningPortString( void ) const{
 	return (strStream.str());
 }
 
+/*! \brief returns the server name
+*       
+*
+*  Returns the server name.
+*/
 std::string		Server::getServerName( void ) const{
 
 	return (this->server_name_);
 }
 
+/*! \brief returns the root
+*       
+*
+*  Returns the root.
+*/
 std::string	Server::getRoot( void ) const{
 
 	return (this->root_);
 }
 
+/*! \brief returns the host
+*       
+*
+*  Returns the host.
+*/
 std::string	Server::getHost( void ) const{
 
 	return (this->host_);
 }
 
+/*! \brief returns the host as and in_addr_t
+*       
+*
+*  Returns the host as and in_addr_t.
+*/
 in_addr_t	Server::getHostInAddr_t( void ) const{
 
 	return (static_cast<in_addr_t>(ft_stoi(this->host_)));
 }
 
+/*! \brief returns the lient max body size
+*       
+*
+*  Returns the lient max body size.
+*/
 int	Server::getClientMaxBodySize( void ) const{
 
 	return (this->client_max_body_size_);
 }
 
+/*! \brief returns the index html
+*       
+*
+*  Returns the index html.
+*/
 std::string	Server::getIndex( void ) const{
 
 	return (this->index_);
 }
 
-std::string	Server::getErrorPage( void ) const{
+/*! \brief returns the error 404 html
+*       
+*
+*  Returns the error 404 html.
+*/
+std::string	Server::getErrorPage_404( void ) const{
 
-	return (this->error_page_);
+	return (this->error_page_404);
 }
+
+/*! \brief returns the error 405 html
+*       
+*
+*  Returns the error 405 html.
+*/
+std::string	Server::getErrorPage_405( void ) const{
+
+	return (this->error_page_405);
+}
+
+/*! \brief returns the error 500 html
+*       
+*
+*  Returns the error 500 html.
+*/
+std::string	Server::getErrorPage_500( void ) const{
+
+	return (this->error_page_500);
+}
+
 
 struct sockaddr_in	Server::getAddress( void ) const{
 
 	return(this->address_);
 }
 
+/*! \brief returns the number of location blocks
+*       
+*
+*  Returns the number of location blocks.
+*/
 int	Server::getLocationBlockCount( void ) const{
 
 	return (this->location.size());
 }
 
+/*! \brief returns a list of location block keys
+*       
+*
+*  Returns a list of location block keys.
+*/
 std::vector<std::string>	Server::getLocationBlockKeys( void ) const{
 
 	std::vector<std::string> locationBlockKeys;
@@ -236,7 +400,11 @@ std::vector<std::string>	Server::getLocationBlockKeys( void ) const{
 	return locationBlockKeys;
 }
 
-
+/*! \brief returns a list keys within a certain location block
+*       
+*
+*  Returns a list keys within a certain location block.
+*/
 const std::vector<std::string> Server::getLocationKeys(std::string locationBlockKey) const {
 
     std::vector<std::string> locationKeys;
@@ -253,6 +421,11 @@ const std::vector<std::string> Server::getLocationKeys(std::string locationBlock
     return locationKeys;
 }
 
+/*! \brief returns the number of location block keys
+*       
+*
+*  Returns the number of location block keys.
+*/
 int	Server::getLocationBlockCount( std::string locationBlockKey ) const{
 
 	int locationKeysCout = 0;
@@ -319,6 +492,11 @@ bool	Server::isLocationInServer( std::string locationBlockKey ) const{
 	return false;
 }
 
+/*! \brief checks if a certain value is listed for a certain key in a certan location
+*       
+*
+*  checks if a certain value is listed for a certain key in a certan location.
+*/
 bool	Server::isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const{
 
 	const std::vector<std::string>*	values = this->getLocationValue(locationBlockKey, key);
@@ -331,11 +509,21 @@ bool	Server::isValueListedForKey( std::string locationBlockKey, std::string key,
 			return (true);
 }
 
+/*! \brief checks if a certain extention is listed under cgi extentions 
+*       
+*
+*  checks if a certain extention is listed under cgi extentions .
+*/
 bool	Server::isExtentionOnCgiList( std::string extention ) const{
 
 	return (isValueListedForKey("/cgi-bin", "cgi_ext", extention));
 }
 
+/*! \brief checks if a certain script is listed under cgi scripts 
+*       
+*
+*  checks if a certain script is listed under cgi scripts .
+*/
 bool	Server::isScriptOnCgiList( std::string script ) const{
 
 	return (isValueListedForKey("/cgi-bin", "index", script));

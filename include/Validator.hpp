@@ -47,7 +47,8 @@ private:
 	static bool checkLocationBlock(std::vector<std::string>*	lines, size_t serverLines);
 	static bool checkBraces(std::vector<std::string>*	lines, size_t serverLines);
 	static size_t countServerLines(std::vector<std::string>*	lines);
-	
+	static bool validate( std::string	infile );
+
 	Validator();
 	Validator( const Validator& src );
 	Validator& operator=( const Validator& rhs );
@@ -56,7 +57,8 @@ private:
 public:
 
 	static std::vector<Server>			servers;
-	static bool validate( std::string	infile );
+	static std::vector<Server>* parse(std::string	input);
+	
 	
 };
 
