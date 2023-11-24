@@ -380,7 +380,7 @@ bool Validator::checkMainBlockKeyValues(void){
 	// 		std::cout << *it << std::endl;
 	// 	}
 	// }
-
+	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
 		//std::cout << "key : " << outerIt->first << std::endl;
 		//std::cout << "value : " << outerIt->second[0] << std::endl;
@@ -391,6 +391,7 @@ bool Validator::checkMainBlockKeyValues(void){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key.", (*outerIt).first.c_str());
 			return false;
 		}
+		keys.push_back(i);
 		if ( outerIt->second.size() > 1 ){
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
@@ -403,6 +404,13 @@ bool Validator::checkMainBlockKeyValues(void){
 				return false;
 			}
 		}
+	}
+	for (int i = 0; i < 9; i++){
+		if (std::find(keys.begin(), keys.end(), i) == keys.end()){
+			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_main_keys[i].c_str());
+			return false;
+		}
+
 	}
 	return true;
 }
