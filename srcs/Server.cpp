@@ -318,3 +318,25 @@ bool	Server::isLocationInServer( std::string locationBlockKey ) const{
 	}
 	return false;
 }
+
+bool	Server::isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const{
+
+	const std::vector<std::string>*	values = this->getLocationValue(locationBlockKey, key);
+		
+		if (!values || values->empty())
+			return (false);
+		else if (std::find(values->begin(), values->end(), value) == values->end())
+			return (false);
+		else
+			return (true);
+}
+
+bool	Server::isExtentionOnCgiList( std::string extention ) const{
+
+	return (isValueListedForKey("/cgi-bin", "cgi_ext", extention));
+}
+
+bool	Server::isScriptOnCgiList( std::string script ) const{
+
+	return (isValueListedForKey("/cgi-bin", "index", script));
+}
