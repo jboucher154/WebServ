@@ -7,6 +7,8 @@
 # include <time.h>
 # include <ostream>
 # include <map>
+#include <unistd.h>
+
 // # include <vector>
 
 # include "utility.hpp"
@@ -40,13 +42,13 @@ class	Response {
 		std::string			body_;
 		std::vector<char>	binary_data_;
 		std::string			response_mime_;
-		std::string			resource_name_;
-		std::string			resource_location_;
+		std::string			resource_path_; //path for opening/ manipulating etc
+		std::string			resource_location_; // location for looking up in server
 		int					status_code_;
 		Server*				server_;
 		Request*			request_;
-		std::string			query_string;
-		std::vector<std::string> file_data;
+		std::string			query_string_;
+		std::vector<std::string> file_data_;
 		//maybe add map of headers, create them as I go?
 		
 		void	intializeMimeTypes( void );
@@ -64,16 +66,13 @@ class	Response {
 		void	postMethod_( void );
 		bool	methodAllowed_( std::string method );
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
-		bool	uriLocationValid_( void );
-		void	setResourceLocationAndName( std::string uri );
-		// void	setResourceLocation( std::string& uri );
-		// void	setResourceName( std::string& uri );
+		int		setResourceLocationAndName( std::string uri );
 		void	setMimeType( void );
 		bool	validateResource_( void );
 
 
 		/*POST*/
-		std::string		getExtension_( void );
+		// std::string		getExtension_( void );
 		// void			uploadFile_( std::string filepath );
 		// std::string		createFile_( std::string& extension );
 		// std::string		getBoundry_( void );
@@ -83,7 +82,6 @@ class	Response {
 
 
 		std::vector<std::string>	getAcceptedFormats( void );
-		std::string					buildResourcePath( void );
 
 		/*TYPEDEF*/
 		typedef	void	(Response::*response_methods_[]) ( void );
@@ -102,8 +100,16 @@ class	Response {
 		void			clear( void ); /*reset for next use*/
 		std::string&	get();
 
-		int				getStatusCode( void ) const;
-		void			setStatusCode( unsigned int	new_code );
+		/* GETTERS */
+		int									getStatusCode( void ) const;
+		const std::string&					getResourcePath( void ) const;
+		const std::string&					getQueryString( void ) const;
+		std::vector<std::string>::iterator	getFileDataBegin( void );
+		std::vector<std::string>::iterator	getFileDataEnd( void );
+		
+
+		/* SETTERS */
+		void				setStatusCode( unsigned int	new_code );
 };
 
 #endif

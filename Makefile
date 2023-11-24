@@ -64,7 +64,7 @@ fclean: clean
 # Debug
 debug:
 			make fclean
-			make all FLAGS="-D GET_DEBUG_LOG=true"
+			make all FLAGS="-D GET_DEBUG_LOG=true -g"
 
 debugsan:
 			make fclean
