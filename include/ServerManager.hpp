@@ -61,23 +61,30 @@ class	ServerManager {
 		bool	SELECT_runServers( void );
 		void	SELECT_runServersLoopStart( timeval& select_timeout, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy );
 		void	SELECT_acceptNewClientConnection( int server_fd );
+		void	SELECT_removeFdFromSets( int fd );
 		void	SELECT_removeClient( int client_fd );
 		void	SELECT_switchClientToReadSet( int client_fd );
 		void	SELECT_switchClientToWriteSet( int client_fd );
 		void	SELECT_receiveFromClient( int client_fd );
 		void	SELECT_sendResponseToClient( int client_fd );
 		void	SELECT_printSetData( void );
+		void	SELECT_removeCgiPipeEndsFromSets( int pipe_in, int pipe_out );
+		void	SELECT_addFdToReadSet( int fd );
+		void	SELECT_addFdToWriteSet( int fd );
 
 
 		bool	POLL_initializeServers( void );
 		bool	POLL_runServers( void );
 		void	POLL_acceptNewClientConnection( int server_fd );
+		void	POLL_removeFdFromPollfds( int fd );
 		void	POLL_removeClient( int client_fd );
 		void	POLL_switchClientToPollin( int client_fd );
 		void	POLL_switchClientToPollout( int client_fd );
 		void	POLL_receiveFromClient( int client_fd );
 		void	POLL_sendResponseToClient( int client_fd );
 		void	POLL_printData( void );
+		void	POLL_removeCgiPipeEndsFromPollfds( int pipe_in, int pipe_out );
+		void	POLL_addFdtoPollfds( int fd, int mode );
 
 };
 

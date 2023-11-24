@@ -1,9 +1,12 @@
 
 #include "CgiHandler.hpp"
 
+#include <signal.h>
+
 
 CgiHandler::CgiHandler( void )
-	:	metavariables_(NULL),
+	:	cgi_output_(""),
+		metavariables_(NULL),
 		args_(NULL),
 		path_(NULL),
 		piping_successful_(false),
@@ -58,6 +61,10 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 
 /* CLASS PUBLIC METHODS */
 
+/*! \brief Prepare CgiHandler for next CGI call.
+*       
+*	This function does not clear the cgi_output_!
+*/
 void	CgiHandler::ClearCgiHandler( void ) {
 	
 	this->metavariables_map_.clear();
@@ -78,43 +85,113 @@ void	CgiHandler::ClearCgiHandler( void ) {
 	this->pid_ = -1;
 }
 
+/*! \brief Close all pipes used for CGI.
+*       if the integer is a file descriptor and it is open, close the file descriptor.
+*/
+void	CgiHandler::closeCgiPipes( void ) {
+
+	if (fcntl(this->pipe_in_[0], F_GETFD) != -1)
+		if (fcntl(this->pipe_in_[0], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_in_[0]);
+	if (fcntl(this->pipe_in_[1], F_GETFD) != -1)
+		if (fcntl(this->pipe_in_[1], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_in_[1]);
+	if (fcntl(this->pipe_out_[0], F_GETFD) != -1)
+		if (fcntl(this->pipe_out_[0], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_out_[0]);
+	if (fcntl(this->pipe_out_[1], F_GETFD) != -1)
+		if (fcntl(this->pipe_out_[1], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_out_[1]);
+}
+
+
+/****************************** SELECT methods ******************************/
+
 int	CgiHandler::SELECT_initializeCgi( Client& client, ServerManager& server_manager ) {
 
 	Request& request = client.getRequest();
+	int 	result;
 
 	/* Request has already checked that cgi-location is valid,
 	that the server has the permission,
 	that you can access the cgi script/program etc. */
 
-	int	result = this->fillMetavariablesMap_(client);
+	if ((result = this->fillMetavariablesMap_(client)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+		return result;
+	}
+	this->metavariables_ = this->convertMetavariablesMapToCStringArray_();
+	if (this->metavariables_ == NULL) {
+		this->ClearCgiHandler();
+		return E_CGI_SERVERERROR;
+	}
+	if ((result = this->createCgiArguments_(request)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+		return result;
+	}
+	if ((result = this->SELECT_setUpCgiPipes_(server_manager)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+	}
+	return result;
+}
 
-	if (result != E_CGI_OK) {
 
+int	CgiHandler::SELECT_cgiFinish( Request& request, ServerManager& server_manager) {
+
+	int	result;
+
+	if ((result = this->SELECT_executeCgi_(request, server_manager)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+		return result;
 	}
 
+	result = this->SELECT_storeCgiOutput_(server_manager);
+	this->ClearCgiHandler();
+	return result;
 }
+
+/****************************** POLL methods ******************************/
 
 int	CgiHandler::POLL_initializeCgi( Client& client, ServerManager& server_manager ) {
 
 	Request& request = client.getRequest();
+	int 	result;
 
 	/* Request has already checked that cgi-location is valid,
 	that the server has the permission,
 	that you can access the cgi script/program etc. */
 
-	int	result = this->fillMetavariablesMap_(client);
-
-	if (result != E_CGI_OK) {
-
+	if ((result = this->fillMetavariablesMap_(client)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+		return result;
 	}
 	this->metavariables_ = this->convertMetavariablesMapToCStringArray_();
 	if (this->metavariables_ == NULL) {
-		Logger::log(E_ERROR, COLOR_RED, "initializeCgi: allocation of cgi metavariables failed");
+		this->ClearCgiHandler();
 		return E_CGI_SERVERERROR;
 	}
+	if ((result = this->createCgiArguments_(request)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+		return result;
+	}
+	if ((result = this->POLL_setUpCgiPipes_(server_manager)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+	}
+	return result;
+}
 
+int	CgiHandler::POLL_cgiFinish( Request& request, ServerManager& server_manager) {
 
+	int	result;
 
+	if ((result = this->POLL_executeCgi_(request, server_manager)) != E_CGI_OK) {
+		this->ClearCgiHandler();
+		return result;
+	}
+
+	result = this->POLL_storeCgiOutput_(server_manager);
+	this->ClearCgiHandler();
+	return result;
 }
 
 /* CLASS PRIVATE METHODS */
@@ -132,15 +209,16 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
 	this->metavariables_map_["AUTH_TYPE"] = "Basic";	// check this later ("Digest" and "Form" are other common values)
 
-	this->metavariables_map_["HTTP_USER_AGENT"] = request.getHeaderValueByKey("user-agent");
-	this->metavariables_map_["HTTP_COOKIE"] = request.getHeaderValueByKey("cookie");
-	this->metavariables_map_["HTTP_REFERER"] = request.getHeaderValueByKey("referer");
+	this->metavariables_map_["DOCUMENT_ROOT"] = client.getServer()->getRoot();
+	this->metavariables_map_["HTTP_USER_AGENT"] = request.getHeaderValueByKey("User-Agent");
+	this->metavariables_map_["HTTP_COOKIE"] = request.getHeaderValueByKey("Cookie");
+	this->metavariables_map_["HTTP_REFERER"] = request.getHeaderValueByKey("Referer");
 	this->metavariables_map_["GATEWAY_INTERFACE"] = "CGI/1.1";
 
 	this->metavariables_map_["SERVER_NAME"] = client.getServer()->getServerName();
 	this->metavariables_map_["SERVER_PORT"] = client.getServer()->getListeningPortInt();
 	this->metavariables_map_["SERVER_PROTOCOL"] = "http/1.1";
-	this->metavariables_map_["SERVER_SOFTWARE"] = ""; // come up with server name (JAS would be great!)
+	this->metavariables_map_["SERVER_SOFTWARE"] = "JAS-webserver/0.75"; // come up with server name (JAS would be great!)
 
 	this->metavariables_map_["REMOTE_HOST"] = client.getClientHost();
 	this->metavariables_map_["REMOTE_PORT"] = ntohs(client.getAddress().sin_port);
@@ -188,6 +266,208 @@ char**	CgiHandler::convertMetavariablesMapToCStringArray_( void ) {
 	return string_array;
 }
 
+/*! \brief Create the arguments for running the CGI script.
+*
+*	First we find out if the script's extension is ".cgi" and set the size
+*	of the args_ array to either 1 or 2 (+1). If the extension is ".cgi", we do not need
+*	a program to run the script and can set the script as the first and only arg,
+*	 but otherwise we need the path to the program to run the script
+*	(for example if bash, args_[0] should be "bin/bash"), and set the path to the
+*	actual script as the second argument. Last arg has to be NULL!
+*/
 int	CgiHandler::createCgiArguments_( Request& request ) {
+	
+	int size;
 
+	try {
+		if () // get extension, if ".cgi" malloc an string array of 2, else 3
+			size = 1;
+		else
+			size = 2;
+		this->args_ = new char*[size + 1];
+		this->args_[size] = NULL;
+	} catch (std::exception& e) {
+		Logger::log(E_ERROR, COLOR_RED, "strdup error: %s", e.what());
+		return E_CGI_SERVERERROR;
+	}
+
+	if (size == 1) {
+
+	} else {
+		// args_[0] = extension executable, for example /bin/bash"
+		// check it worked
+		// args[1] = cgi script path
+	}
+
+	return E_CGI_OK;
+}
+
+void	CgiHandler::cgiTimer_( int& status ) {
+
+	time_t	start = time(NULL);
+	int		result;
+
+	while (difftime(time(NULL), start) >= CGI_TIMEOUT) {
+		result = waitpid(this->pid_, &status, WNOHANG);
+		if (result > 0)
+			return;
+	}
+
+	kill(this->pid_, SIGKILL);	// if it got here the CGI process has gone on for too long, close it remotely
+	waitpid(this->pid_, &status, 0);
+}
+
+/****************************** SELECT methods ******************************/
+
+int	CgiHandler::SELECT_setUpCgiPipes_( ServerManager& server_manager ) {
+
+	if (pipe(pipe_in_) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
+		this->piping_successful_ = false;
+		return E_CGI_SERVERERROR;
+	}
+	if (pipe(pipe_out_) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
+		this->closeCgiPipes();
+		this->piping_successful_ = false;
+		return E_CGI_SERVERERROR;
+	}
+	if (fcntl(this->pipe_in_[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1 || fcntl(this->pipe_out_[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes fcntl error: %s", strerror(errno));
+		this->closeCgiPipes();
+		this->piping_successful_ = false;
+		return E_CGI_SERVERERROR;
+	}
+	
+	server_manager.SELECT_addFdToReadSet(this->pipe_in_[1]);
+	server_manager.SELECT_addFdToWriteSet(this->pipe_out_[0]);
+
+	this->piping_successful_ = true;
+	return E_CGI_OK;
+}
+
+int	CgiHandler::SELECT_executeCgi_( Request& request, ServerManager& server_manager ) {
+
+	std::string	body_string = ();	// get body into string
+
+	if (body_string.empty())
+		send(this->pipe_in_[1], "\0", 1, 0);
+	else
+		send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
+	
+	server_manager.SELECT_removeFdFromSets(this->pipe_in_[1]);
+	close(pipe_in_[1]);
+	
+	if ((this->pid_ = fork()) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
+		this->forking_successful_ = false;
+		this->closeCgiPipes();
+		return E_CGI_SERVERERROR;
+	}
+	if (this->pid_ == 0) { // child process
+		this->forking_successful_ = true;
+		dup2(this->pipe_out_[1], STDOUT_FILENO);
+		dup2(this->pipe_in_[0], STDIN_FILENO);
+		this->closeCgiPipes();
+
+		execve(this->path_, this->args_, this->metavariables_);
+
+		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
+		delete [] this->path_;
+		deleteAllocatedCStringArray(this->args_);
+		deleteAllocatedCStringArray(this->metavariables_);
+		std::exit(EXIT_FAILURE);
+	} else {	// parent process
+		this->forking_successful_ = true;
+		close(this->pipe_out_[1]);
+
+		int status;
+		this->cgiTimer_(status);
+		if (WIFSIGNALED(status) > 0 || WEXITSTATUS(status) != 0)
+			return E_CGI_SERVERERROR;
+	}
+
+	return E_CGI_OK;
+}
+
+int	CgiHandler::SELECT_storeCgiOutput_( ServerManager& server_manager ) {
+
+}
+
+/****************************** POLL methods ******************************/
+
+int	CgiHandler::POLL_setUpCgiPipes_( ServerManager& server_manager ) {
+
+	if (pipe(pipe_in_) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
+		this->piping_successful_ = false;
+		return E_CGI_SERVERERROR;
+	}
+	if (pipe(pipe_out_) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
+		this->closeCgiPipes();
+		this->piping_successful_ = false;
+		return E_CGI_SERVERERROR;
+	}
+	if (fcntl(this->pipe_in_[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1 || fcntl(this->pipe_out_[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes fcntl error: %s", strerror(errno));
+		this->closeCgiPipes();
+		this->piping_successful_ = false;
+		return E_CGI_SERVERERROR;
+	}
+
+	server_manager.POLL_addFdtoPollfds(this->pipe_in_[1], POLLIN);
+	server_manager.POLL_addFdtoPollfds(this->pipe_out_[0], POLLOUT);
+
+	this->piping_successful_ = true;
+	return E_CGI_OK;
+}
+
+int		CgiHandler::POLL_executeCgi_( Request& request, ServerManager& server_manager ) {
+
+	std::string	body_string = ();	// get body into string
+
+	if (body_string.empty())
+		send(this->pipe_in_[1], "\0", 1, 0);
+	else
+		send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
+	
+	server_manager.POLL_removeFdFromPollfds(this->pipe_in_[1]);
+	close(pipe_in_[1]);
+	
+	if ((this->pid_ = fork()) == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
+		this->forking_successful_ = false;
+		this->closeCgiPipes();
+		return E_CGI_SERVERERROR;
+	}
+	if (this->pid_ == 0) { // child process
+		this->forking_successful_ = true;
+		dup2(this->pipe_out_[1], STDOUT_FILENO);
+		dup2(this->pipe_in_[0], STDIN_FILENO);
+		this->closeCgiPipes();
+
+		execve(this->path_, this->args_, this->metavariables_);
+
+		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
+		delete [] this->path_;
+		deleteAllocatedCStringArray(this->args_);
+		deleteAllocatedCStringArray(this->metavariables_);
+		std::exit(EXIT_FAILURE);
+	} else {	// parent process
+		this->forking_successful_ = true;
+		close(this->pipe_out_[1]);
+
+		int status;
+		this->cgiTimer_(status);
+		if (WIFSIGNALED(status) > 0 || WEXITSTATUS(status) != 0)
+			return E_CGI_SERVERERROR;
+	}
+
+	return E_CGI_OK;
+}
+
+int		CgiHandler::POLL_storeCgiOutput_( ServerManager& server_manager ) {
+
+	
 }

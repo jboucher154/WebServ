@@ -179,19 +179,78 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->request_ = NULL;
 }
 
+/******************************** CGI methods (ssalmi) ********************************/
+
 /*! \brief start the handling of a request that involves cgi (POLL-version) 
 *
 *	Added by ssalmi
 *
+*	if error set CGI flag to zero?
+*	TALK WITH JENNY about what to do in error cases!
 */
-void	startCgiResponse( Client& client, ServerManager& server_manager ) {
+void	Response::SELECT_startCgiResponse( Client& client, ServerManager& server_manager ) {
 
+	int	cgi_result = this->cgi_handler_.SELECT_initializeCgi(client, server_manager);
+
+	switch (cgi_result)
+	{	
+		case E_CGI_SERVERERROR:
+			// set status as ?
+			// error printing?
+			break;
+
+		case E_CGI_UNKNOWNMETHOD:
+			// set status as ?
+			// error printing?
+			break;
+
+		case E_CGI_NOTFOUND:
+			// set status as ?
+			// error printing?
+			break;
+
+		case E_CGI_NOPERMISSION:
+			// set status as ?
+			// error printing?
+			break;
+
+		case E_CGI_OK:
+			break;
+
+		default:
+			// set status as ? (teapot???)
+			// error printing?
+			break;
+	}
 }
+
+
+void	Response::SELECT_finishCgiResponse( Request& request, ServerManager& server_manager ) {
+
+	int result = this->getCgiHandler_().SELECT_cgiFinish(request, server_manager);
+
+	switch (result)
+	{
+	case E_CGI_SERVERERROR:
+		// set up status code? and send to client?
+		break;
+	
+	case E_CGI_OK:
+		break;
+
+	default:
+		// set up error teapot code? seems to be just a Carlos thing...
+		break;
+	}
+}
+
 
 /*! \brief start the handling of a request that involves cgi 
 *
 *	Added by ssalmi
 *
+*	if error set CGI flag to zero?
+*	TALK WITH JENNY about what to do in error cases!
 */
 void	Response::POLL_startCgiResponse( Client& client, ServerManager& server_manager ) {
 
@@ -199,18 +258,42 @@ void	Response::POLL_startCgiResponse( Client& client, ServerManager& server_mana
 
 	switch (cgi_result)
 	{	
+		case E_CGI_SERVERERROR:
+			// set status as ?
+			// error printing?
+			break;
+
 		case E_CGI_UNKNOWNMETHOD:
+			// set status as ?
+			// error printing?
+			break;
+
+		case E_CGI_NOTFOUND:
+			// set status as ?
+			// error printing?
+			break;
+
+		case E_CGI_NOPERMISSION:
+			// set status as ?
+			// error printing?
 			break;
 
 		case E_CGI_OK:
 			break;
 
-	// the rest of the possible results
-
 		default:
+			// set status as ? (teapot???)
+			// error printing?
 			break;
 	}
 }
+
+void	Response::POLL_finishCgiResponse( Request& request, ServerManager& server_manager ) {
+
+
+}
+
+/******************************** end of CGI methods ********************************/
 
 /* CLASS PRIVATE METHODS */
 

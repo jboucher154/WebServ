@@ -313,14 +313,19 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 	FD_SET(client_fd, &this->read_fd_set_);
 }
 
+void	ServerManager::SELECT_removeFdFromSets( int fd ) {
+	
+	if (FD_ISSET(fd, &this->read_fd_set_))
+		FD_CLR(fd, &this->read_fd_set_);
+	if (FD_ISSET(fd, &this->write_fd_set_))
+		FD_CLR(fd, &this->write_fd_set_);
+		if (fd == this->biggest_fd_)
+			this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+}
+
 void	ServerManager::SELECT_removeClient( int client_fd ) {
 
-	if (FD_ISSET(client_fd, &this->read_fd_set_))
-		FD_CLR(client_fd, &this->read_fd_set_);
-	if (FD_ISSET(client_fd, &this->write_fd_set_))
-		FD_CLR(client_fd, &this->write_fd_set_);
-		if (client_fd == this->biggest_fd_)
-			this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+	this->SELECT_removeFdFromSets(client_fd);
 	this->removeClient(client_fd);
 }
 
@@ -391,6 +396,28 @@ void	ServerManager::SELECT_printSetData( void ) {
 	Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
 	Logger::log(E_DEBUG, COLOR_YELLOW, read_set.c_str());
 	Logger::log(E_DEBUG, COLOR_YELLOW, write_set.c_str());
+}
+
+void	ServerManager::SELECT_removeCgiPipeEndsFromSets( int pipe_in, int pipe_out ) {
+
+	if (FD_ISSET(pipe_in, &this->read_fd_set_))
+		FD_CLR(pipe_in, &this->read_fd_set_);
+	if (FD_ISSET(pipe_out, &this->write_fd_set_))
+		FD_CLR(pipe_out, &this->write_fd_set_);
+		if (pipe_in == this->biggest_fd_ || pipe_out == this->biggest_fd_)
+			this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+}
+
+void	ServerManager::SELECT_addFdToReadSet( int fd ) {
+
+	if (!FD_ISSET(fd, &this->read_fd_set_))
+		FD_SET(fd, &this->read_fd_set_);
+}
+
+void	ServerManager::SELECT_addFdToWriteSet( int fd ) {
+
+	if (!FD_ISSET(fd, &this->write_fd_set_))
+		FD_SET(fd, &this->write_fd_set_);
 }
 
 /********************************************** POLL functions **********************************************************/
@@ -499,15 +526,20 @@ void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
 	this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
 }
 
-void	ServerManager::POLL_removeClient( int client_fd ) {
+void	ServerManager::POLL_removeFdFromPollfds( int fd ) {
 
 	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
-		if (it->fd == client_fd) {
+		if (it->fd == fd) {
 			this->pollfds_.erase(it);
 			break;
 		}
 	}
 	this->pollfds_size_--;
+}
+
+void	ServerManager::POLL_removeClient( int client_fd ) {
+
+	this->POLL_removeFdFromPollfds(client_fd);
 	this->removeClient(client_fd);
 }
 
@@ -572,4 +604,19 @@ void	ServerManager::POLL_printData( void ) {
 	Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
 	Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
 	Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
+}
+
+void	ServerManager::POLL_removeCgiPipeEndsFromPollfds( int pipe_in, int pipe_out ) {
+	
+	this->POLL_removeFdFromPollfds(pipe_in);
+	this->POLL_removeFdFromPollfds(pipe_out);
+}
+
+/*! \brief Add a file descriptor to the pollfds vector.
+*		Mode should be either POLLIN or POLLOUT!
+*/
+void	ServerManager::POLL_addFdtoPollfds( int fd, int mode ) {
+
+	pollfd new_pollfd = {fd, mode, 0};
+	this->pollfds_.push_back(new_pollfd);
 }

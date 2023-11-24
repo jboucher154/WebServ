@@ -25,6 +25,7 @@ int  main( int argc, char *argv[]) {
   std::cout << (server_vector.front().isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
   Server  server2("Server-2", 9090, "127.0.0.1");
   server_vector.push_back(server2);
+  
   //SELECT VERSION
   while (true) {
     ServerManager server_manager(server_vector);

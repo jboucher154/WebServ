@@ -108,9 +108,11 @@ class	Response {
 		std::string&		get();
 		
 		// all under are added by ssalmi
-		void	SELECT_startCgiResponse(Client& client, ServerManager& server_manager);
+		void	SELECT_startCgiResponse( Request& request, ServerManager& server_manager );
+		void	SELECT_finishCgiResponse( Request& request, ServerManager& server_manager );
 
-		void	POLL_startCgiResponse(Client& client, ServerManager& server_manager);
+		void	POLL_startCgiResponse( Client& client, ServerManager& server_manager );
+		void	POLL_finishCgiResponse( Request& request, ServerManager& server_manager );
 };
 
 #endif
