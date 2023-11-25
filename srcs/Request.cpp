@@ -4,7 +4,8 @@
 /* CONSTRUCTORS */
 
 Request::Request( void ) 
-: body_size_(0), body_len_received_(0), chunked_(false), keep_alive_(false), headers_complete(false), complete_(false), sever_error_(false) {
+: body_size_(0), body_len_received_(0), chunked_(false), keep_alive_(false), cgi_flag_(false), headers_complete(false), 
+	complete_(false), sever_error_(false), text_body_(), binary_body_() {
 
 	/* default constructor */
 }
@@ -32,8 +33,10 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->keep_alive_ = rhs.keep_alive_;
 		this->request_line_ = rhs.request_line_;
 		this->headers_ = rhs.headers_;
-		this->body_ = rhs.body_;
+		this->text_body_ = rhs.text_body_;
+		this->binary_body_ = rhs.binary_body_;
 		this->complete_ = rhs.complete_;
+		this->cgi_flag_ = rhs.cgi_flag_;
 	}
 	return (*this);
 }
@@ -52,7 +55,7 @@ void	Request::add( std::string to_add ) {
 	std::string			line;
 
 	try {
-		while (getline(ss, line, '\n')) { // do I need my own getline??
+		while (getline(ss, line, '\n')) {
 			if (this->request_line_.empty()) {
 				this->parseRequestLine_(line);
 			}
@@ -65,11 +68,8 @@ void	Request::add( std::string to_add ) {
 					this->parseHeader_(line);
 				}
 			}
-			else if (this->headers_complete && line.compare("\r") == 0) {
-				break ;
-			}
 			else {
-				this->parseBody_(line);
+				this->parseBody_(line, ss.eof());
 			}
 		}
 		this->setRequestAttributes();
@@ -81,7 +81,8 @@ void	Request::add( std::string to_add ) {
 		Logger::log(E_ERROR, COLOR_RED, e.what());
 		this->sever_error_ = true;
 	}
-	printRequest();//
+	// std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
+	printRequest();//debugging
 }
 
 /*! \brief clears all containers and resets all values to intial state
@@ -96,10 +97,12 @@ void	Request::clear( void ) {
 	this->body_len_received_ = 0;
 	this->chunked_ = false;
 	this->keep_alive_ = false;
+	this->cgi_flag_ = false;
 	this->headers_complete = false;
 	this->request_line_.clear();
 	this->headers_.clear();
-	this->body_.clear();
+	this->text_body_.clear();
+	this->binary_body_.clear();
 	this->complete_ = false;
 	this->sever_error_ = false;
 }
@@ -116,19 +119,31 @@ void	Request::printRequest( void ) const {
 	for (std::map<std::string, std::string>::const_iterator it = this->request_line_.begin(); it != this->request_line_.end(); it++) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
-	std::cout << "\nHeaders:\n";
+	std::cout << "\nHeaders:" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = this->headers_.begin(); it != this->headers_.end(); it++) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
-	std::cout << "\nBody:\n";
-	for (std::vector<std::string>::const_iterator it = this->body_.begin(); it != this->body_.end(); it++) {
-		std::cout << *it;;
-	}
-	if (!this->body_.empty())
+	std::cout << "\nBody:" << std::endl;
+	if (!this->text_body_.empty()) {
+		for (std::vector<std::string>::const_iterator it = this->text_body_.begin(); it != this->text_body_.end(); it++) {
+			std::cout << *it;;
+		}
 		std::cout << std::endl;
+	}
+	if (!this->binary_body_.empty()) {
+		for (std::vector<char>::const_iterator it = this->binary_body_.begin(); it != this->binary_body_.end(); it++) {
+			std::cout << *it;;
+		}
+		std::cout << std::endl;
+	}
 }
 
 /************** PUBLIC GETTERS **************/
+
+bool	Request::getCgiFlag( void ) const {
+
+	return (this->cgi_flag_);
+}
 
 size_t		Request::getBodySize( void ) const {
 	
@@ -177,7 +192,6 @@ std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void
 	return (this->headers_.begin());
 }
 
-
 std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void ) const {
 
 	return (this->headers_.end());
@@ -196,23 +210,38 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 
 std::vector<std::string>::iterator	Request::getBodyBegin( void ) {
 
-	return (this->body_.begin());
+	return (this->text_body_.begin());
 }
 
 std::vector<std::string>::iterator	Request::getBodyEnd( void ) {
 	
-	return (this->body_.end());
+	return (this->text_body_.end());
+}
+
+std::vector<char>::iterator	Request::getBinaryBodyBegin( void ) {
+
+	return (this->binary_body_.begin());
+}
+
+std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
+	
+	return (this->binary_body_.end());
 }
 
 /************** CLASS PRIVATE METHODS **************/
 
 /************** PRIVATE SETTERS **************/
 
-
 void	Request::setBodySize( void ) {
 
 	std::string	content_length = this->headers_["Content-Length"];
-	this->body_size_ = ft_stoi(content_length);
+	try {
+		this->body_size_ = ft_stoi(content_length);
+	}
+	catch (std::exception& e){
+		Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on coversion.");
+		//413 content too large
+	}
 }
 
 void	Request::setChunked( void ) {
@@ -237,10 +266,21 @@ void	Request::setKeepAlive( void ) {
 	}
 }
 
+void	Request::setCgiFlag( void ) {
+
+	std::string	uri = this->getRequestLineValue("uri");
+	if (strncmp(uri.c_str(), "/cgi-bin", 8) == 0) {
+		this->cgi_flag_ = true;
+	}
+	else {
+		this->cgi_flag_ = false;
+	}
+}
+
 void	Request::setRequestAttributes( void ) {
 
-	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize };
-	for (int i = 0; i < 3; i++) { //get size of setters instead of 3
+	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize , &Request::setCgiFlag };
+	for (int i = 0; i < 4; i++) { //get size of setters instead of 3
 		(this->*setters[i])();
 	}
 }
@@ -287,9 +327,23 @@ void	Request::parseHeader_( std::string& to_parse ) {
 	}
 }
 
-void	Request::parseBody_( std::string& to_parse ) {
+void	Request::parseBody_( std::string& to_parse, bool eof_marker ) {
 
-	to_parse.pop_back();
-	this->body_.push_back(to_parse);
-	this->body_len_received_ += to_parse.length();
+	int	removed_chars = eof_marker ? 0:1;
+
+	if (to_parse.back() == '\r') {
+		to_parse.pop_back();
+		removed_chars++;
+	}
+	this->text_body_.push_back(to_parse);
+	this->body_len_received_ += to_parse.length() + removed_chars;
+}
+
+//may not be needed
+void	Request::storeBinaryBody_( std::string& to_parse) {
+
+	for (std::string::const_iterator it = to_parse.begin(); it != to_parse.end(); it++) {
+		this->binary_body_.push_back(*it);
+		this->body_len_received_++;
+	}
 }

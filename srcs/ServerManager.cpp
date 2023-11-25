@@ -154,8 +154,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	std::string	response_string = client->getResponseString();
 	if (response_string.empty())
 		return keep_alive;
-
-	(void)response;
+	(void)response;//?
 	client->setLatestTime();
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {

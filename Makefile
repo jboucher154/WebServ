@@ -35,8 +35,8 @@ SRCS = \
 	Validator.cpp		\
 	file_handling.cpp	\
 	is_valid_ip_address.cpp \
-	is_all_digit.cpp
-
+	url_encoder.cpp \
+	is_all_digit.cpp \
 
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
@@ -64,7 +64,7 @@ fclean: clean
 # Debug
 debug:
 			make fclean
-			make all FLAGS="-D GET_DEBUG_LOG=true"
+			make all FLAGS="-D GET_DEBUG_LOG=true -g"
 
 debugsan:
 			make fclean
