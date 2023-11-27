@@ -113,7 +113,6 @@ class	Response {
 
 #endif
 
-
 /*
 - verify path to cgi script before handing over to cgi
 - check access/ permissions to the resource
