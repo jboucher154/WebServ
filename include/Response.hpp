@@ -13,14 +13,19 @@
 
 # include "utility.hpp"
 # include "ServerManager.hpp"
-# include "Server.hpp"
+// # include "Server.hpp"
 # include "Request.hpp"
 # include "Logger.hpp"
 # include "CgiHandler.hpp"
+// # include "Client.hpp"
 
 # ifndef CRLF
 #  define CRLF "\r\n"
 # endif
+
+// class	Client;
+// class	Server;
+// class	ServerManager;
 
 
 /*! \brief Class for handling HTTP responses.
@@ -71,6 +76,11 @@ class	Response {
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
 		int		setResourceLocationAndName( std::string uri );
 		void	setMimeType( void );
+		bool	validateResource_( void );
+
+		/*POST*/
+		std::vector<std::string> 	GetContentTypeValues_( void );
+		void						parseMultiPartFormData( std::string& boundary );
 
 		std::vector<std::string>	getAcceptedFormats( void );
 
@@ -89,7 +99,28 @@ class	Response {
 
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
-		std::string&		get();
+		std::string&	get();
+		std::string&	get( std::string& body );
+
+		/*	CGI METHODS	*/
+		void	SELECT_startCgiResponse( Client& client, ServerManager& server_manager );
+		void	SELECT_finishCgiResponse( Request& request, ServerManager& server_manager );
+
+		void	POLL_startCgiResponse( Client& client, ServerManager& server_manager );
+		void	POLL_finishCgiResponse( Request& request, ServerManager& server_manager );
+
+
+		/* GETTERS */
+		int									getStatusCode( void ) const;
+		const std::string&					getResourcePath( void ) const;
+		const std::string&					getQueryString( void ) const;
+		std::vector<std::string>::iterator	getFileDataBegin( void );
+		std::vector<std::string>::iterator	getFileDataEnd( void );
+		CgiHandler&							getCgiHandler_( void );
+		
+
+		/* SETTERS */
+		void				setStatusCode( unsigned int	new_code );
 };
 
 #endif

@@ -73,8 +73,7 @@ void	CgiHandler::ClearCgiHandler( void ) {
 	this->metavariables_ = NULL;
 	deleteAllocatedCStringArray(this->args_);
 	this->args_ = NULL;
-	if (this->path_ != NULL)
-		delete [] this->path_;
+	this->path_ = "";
 	this->path_ = NULL;
 	this->piping_successful_ = false;
 	this->forking_successful_ = false;
@@ -110,6 +109,9 @@ void	CgiHandler::closeCgiPipes( void ) {
 int	CgiHandler::SELECT_initializeCgi( Client& client, ServerManager& server_manager ) {
 
 	Request& request = client.getRequest();
+
+	this->path_ = const_cast<char*>(client.getResponse().getResourcePath().c_str());
+
 	int 	result;
 
 	/* Request has already checked that cgi-location is valid,
@@ -155,6 +157,9 @@ int	CgiHandler::SELECT_cgiFinish( Request& request, ServerManager& server_manage
 int	CgiHandler::POLL_initializeCgi( Client& client, ServerManager& server_manager ) {
 
 	Request& request = client.getRequest();
+
+	this->path_ = const_cast<char*>(client.getResponse().getResourcePath().c_str());
+
 	int 	result;
 
 	/* Request has already checked that cgi-location is valid,
@@ -222,6 +227,9 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
 	this->metavariables_map_["REMOTE_HOST"] = client.getClientHost();
 	this->metavariables_map_["REMOTE_PORT"] = ntohs(client.getAddress().sin_port);
+	this->metavariables_map_["PATH_INFO"] = request.getRequestLineValue("uri");
+	this->metavariables_map_["PATH_TRANSLATED"] = this->path_;
+	this->metavariables_map_["QUERY_STRING"] = client.getResponse().getQueryString();
 
 	return E_CGI_OK;
 }
@@ -266,6 +274,26 @@ char**	CgiHandler::convertMetavariablesMapToCStringArray_( void ) {
 	return string_array;
 }
 
+/*! \brief
+*
+*
+*
+*
+*/
+std::string	CgiHandler::getExtension( std::string uri ) {
+
+	size_t		extension_start = uri.find_last_of('.');
+	std::string	extension;
+
+	if (extension_start == std::string::npos) {
+		extension = "cgi";
+	}
+	else {
+		extension = uri.substr(extension_start + 1);
+	}
+	return extension;
+}
+
 /*! \brief Create the arguments for running the CGI script.
 *
 *	First we find out if the script's extension is ".cgi" and set the size
@@ -278,9 +306,10 @@ char**	CgiHandler::convertMetavariablesMapToCStringArray_( void ) {
 int	CgiHandler::createCgiArguments_( Request& request ) {
 	
 	int size;
+	std::string	extension = this->getExtension(request.getRequestLineValue("uri"));
 
 	try {
-		if () // get extension, if ".cgi" malloc an string array of 2, else 3
+		if (extension == "cgi") // get extension, if ".cgi" malloc an string array of 2, else 3
 			size = 1;
 		else
 			size = 2;
@@ -290,15 +319,14 @@ int	CgiHandler::createCgiArguments_( Request& request ) {
 		Logger::log(E_ERROR, COLOR_RED, "strdup error: %s", e.what());
 		return E_CGI_SERVERERROR;
 	}
-
 	if (size == 1) {
-
+		this->args_[0] = this->path_;
 	} else {
 		// args_[0] = extension executable, for example /bin/bash"
+		args_[0] = "/bin/bash";
 		// check it worked
-		// args[1] = cgi script path
+		this->args_[1] = this->path_;
 	}
-
 	return E_CGI_OK;
 }
 
@@ -425,6 +453,7 @@ int	CgiHandler::POLL_setUpCgiPipes_( ServerManager& server_manager ) {
 
 int		CgiHandler::POLL_executeCgi_( Request& request, ServerManager& server_manager ) {
 
+	// get the body_string somehow and send it into pipe
 	std::string	body_string = ();	// get body into string
 
 	if (body_string.empty())
@@ -469,5 +498,32 @@ int		CgiHandler::POLL_executeCgi_( Request& request, ServerManager& server_manag
 
 int		CgiHandler::POLL_storeCgiOutput_( ServerManager& server_manager ) {
 
-	
+	int	ret = 1;
+	int	bytesread = 0;
+	char	buffer[10000]; // change buffer size later; make a macro for it!
+
+	this->cgi_output_.clear();
+	memset(buffer, 0, 10000);
+
+	while (ret > 0) {
+		ret = recv(this->pipe_out_[0], buffer, 1024, 0); // set up a read_max
+		if (ret > 0) {
+			this->cgi_output_.append(buffer);
+			bytesread += ret;
+		}
+		if (bytesread >= 10000) {
+			server_manager.POLL_removeFdFromPollfds(this->pipe_out_[0]);
+			this->closeCgiPipes();
+			return E_CGI_SERVERERROR;
+		}
+	}
+	if (ret < 0) {
+		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput: ", strerror(errno));
+		this->closeCgiPipes();
+		return E_CGI_SERVERERROR;
+	}
+	server_manager.POLL_removeFdFromPollfds(this->pipe_out_[0]);
+	this->closeCgiPipes();
+
+	return E_CGI_OK;
 }

@@ -115,10 +115,15 @@ Response&	Client::getResponse( void ) {
 	return this->response_;
 }
 
-std::string	Client::getResponseString( void ) {
+std::string&	Client::getResponseString( void ) {
 
-	this->response_.generate(&(this->request_));
-	return this->response_.get();
+	//any CGI stuff
+	if (this->request_.getCgiFlag()) {
+		return (this->response_.get(this->response_.getCgiHandler_().getCgiOutput()));
+	}
+	else {
+		return this->response_.get();
+	}
 	// if (this->request_.getComplete())
 	// 	return this->response_.get();
 	// else

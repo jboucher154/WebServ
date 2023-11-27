@@ -477,8 +477,12 @@ bool	ServerManager::POLL_runServers( void ) {
 			if (it->revents & POLLIN) {
 				if (this->server_map_.count(it->fd))
 					this->POLL_acceptNewClientConnection(it->fd);
-				if (this->client_map_.count(it->fd))
+				if (this->client_map_.count(it->fd)) {
 					this->POLL_receiveFromClient(it->fd);
+					//generate
+					//cgi finish
+				}
+
 			}
 			if (it->revents & POLLOUT) {
 				if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
@@ -566,10 +570,24 @@ void	ServerManager::POLL_switchClientToPollout( int client_fd ) {
 
 void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 
+	Client&	client = this->client_map_[client_fd];
+	// first check if cgi bool is true, if so, we finish cgi
+	if (client.getRequest().getCgiFlag()) {
+		client.getResponse().POLL_finishCgiResponse(client.getRequest(), *this);
+		this->POLL_switchClientToPollout(client_fd);
+		return;
+	}
+	
 	if (!this->receiveFromClient(client_fd))
 		this->POLL_removeClient(client_fd);
-	else
+	else {
+		client.getResponse().generate(&client.getRequest());
+		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+			client.getResponse().POLL_startCgiResponse(client, *this);
+			return;
+		}
 		this->POLL_switchClientToPollout(client_fd);
+	}
 }
 
 

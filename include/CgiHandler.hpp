@@ -1,8 +1,9 @@
 #ifndef CGIHANDLER_HPP
 # define CGIHANDLER_HPP
 
-# include "Server.hpp"
-# include "Client.hpp"
+// # include "Server.hpp"
+# include "ServerManager.hpp"
+// # include "Client.hpp"
 # include "Request.hpp"
 
 # include <unistd.h>
@@ -11,6 +12,10 @@
 
 // macro for cgi timeout
 # define CGI_TIMEOUT 5
+
+class	Client;
+class	Server;
+class	ServerManager;
 
 enum	e_cgi_results {
 	E_CGI_OK,
@@ -76,6 +81,10 @@ class	CgiHandler {
 		// getters
 		std::vector<std::string, std::string>&	getMetavariablesVector( void ) const;
 		std::vector<std::string, std::string>&	getCgiVector( void ) const;
+	
+		std::string		getExtension( std::string uri );
+		std::string&	getCgiOutput( void );
+
 		char**	getMetaVariables( void ) const;
 		char**	getArgs( void ) const;
 		bool	getPipingSuccessful( void ) const;

@@ -5,6 +5,8 @@
 # include "Response.hpp"
 # include "Server.hpp"
 
+class	Response;
+
 /*! \brief Brief description.
 *         Brief description continued.
 *
@@ -44,7 +46,7 @@ class	Client {
 
 		Request&			getRequest( void );
 		Response&			getResponse( void );
-		std::string			getResponseString( void );
+		std::string&		getResponseString( void );
 		void				addToRequest( std::string message );
 		void				resetResponse( void );
 		void				resetRequest( void );

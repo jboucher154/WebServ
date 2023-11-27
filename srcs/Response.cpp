@@ -132,7 +132,6 @@ void	Response::generate( Request* request ) {
 }
 
 
-//should it return a string?
 /*! \brief get method returns the response as a c string.
 *       
 *
@@ -159,6 +158,31 @@ std::string&	Response::get( void ) {
 	return (this->response_);
 }
 
+/*! \brief get method returns the response as a c string.
+*       
+*
+*  Currently returns response from ResponseCodes class based on current status_code_.
+*  More details to be filled as project progresses.
+*  
+*/
+std::string&	Response::get( std::string& body ) {
+	
+	this->body_ = body;
+
+	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
+	if (this->status_code_ >= 400 || this->status_code_ == 0) { // any code that should trigger the minmal response
+		//check it there is fancy error page in server
+		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
+		this->response_mime_ = Response::mime_types_["html"];
+	}
+	this->response_ = addHeaders_(this->response_);
+	if (!this->body_.empty()) {
+		this->response_ += this->body_ + CRLF;
+	}
+	this->response_ += CRLF;
+	return (this->response_);
+}
+
 /*! \brief clear method resets the response for next use
 *       
 *
@@ -174,7 +198,6 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->resource_path_ = "";
 	this->resource_location_ = "";
 	this->status_code_ = 0;
-	// this->server_ = NULL;
 	this->request_ = NULL;
 }
 
@@ -196,6 +219,7 @@ void	Response::SELECT_startCgiResponse( Client& client, ServerManager& server_ma
 		case E_CGI_SERVERERROR:
 			// set status as ?
 			// error printing?
+			this->status_code_ = 500;
 			break;
 
 		case E_CGI_UNKNOWNMETHOD:
@@ -253,12 +277,15 @@ void	Response::SELECT_finishCgiResponse( Request& request, ServerManager& server
 */
 void	Response::POLL_startCgiResponse( Client& client, ServerManager& server_manager ) {
 
+	if (this->status_code_ >= 400)
+		return ;
 	int	cgi_result = this->cgi_handler_.POLL_initializeCgi(client, server_manager);
 
 	switch (cgi_result)
 	{	
 		case E_CGI_SERVERERROR:
 			// set status as ?
+			this->status_code_ = 500;
 			// error printing?
 			break;
 
@@ -289,7 +316,24 @@ void	Response::POLL_startCgiResponse( Client& client, ServerManager& server_mana
 
 void	Response::POLL_finishCgiResponse( Request& request, ServerManager& server_manager ) {
 
+	int	result = this->getCgiHandler_().POLL_cgiFinish(request, server_manager);
+	std::string method = this->request_->getRequestLineValue("method");
 
+	switch (result) {
+		case E_CGI_OK :
+			if (method == "POST")
+				this->status_code_ = 201;
+			else
+				this->status_code_ = 200;
+			break ;
+
+		case E_CGI_SERVERERROR :
+			this->status_code_ = 500;
+			break ;
+		
+		default :
+			break;
+	}
 }
 
 /******************************** end of CGI methods ********************************/
@@ -600,7 +644,7 @@ bool	Response::methodAllowed_( std::string method ) {
 	}
 }
 
-/*************************************************GET*************************************************/
+/************************************************* GET *************************************************/
 
 /*! \brief	returns the accepted formats from request in a vector
 *
@@ -628,7 +672,7 @@ std::vector<std::string>	Response::getAcceptedFormats( void ) {
 	return (accepted_formats);
 }
 
-/*! \brief
+/*! \brief sets the content type MIME for the response header
 *
 *
 *
@@ -682,6 +726,11 @@ void	Response::getMethod_( void ) {
 		if (this->request_->getCgiFlag()) {
 			//call the cgi here to get the generated body
 			//need cgi to return or set the body of the response
+
+			/*
+			1. int result = initializeCgi();
+			*/
+			// RETURN
 		}
 		else if (this->response_mime_.compare(0, 4, "text") == 0) {
 			buildBody_(this->resource_path_, std::ifstream::in);
@@ -885,8 +934,8 @@ void	Response::postMethod_( void ) {
 
 	//just for now
 	//this will be an invalid thing in the future...
-	if (this->status_code_ == 0) {
-		buildBody_(this->resource_path_, std::ifstream::in);
-		this->status_code_ = 201; //created //not actually created right now
-	}
+	// if (this->status_code_ == 0) {
+	// 	buildBody_(this->resource_path_, std::ifstream::in);
+	// 	this->status_code_ = 201; //created //not actually created right now
+	// }
 }
