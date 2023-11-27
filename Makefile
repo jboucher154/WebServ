@@ -39,7 +39,7 @@ SRCS = \
 	is_all_digit.cpp \
 	CgiHandler.cpp			\
 	copyCStringArray.cpp	\
-	deleteAllocatedCString.cpp	\
+	deleteAllocatedCStringArray.cpp	\
 	ft_strdup.cpp				\
 
 

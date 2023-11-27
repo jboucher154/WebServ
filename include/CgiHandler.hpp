@@ -1,8 +1,8 @@
 #ifndef CGIHANDLER_HPP
 # define CGIHANDLER_HPP
 
-// # include "Server.hpp"
-# include "ServerManager.hpp"
+# include "Server.hpp"
+// # include "ServerManager.hpp"
 // # include "Client.hpp"
 # include "Request.hpp"
 
@@ -14,7 +14,7 @@
 # define CGI_TIMEOUT 5
 
 class	Client;
-class	Server;
+// class	Server;
 class	ServerManager;
 
 enum	e_cgi_results {
@@ -37,9 +37,9 @@ class	CgiHandler {
 		char*		path_;
 		bool		piping_successful_;
 		bool		forking_successful_;
+		int			pid_;
 		int			pipe_in_[2];
 		int			pipe_out_[2];
-		int			pid_;
 
 		int		fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
@@ -83,7 +83,7 @@ class	CgiHandler {
 		std::vector<std::string, std::string>&	getCgiVector( void ) const;
 	
 		std::string		getExtension( std::string uri );
-		std::string&	getCgiOutput( void );
+		const std::string&	getCgiOutput( void ) const;
 
 		char**	getMetaVariables( void ) const;
 		char**	getArgs( void ) const;

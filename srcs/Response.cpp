@@ -1,6 +1,6 @@
 
 #include "Response.hpp"
-#include "sstream"
+#include <sstream>
 
 std::map<std::string, std::string>	Response::mime_types_;
 
@@ -165,7 +165,7 @@ std::string&	Response::get( void ) {
 *  More details to be filled as project progresses.
 *  
 */
-std::string&	Response::get( std::string& body ) {
+std::string&	Response::get( const std::string& body ) {
 	
 	this->body_ = body;
 

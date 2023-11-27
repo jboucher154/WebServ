@@ -1,6 +1,10 @@
 
 #include "CgiHandler.hpp"
 
+//attempting to compile
+#include "ServerManager.hpp"
+#include "Client.hpp"
+
 #include <signal.h>
 
 
@@ -11,9 +15,13 @@ CgiHandler::CgiHandler( void )
 		path_(NULL),
 		piping_successful_(false),
 		forking_successful_(false),
-		pipe_in_({-1, -1}),
-		pipe_out_({-1, -1}),
-		pid_(-1) {}
+		pid_(-1)
+{
+	this->pipe_in_[0] = -1;
+	this->pipe_in_[1] = -1;
+	this->pipe_out_[0] = -1;
+	this->pipe_out_[1] = -1;
+}
 
 CgiHandler::CgiHandler( const CgiHandler& to_copy ) {
 
@@ -73,7 +81,6 @@ void	CgiHandler::ClearCgiHandler( void ) {
 	this->metavariables_ = NULL;
 	deleteAllocatedCStringArray(this->args_);
 	this->args_ = NULL;
-	this->path_ = "";
 	this->path_ = NULL;
 	this->piping_successful_ = false;
 	this->forking_successful_ = false;
@@ -320,12 +327,26 @@ int	CgiHandler::createCgiArguments_( Request& request ) {
 		return E_CGI_SERVERERROR;
 	}
 	if (size == 1) {
-		this->args_[0] = this->path_;
+		this->args_[0] = ft_strdup(this->path_);
+		if (!this->args_[0]) {
+			deleteAllocatedCStringArray(this->args_);
+			this->args_ = NULL;
+			return E_CGI_SERVERERROR;
+		}
 	} else {
 		// args_[0] = extension executable, for example /bin/bash"
-		args_[0] = "/bin/bash";
-		// check it worked
-		this->args_[1] = this->path_;
+		this->args_[0] = ft_strdup("/bin/bash");
+		if (this->args_[0]) {
+			deleteAllocatedCStringArray(this->args_);
+			this->args_ = NULL;
+			return E_CGI_SERVERERROR;
+		}
+		this->args_[1] = ft_strdup(this->path_);
+		if (!this->args_[1]) {
+			deleteAllocatedCStringArray(this->args_);
+			this->args_ = NULL;
+			return E_CGI_SERVERERROR;
+		}
 	}
 	return E_CGI_OK;
 }
@@ -376,7 +397,8 @@ int	CgiHandler::SELECT_setUpCgiPipes_( ServerManager& server_manager ) {
 
 int	CgiHandler::SELECT_executeCgi_( Request& request, ServerManager& server_manager ) {
 
-	std::string	body_string = ();	// get body into string
+	(void)request;
+	std::string	body_string = "test";	// get body into string
 
 	if (body_string.empty())
 		send(this->pipe_in_[1], "\0", 1, 0);
@@ -419,7 +441,8 @@ int	CgiHandler::SELECT_executeCgi_( Request& request, ServerManager& server_mana
 }
 
 int	CgiHandler::SELECT_storeCgiOutput_( ServerManager& server_manager ) {
-
+	(void)server_manager;
+	return 0;
 }
 
 /****************************** POLL methods ******************************/
@@ -453,8 +476,8 @@ int	CgiHandler::POLL_setUpCgiPipes_( ServerManager& server_manager ) {
 
 int		CgiHandler::POLL_executeCgi_( Request& request, ServerManager& server_manager ) {
 
-	// get the body_string somehow and send it into pipe
-	std::string	body_string = ();	// get body into string
+	(void)request;
+	std::string	body_string = "test";	// get body into string
 
 	if (body_string.empty())
 		send(this->pipe_in_[1], "\0", 1, 0);
@@ -526,4 +549,10 @@ int		CgiHandler::POLL_storeCgiOutput_( ServerManager& server_manager ) {
 	this->closeCgiPipes();
 
 	return E_CGI_OK;
+}
+
+/********************* getters ********************/
+const std::string&	CgiHandler::getCgiOutput( void ) const {
+	
+	return this->cgi_output_;
 }

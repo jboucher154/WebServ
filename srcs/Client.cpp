@@ -5,7 +5,7 @@
 
 /* CONSTRUCTORS */
 
-Client::Client( void ) : response_(NULL), cgi_flag_(false) {
+Client::Client( void ) : response_(NULL) {
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
@@ -18,7 +18,7 @@ Client::Client( void ) : response_(NULL), cgi_flag_(false) {
 	this->server_fd_ = -1;
 }
 
-Client::Client( int server_fd, Server* server ) : response_(server), cgi_flag_(false) {
+Client::Client( int server_fd, Server* server ) : response_(server) {
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
@@ -54,7 +54,6 @@ Client&	Client::operator=( const Client& rhs ) {
 		this->latest_time_ = rhs.latest_time_;
 		this->server_ = rhs.server_;
 		this->server_fd_ = rhs.server_fd_;
-		this->cgi_flag_ = rhs.cgi_flag_;
 		this->request_ = rhs.request_;
 		this->response_ = rhs.response_;
 	}

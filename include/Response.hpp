@@ -12,8 +12,8 @@
 # include <vector>
 
 # include "utility.hpp"
-# include "ServerManager.hpp"
-// # include "Server.hpp"
+// # include "ServerManager.hpp"
+# include "Server.hpp"
 # include "Request.hpp"
 # include "Logger.hpp"
 # include "CgiHandler.hpp"
@@ -23,9 +23,9 @@
 #  define CRLF "\r\n"
 # endif
 
-// class	Client;
+class	Client;
 // class	Server;
-// class	ServerManager;
+class	ServerManager;
 
 
 /*! \brief Class for handling HTTP responses.
@@ -100,7 +100,7 @@ class	Response {
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
 		std::string&	get();
-		std::string&	get( std::string& body );
+		std::string&	get( const std::string& body );
 
 		/*	CGI METHODS	*/
 		void	SELECT_startCgiResponse( Client& client, ServerManager& server_manager );

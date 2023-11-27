@@ -5,7 +5,8 @@
 # include "Response.hpp"
 # include "Server.hpp"
 
-class	Response;
+// class	Request;
+// class	Server;
 
 /*! \brief Brief description.
 *         Brief description continued.
@@ -20,7 +21,6 @@ class	Client {
 		time_t				latest_time_;			// time of client's latest action (used for disconneting and server automatic shutdown)
 		Server*				server_;				// pointer to the server the client is connected to
 		int					server_fd_;				// file (socket) descriptor of the server the client is connected to
-		bool				cgi_flag_;
 
 		Request				request_;
 		Response			response_;
