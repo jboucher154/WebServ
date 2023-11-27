@@ -70,7 +70,6 @@ class	Response {
 		void	setMimeType( void );
 		bool	validateResource_( void );
 
-
 		/*POST*/
 		// std::string		getExtension_( void );
 		// void			uploadFile_( std::string filepath );
