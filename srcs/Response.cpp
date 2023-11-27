@@ -617,16 +617,36 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 	//check if body was too large 431 or 424
 }
 
-/*! \brief	not yet developed
+/****************************************** HEAD ******************************************/
+
+/*! \brief	implements HEAD method, returns 200 if resource acceptable to client
+*				and 415 if not.
 *
-*
-*
+*	Checks the MIME type of the requested resource agains the acceptable formats
+*	from client. If MIME is unsuported or unacceptable the error status code 
+*	is set. Else to 200 OK status code is set.
 *
 */
 void	Response::headMethod_( void ) {
 
-	this->status_code_ = 501;
+	std::vector<std::string>	accepted_formats = getAcceptedFormats();
+
+	setMimeType();
+	if (this->status_code_ >= 400) {
+		return ;
+	}
+	if (accepted_formats.empty() || std::count(accepted_formats.begin(), accepted_formats.end(), "*/*") || std::count(accepted_formats.begin(), accepted_formats.end(), this->response_mime_)) {
+		if (this->status_code_ < 400) {
+			this->status_code_ = 200; //OK, everything worked!
+		}
+	}
+	else {
+		this->status_code_ = 415;
+		Logger::log(E_DEBUG, COLOR_CYAN, "HEAD: 415 MIME type of resource not in client `Accept` list: %s.", this->request_->getRequestLineValue("uri").c_str());
+	}
 }
+
+/****************************************** DELETE ******************************************/
 
 /*! \brief not yet developed
 *
