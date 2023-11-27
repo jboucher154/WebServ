@@ -18,21 +18,25 @@ class	Request {
 		size_t								body_len_received_;					
 		bool 								chunked_;
 		bool								keep_alive_;
+		bool								cgi_flag_;
 		bool								headers_complete;
 		bool								complete_;
 		bool								sever_error_;
 		std::map<std::string, std::string>	request_line_;
 		std::map<std::string, std::string>	headers_;
-		std::vector<std::string>			body_;
+		std::vector<std::string>			text_body_;
+		std::vector<char>					binary_body_;//maybe take out, not currenlty using
 		//no footers for now
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
-		void	parseBody_( std::string& to_parse );
+		void	parseBody_( std::string& to_parse, bool eof_marker );
+		void 	storeBinaryBody_( std::string& to_parse);
 		void	setBodySize( void );
 		void	setChunked( void );
 		void	setKeepAlive( void );
 		void	setRequestAttributes( void );
+		void	setCgiFlag( void );
 
 	public:
 		Request( void );
@@ -53,6 +57,9 @@ class	Request {
 		bool		getKeepAlive( void ) const;
 		bool		getComplete( void ) const;
 		bool		getServerError( void ) const;
+		bool		getCgiFlag( void ) const;
+		std::vector<char>::iterator	getBinaryBodyBegin( void );
+		std::vector<char>::iterator	getBinaryBodyEnd( void );
 
 		void		printRequest( void ) const;
 

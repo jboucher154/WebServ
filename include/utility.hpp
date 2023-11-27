@@ -17,5 +17,7 @@ bool		isDirectory( std::string& path );
 char**		copyCStringArray( char** array );
 char*		ft_strdup( const char* str );
 void		deleteAllocatedCStringArray( char** array );
+std::string	urlEncode( std::string to_encode );
+bool 		isAllDigit(const std::string& s);
 
 #endif

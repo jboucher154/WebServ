@@ -20,7 +20,7 @@ Server::Server( std::string serverName, int port,  std::string host ){
 	this->setIndex("index.html");
 	this->setClientMaxBodySize(30000);
 	this->setListeningPort(port);
-	std::string innerValues[] = {"HEAD", "GET"};
+	std::string innerValues[] = {"HEAD", "GET", "POST"};//
 	size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
 	std::vector<std::string> values(innerValues, innerValues + numValues);
 	this->setLocation( "/blue", "allow_methods", values );
@@ -269,6 +269,13 @@ int	Server::getLocationBlockCount( std::string locationBlockKey ) const{
     return locationKeysCout;
 }
 
+/*! \brief return the value for a certain key in a certain location
+*       
+*
+*  Looks for the location in the server with map::find() if the location is found 
+*  looks for the key in the location with map::find() and if it is found it's value is returned
+*  and else NULL will be returned.
+*/
 const std::vector<std::string>*	Server::getLocationValue( std::string locationBlockKey, std::string key ) const{
 	
 	std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator outerMapIt = this->location.find(locationBlockKey);
@@ -283,19 +290,53 @@ const std::vector<std::string>*	Server::getLocationValue( std::string locationBl
 	return NULL;
 }
 
+
+/*! \brief checks if a certain key exists in a certain location
+*       
+*
+*  calls the getter that would return the value for the key in question
+*  If the value is null then either the key didn't exist or the location 
+*  If the value is not null the key exists in the location in question.
+*/
 bool Server::isKeyInLocation( std::string locationBlockKey, std::string key ) const{
 	if ( this->getLocationValue( locationBlockKey, key) )
 		return true;
 	else return false;
 }
 
+/*! \brief checks if a certain location exists
+*       
+*
+*  loops through all the location blocks of the server
+*  If the location in question exists returns ture, else it retuns false.
+*/
 bool	Server::isLocationInServer( std::string locationBlockKey ) const{
 
-	// if (this->location.empty())
-	// 	return false;
 	for ( std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator it = this->location.begin(); it != this->location.end(); it++ ) {
 		if ( locationBlockKey.compare( it->first ) == 0 )
 			return true;
 	}
 	return false;
+}
+
+bool	Server::isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const{
+
+	const std::vector<std::string>*	values = this->getLocationValue(locationBlockKey, key);
+		
+		if (!values || values->empty())
+			return (false);
+		else if (std::find(values->begin(), values->end(), value) == values->end())
+			return (false);
+		else
+			return (true);
+}
+
+bool	Server::isExtentionOnCgiList( std::string extention ) const{
+
+	return (isValueListedForKey("/cgi-bin", "cgi_ext", extention));
+}
+
+bool	Server::isScriptOnCgiList( std::string script ) const{
+
+	return (isValueListedForKey("/cgi-bin", "index", script));
 }

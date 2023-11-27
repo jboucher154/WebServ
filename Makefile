@@ -7,7 +7,7 @@ INC_DIR = include/
 TARGET_DIR = ./
 CXX = c++
 C98FLAG = -std=c++98
-EXTRA =-Wall -Werror -Wextra -g
+EXTRA = -Wall -Wextra -Werror
 DEP = -MP -MMD
 
 # Colors
@@ -34,7 +34,9 @@ SRCS = \
 	Client.cpp			\
 	Validator.cpp		\
 	file_handling.cpp	\
-	is_valid_ip_address.cpp
+	is_valid_ip_address.cpp \
+	url_encoder.cpp \
+	is_all_digit.cpp \
 
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
@@ -62,7 +64,7 @@ fclean: clean
 # Debug
 debug:
 			make fclean
-			make all FLAGS="-D GET_DEBUG_LOG=true"
+			make all FLAGS="-D GET_DEBUG_LOG=true -g"
 
 debugsan:
 			make fclean
