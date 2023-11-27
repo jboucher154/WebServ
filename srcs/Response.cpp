@@ -284,11 +284,12 @@ void	Response::intializeMimeTypes( void ) {
 	Response::mime_types_["jpg"] = "image/jpeg";
 	Response::mime_types_["png"] = "image/png";
 	Response::mime_types_["tiff"] = "image/tiff";
+	Response::mime_types_["ico"] = "image/x-icon";
 
 	//message
 
-	//model
 
+	//model
 	//multipart
 
 	//video
@@ -656,7 +657,11 @@ void	Response::headMethod_( void ) {
 */
 void	Response::deleteMethod_( void ) {
 
-	this->status_code_ = 501;
+	if (this->request_->getCgiFlag()) {
+		return ;
+	}
+	
+	this->status_code_ = 200;
 }
 
 /****************************************** POST ******************************************/

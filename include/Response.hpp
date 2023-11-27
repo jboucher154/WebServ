@@ -71,11 +71,6 @@ class	Response {
 		bool	validateResource_( void );
 
 		/*POST*/
-		// std::string		getExtension_( void );
-		// void			uploadFile_( std::string filepath );
-		// std::string		createFile_( std::string& extension );
-		// std::string		getBoundry_( void );
-		// std::string 	MimeTypeFromContentType_( void );
 		std::vector<std::string> 	GetContentTypeValues_( void );
 		void						parseMultiPartFormData( std::string& boundary );
 
