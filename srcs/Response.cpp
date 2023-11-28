@@ -649,7 +649,7 @@ void	Response::headMethod_( void ) {
 
 /****************************************** DELETE ******************************************/
 
-/*! \brief not yet developed
+/*! \brief if no cgi present, calls remove on resource path to delete file
 *
 *
 *
@@ -661,7 +661,13 @@ void	Response::deleteMethod_( void ) {
 		return ;
 	}
 	
-	this->status_code_ = 200;
+	if (std::remove(this->resource_path_.c_str()) != 0 ) {
+		Logger::log(E_ERROR, COLOR_RED, "DELETE METHOD, removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
+		this->status_code_ = 500; //internal server error for now
+	}
+	else {
+		this->status_code_ = 200;
+	}
 }
 
 /****************************************** POST ******************************************/
