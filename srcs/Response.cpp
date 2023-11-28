@@ -420,7 +420,8 @@ std::string Response::contentLocationHeader_( void ) const {
 *  
 */
 int	Response::setResourceLocationAndName( std::string uri ) {
-
+	
+	/* NEED TO ADD HANDLING FOR ALIAS AND REDIRECTION HERE */
 	size_t	last_slash_pos = uri.find_last_of('/');
 
 	if (last_slash_pos != std::string::npos && (last_slash_pos != uri.length() || uri == "/")) {
