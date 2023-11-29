@@ -56,9 +56,9 @@ Client::Client( const Client& to_copy ) : response_(NULL), cgi_handler_(NULL) {
 /* DESTRUCTOR */
 
 Client::~Client( void ) {
-	// if (this->cgi_handler_)
-	// 	delete this->cgi_handler_;
-	// this->cgi_handler_ = NULL;
+	if (this->cgi_handler_)
+		delete this->cgi_handler_;
+	this->cgi_handler_ = NULL;
 	/* destructor */
 } 
 
@@ -74,13 +74,14 @@ Client&	Client::operator=( const Client& rhs ) {
 		this->server_fd_ = rhs.server_fd_;
 		this->request_ = rhs.request_;
 		this->response_ = rhs.response_;
-		// if (this->cgi_handler_)
-		// 	delete this->cgi_handler_;
-		// if (rhs.cgi_handler_) {
-		// 	this->cgi_handler_ = new CgiHandler;
-		// 	this->cgi_handler_ = rhs.cgi_handler_;
-		// } else
-		this->cgi_handler_ = rhs.cgi_handler_;
+		if (this->cgi_handler_) {
+			delete this->cgi_handler_;
+			this->cgi_handler_ = NULL;
+		}
+		this->cgi_handler_ = new CgiHandler;
+		if (rhs.cgi_handler_) {
+			*(this->cgi_handler_) = *(rhs.cgi_handler_);
+		}
 	}
 	return *this;
 }
