@@ -6,9 +6,9 @@
 
 CgiHandler::CgiHandler( void )
 	:	cgi_output_(""),
-		metavariables_(NULL),
-		args_(NULL),
-		path_(NULL),
+		metavariables_(nullptr),
+		args_(nullptr),
+		path_(nullptr),
 		piping_successful_(false),
 		forking_successful_(false),
 		pid_(-1)
@@ -19,17 +19,29 @@ CgiHandler::CgiHandler( void )
 	this->pipe_out_[1] = -1;
 }
 
-CgiHandler::CgiHandler( const CgiHandler& to_copy ) {
+CgiHandler::CgiHandler( const CgiHandler& to_copy )
+	:	cgi_output_(""),
+		metavariables_(nullptr),
+		args_(nullptr),
+		path_(nullptr),
+		piping_successful_(false),
+		forking_successful_(false),
+		pid_(-1)
+{
 
 	*this = to_copy;
 } 
 
 CgiHandler::~CgiHandler( void ) {
 
+	std::cout << "des 1" << std::endl;
 	deleteAllocatedCStringArray(this->metavariables_);
+	std::cout << "des 2" << std::endl;
 	deleteAllocatedCStringArray(this->args_);
+	std::cout << "des 3" << std::endl;
 	if (this->path_ != NULL)
 		delete [] this->path_;
+	std::cout << "des 4" << std::endl;
 } 
 
 /* OPERATOR OVERLOADS */

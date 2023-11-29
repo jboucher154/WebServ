@@ -14,7 +14,6 @@ class CgiHandler;
 *
 *  Detailed description starts here.
 */
-
 class	Client {
 	private:
 		int					fd_;					// client's file (socket) descriptor

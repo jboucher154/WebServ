@@ -36,14 +36,18 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 	this->server_ = server;
 	this->server_fd_ = server_fd;
 
+	std::cout << "stage 1" << std::endl;
+	
 	while (!this->cgi_handler_) {
+		std::cout << "stage 2" << std::endl;
 		this->cgi_handler_ = new CgiHandler;
 		if (!this->cgi_handler_)
-			Logger::log(E_ERROR, COLOR_RED, "Client constructor new failure (CgiHandler)");
+			Logger::log(E_ERROR, COLOR_RED, "Client constructor new failure (CgiHandler), attempting again");
 	}
+	std::cout << "stage 3" << std::endl;
 }
 
-Client::Client( const Client& to_copy ) : response_(NULL) {
+Client::Client( const Client& to_copy ) : response_(NULL), cgi_handler_(NULL) {
 
 	*this = to_copy;
 	/* copy constructor */
@@ -52,7 +56,9 @@ Client::Client( const Client& to_copy ) : response_(NULL) {
 /* DESTRUCTOR */
 
 Client::~Client( void ) {
-	delete this->cgi_handler_;
+	// if (this->cgi_handler_)
+	// 	delete this->cgi_handler_;
+	// this->cgi_handler_ = NULL;
 	/* destructor */
 } 
 
@@ -68,6 +74,13 @@ Client&	Client::operator=( const Client& rhs ) {
 		this->server_fd_ = rhs.server_fd_;
 		this->request_ = rhs.request_;
 		this->response_ = rhs.response_;
+		// if (this->cgi_handler_)
+		// 	delete this->cgi_handler_;
+		// if (rhs.cgi_handler_) {
+		// 	this->cgi_handler_ = new CgiHandler;
+		// 	this->cgi_handler_ = rhs.cgi_handler_;
+		// } else
+		this->cgi_handler_ = rhs.cgi_handler_;
 	}
 	return *this;
 }

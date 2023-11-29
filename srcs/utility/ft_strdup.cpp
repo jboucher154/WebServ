@@ -10,12 +10,7 @@ char*	ft_strdup(const char* str) {
 	while (str[i])
 		i++;
 	
-	try {
-		str_copy = new char[i + 1];
-	} catch (std::exception& e) {
-		Logger::log(E_ERROR, COLOR_RED, "ft_strdup: %s", e.what());
-		return NULL;
-	}
+	str_copy = new char[i + 1];
 
 	for (int j = 0; j < i; ++j) {
 		str_copy[j] = str[j];
