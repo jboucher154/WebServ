@@ -1,21 +1,20 @@
 #ifndef CGIHANDLER_HPP
 # define CGIHANDLER_HPP
 
-# include "Server.hpp"
-// # include "ServerManager.hpp"
-// # include "Client.hpp"
-# include "Request.hpp"
+# include "Client.hpp"
 
 # include <unistd.h>
 # include <fcntl.h>
 # include <poll.h>
+# include <vector>
+# include <map>
+# include <string>
+
+// forward declaration
+class Client;
 
 // macro for cgi timeout
 # define CGI_TIMEOUT 5
-
-class	Client;
-// class	Server;
-class	ServerManager;
 
 enum	e_cgi_results {
 	E_CGI_OK,
@@ -41,18 +40,33 @@ class	CgiHandler {
 		int			pipe_in_[2];
 		int			pipe_out_[2];
 
+		// these are needed for POLL/SELECT
+		std::vector<pollfd>		pollfds_;
+		fd_set					read_fd_set_;
+		fd_set					write_fd_set_;
+
+		void	SELECT_cgiRemoveFdFromSets_( int fd );
+		void	SELECT_cgiRemoveCgiPipeEndsFromSets_( int pipe_in, int pipe_out );
+		void	SELECT_cgiAddFdToReadSet_( int fd );
+		void	SELECT_cgiAddFdToWriteSet_( int fd );
+
+		void	POLL_cgiRemoveFdFromPollfds_( int fd );
+		void	POLL_cgiRemoveCgiPipeEndsFromPollfds_( int pipe_in, int pipe_out );
+		void	POLL_cgiAddFdtoPollfds_( int fd, int mode );
+		// end of POLL/SELECT attributes and methods
+
 		int		fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
-		int		createCgiArguments_( Request& request );
+		int		createCgiArguments_( std::string uri );
 		void	cgiTimer_( int& status );
 
-		int		SELECT_setUpCgiPipes_( ServerManager& server_manager );
-		int		SELECT_executeCgi_( Request& request, ServerManager& server_manager );
-		int		SELECT_storeCgiOutput_( ServerManager& server_manager );
+		int		SELECT_setUpCgiPipes_( void );
+		int		SELECT_executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end );
+		int		SELECT_storeCgiOutput_( void );
 
-		int		POLL_setUpCgiPipes_( ServerManager& server_manager );
-		int		POLL_executeCgi_( Request& request, ServerManager& server_manager );
-		int		POLL_storeCgiOutput_( ServerManager& server_manager );
+		int		POLL_setUpCgiPipes_( void );
+		int		POLL_executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end );
+		int		POLL_storeCgiOutput_( void );
 
 	public:
 		CgiHandler( void );
@@ -62,16 +76,16 @@ class	CgiHandler {
 
 		CgiHandler&	operator=( const CgiHandler& to_copy );
 
-		/* PUBLIC METHODS */
 		void	ClearCgiHandler( void );
 		void	closeCgiPipes( void );
+		void	clearCgiHandlerPollfdsAndSets( void );
 
-		int		SELECT_initializeCgi( Client& client, ServerManager& server_manager );
-		int		SELECT_cgiFinish( Request& request, ServerManager& server_manager );
+		int		SELECT_initializeCgi( Client& client );
+		int		SELECT_cgiFinish( Response& response );
 
 
-		int		POLL_initializeCgi( Client& client, ServerManager& server_manager );
-		int		POLL_cgiFinish( Request& request, ServerManager& server_manager );
+		int		POLL_initializeCgi( Client& client );
+		int		POLL_cgiFinish( Response& response );
 
 		// setters
 		void	setMetaVariables( const char** metavariables );
@@ -84,6 +98,10 @@ class	CgiHandler {
 	
 		std::string		getExtension( std::string uri );
 		const std::string&	getCgiOutput( void ) const;
+
+		std::vector<pollfd>&	getCgiPollfds( void );
+		fd_set&					getCgiReadSet( void );
+		fd_set&					getCgiwriteSet( void );
 
 		char**	getMetaVariables( void ) const;
 		char**	getArgs( void ) const;

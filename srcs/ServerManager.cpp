@@ -344,15 +344,36 @@ void	ServerManager::SELECT_switchClientToWriteSet( int client_fd ) {
 		FD_SET(client_fd, &this->write_fd_set_);
 }
 
-/*	Use this function in the version that uses SELECT:
-	Will call the receiveFromClient function but handle it's
-	results in the correct SELECT way */
+/*	check the following lines, maybe scuffed
+
+if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+			if ((client.POLL_startCgiResponse()) == true)
+				this->POLL_addCgiFdsToPollfds_(client);
+			return;
+
+*/
 void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
 
-	if (!this->receiveFromClient(client_fd))
-		this->SELECT_removeClient(client_fd);
-	else
+	Client& client = this->client_map_[client_fd];
+
+	if (client.getRequest().getCgiFlag()) {
+		client.SELECT_finishCgiResponse();
+		this->SELECT_removeCgiFdsFromSets_(client);
 		this->SELECT_switchClientToWriteSet(client_fd);
+		return;
+	}
+
+	if (this->receiveFromClient(client_fd))
+		this->SELECT_removeClient(client_fd);
+	else {
+		client.getResponse().generate(&client.getRequest());
+		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+			if ((client.SELECT_startCgiResponse()) == true)
+				this->SELECT_addCgiFdsToSets_(client);
+			return;
+		}
+		this->SELECT_switchClientToWriteSet(client_fd);
+	}
 }
 
 /*	Use this function in the version that uses SELECT:
@@ -395,28 +416,6 @@ void	ServerManager::SELECT_printSetData( void ) {
 	Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
 	Logger::log(E_DEBUG, COLOR_YELLOW, read_set.c_str());
 	Logger::log(E_DEBUG, COLOR_YELLOW, write_set.c_str());
-}
-
-void	ServerManager::SELECT_removeCgiPipeEndsFromSets( int pipe_in, int pipe_out ) {
-
-	if (FD_ISSET(pipe_in, &this->read_fd_set_))
-		FD_CLR(pipe_in, &this->read_fd_set_);
-	if (FD_ISSET(pipe_out, &this->write_fd_set_))
-		FD_CLR(pipe_out, &this->write_fd_set_);
-		if (pipe_in == this->biggest_fd_ || pipe_out == this->biggest_fd_)
-			this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
-}
-
-void	ServerManager::SELECT_addFdToReadSet( int fd ) {
-
-	if (!FD_ISSET(fd, &this->read_fd_set_))
-		FD_SET(fd, &this->read_fd_set_);
-}
-
-void	ServerManager::SELECT_addFdToWriteSet( int fd ) {
-
-	if (!FD_ISSET(fd, &this->write_fd_set_))
-		FD_SET(fd, &this->write_fd_set_);
 }
 
 /********************************************** POLL functions **********************************************************/
@@ -568,12 +567,21 @@ void	ServerManager::POLL_switchClientToPollout( int client_fd ) {
 	}
 }
 
+/*	check the following lines, maybe scuffed
+
+if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+			if ((client.POLL_startCgiResponse()) == true)
+				this->POLL_addCgiFdsToPollfds_(client);
+			return;
+
+*/
 void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 
 	Client&	client = this->client_map_[client_fd];
-	// first check if cgi bool is true, if so, we finish cgi
+
 	if (client.getRequest().getCgiFlag()) {
-		client.getResponse().POLL_finishCgiResponse(client.getRequest(), *this);
+		client.POLL_finishCgiResponse();
+		this->POLL_removeCgiFdsFromPollfds_(client);
 		this->POLL_switchClientToPollout(client_fd);
 		return;
 	}
@@ -583,7 +591,8 @@ void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 	else {
 		client.getResponse().generate(&client.getRequest());
 		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			client.getResponse().POLL_startCgiResponse(client, *this);
+			if ((client.POLL_startCgiResponse()) == true)
+				this->POLL_addCgiFdsToPollfds_(client);
 			return;
 		}
 		this->POLL_switchClientToPollout(client_fd);
@@ -623,17 +632,70 @@ void	ServerManager::POLL_printData( void ) {
 	Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
 }
 
-void	ServerManager::POLL_removeCgiPipeEndsFromPollfds( int pipe_in, int pipe_out ) {
-	
-	this->POLL_removeFdFromPollfds(pipe_in);
-	this->POLL_removeFdFromPollfds(pipe_out);
+/* CLASS PRIVATE METHODS */
+
+void	ServerManager::POLL_addCgiFdsToPollfds_( Client& client ) {
+
+	std::vector<pollfd>& cgi_pollfds = client.getCgiHandler()->getCgiPollfds();
+
+	for (std::vector<pollfd>::iterator it = cgi_pollfds.begin(); it != cgi_pollfds.end(); ++it) {
+		this->pollfds_.push_back(*it);
+		++this->pollfds_size_;
+	}
 }
 
-/*! \brief Add a file descriptor to the pollfds vector.
-*		Mode should be either POLLIN or POLLOUT!
-*/
-void	ServerManager::POLL_addFdtoPollfds( int fd, int mode ) {
+void	ServerManager::POLL_removeCgiFdsFromPollfds_( Client& client ) {
 
-	pollfd new_pollfd = {fd, mode, 0};
-	this->pollfds_.push_back(new_pollfd);
+	std::vector<pollfd>& cgi_pollfds = client.getCgiHandler()->getCgiPollfds();
+
+	for (std::vector<pollfd>::iterator it = cgi_pollfds.begin(); it != cgi_pollfds.end(); ++it) {
+		this->POLL_removeFdFromPollfds(it->fd);
+	}
+
+	client.getCgiHandler()->getCgiPollfds();
+}
+
+
+void	ServerManager::SELECT_addCgiFdsToSets_( Client& client ) {
+
+	fd_set&	cgi_read_set = client.getCgiHandler()->getCgiReadSet();
+	fd_set&	cgi_write_set = client.getCgiHandler()->getCgiwriteSet();
+
+	int	hits = 0;
+	for (int fd = FD_SETSIZE - 1; fd >= 0; --fd) {
+		if (FD_ISSET(fd, &cgi_read_set)) {
+			FD_SET(fd, &cgi_read_set);
+			++hits;
+		}
+		if (FD_ISSET(fd, &cgi_write_set)) {
+			FD_SET(fd, &cgi_write_set);
+			++hits;
+		}
+		if (hits >= 2)
+			break;
+	}
+
+	this->biggest_fd_ = this->SELECT_getBiggestFd(FD_SETSIZE - 1);
+}
+
+void	ServerManager::SELECT_removeCgiFdsFromSets_( Client& client ) {
+
+	fd_set&	cgi_read_set = client.getCgiHandler()->getCgiReadSet();
+	fd_set&	cgi_write_set = client.getCgiHandler()->getCgiwriteSet();
+
+	int	hits = 0;
+	for (int fd = FD_SETSIZE - 1; fd >= 0; --fd) {
+		if (FD_ISSET(fd, &cgi_read_set)) {
+			FD_CLR(fd, &this->read_fd_set_);
+			++hits;
+		}
+		if (FD_ISSET(fd, &cgi_write_set)) {
+			FD_SET(fd, &this->write_fd_set_);
+			++hits;
+		}
+		if (hits >= 2)
+			break;
+	}
+
+	client.getCgiHandler()->clearCgiHandlerPollfdsAndSets();
 }

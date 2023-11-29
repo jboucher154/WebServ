@@ -12,20 +12,13 @@
 # include <vector>
 
 # include "utility.hpp"
-// # include "ServerManager.hpp"
 # include "Server.hpp"
 # include "Request.hpp"
 # include "Logger.hpp"
-# include "CgiHandler.hpp"
-// # include "Client.hpp"
 
 # ifndef CRLF
 #  define CRLF "\r\n"
 # endif
-
-class	Client;
-// class	Server;
-class	ServerManager;
 
 
 /*! \brief Class for handling HTTP responses.
@@ -57,7 +50,6 @@ class	Response {
 		std::string			query_string_;
 		std::vector<std::string> file_data_;
 		//maybe add map of headers, create them as I go?
-		CgiHandler			cgi_handler_;	// added by ssalmi
 		
 		void	intializeMimeTypes( void );
 
@@ -102,22 +94,12 @@ class	Response {
 		std::string&	get();
 		std::string&	get( const std::string& body );
 
-		/*	CGI METHODS	*/
-		void	SELECT_startCgiResponse( Client& client, ServerManager& server_manager );
-		void	SELECT_finishCgiResponse( Request& request, ServerManager& server_manager );
-
-		void	POLL_startCgiResponse( Client& client, ServerManager& server_manager );
-		void	POLL_finishCgiResponse( Request& request, ServerManager& server_manager );
-
-
 		/* GETTERS */
 		int									getStatusCode( void ) const;
 		const std::string&					getResourcePath( void ) const;
 		const std::string&					getQueryString( void ) const;
 		std::vector<std::string>::iterator	getFileDataBegin( void );
 		std::vector<std::string>::iterator	getFileDataEnd( void );
-		CgiHandler&							getCgiHandler_( void );
-		
 
 		/* SETTERS */
 		void				setStatusCode( unsigned int	new_code );

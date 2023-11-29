@@ -1,10 +1,6 @@
 
 #include "CgiHandler.hpp"
 
-//attempting to compile
-#include "ServerManager.hpp"
-#include "Client.hpp"
-
 #include <signal.h>
 
 
@@ -84,6 +80,7 @@ void	CgiHandler::ClearCgiHandler( void ) {
 	this->path_ = NULL;
 	this->piping_successful_ = false;
 	this->forking_successful_ = false;
+	this->closeCgiPipes();
 	for (int i = 0; i < 2; ++i) {
 		this->pipe_in_[i] = -1;
 		this->pipe_out_[i] = -1;
@@ -110,12 +107,18 @@ void	CgiHandler::closeCgiPipes( void ) {
 			close (this->pipe_out_[1]);
 }
 
+void	CgiHandler::clearCgiHandlerPollfdsAndSets( void ) {
+
+	this->pollfds_.clear();
+	FD_ZERO(&this->read_fd_set_);
+	FD_ZERO(&this->write_fd_set_);
+}
 
 /****************************** SELECT methods ******************************/
 
-int	CgiHandler::SELECT_initializeCgi( Client& client, ServerManager& server_manager ) {
+int	CgiHandler::SELECT_initializeCgi( Client& client ) {
 
-	Request& request = client.getRequest();
+	std::string uri = client.getRequest().getRequestLineValue("uri");
 
 	this->path_ = const_cast<char*>(client.getResponse().getResourcePath().c_str());
 
@@ -134,36 +137,36 @@ int	CgiHandler::SELECT_initializeCgi( Client& client, ServerManager& server_mana
 		this->ClearCgiHandler();
 		return E_CGI_SERVERERROR;
 	}
-	if ((result = this->createCgiArguments_(request)) != E_CGI_OK) {
+	if ((result = this->createCgiArguments_(uri)) != E_CGI_OK) {
 		this->ClearCgiHandler();
 		return result;
 	}
-	if ((result = this->SELECT_setUpCgiPipes_(server_manager)) != E_CGI_OK) {
+	if ((result = this->SELECT_setUpCgiPipes_()) != E_CGI_OK) {
 		this->ClearCgiHandler();
 	}
 	return result;
 }
 
 
-int	CgiHandler::SELECT_cgiFinish( Request& request, ServerManager& server_manager) {
+int	CgiHandler::SELECT_cgiFinish( Response& response ) {
 
 	int	result;
 
-	if ((result = this->SELECT_executeCgi_(request, server_manager)) != E_CGI_OK) {
+	if ((result = this->SELECT_executeCgi_(response.getFileDataBegin(), response.getFileDataEnd())) != E_CGI_OK) {
 		this->ClearCgiHandler();
 		return result;
 	}
 
-	result = this->SELECT_storeCgiOutput_(server_manager);
+	result = this->SELECT_storeCgiOutput_();
 	this->ClearCgiHandler();
 	return result;
 }
 
 /****************************** POLL methods ******************************/
 
-int	CgiHandler::POLL_initializeCgi( Client& client, ServerManager& server_manager ) {
+int	CgiHandler::POLL_initializeCgi( Client& client ) {
 
-	Request& request = client.getRequest();
+	std::string uri = client.getRequest().getRequestLineValue("uri");
 
 	this->path_ = const_cast<char*>(client.getResponse().getResourcePath().c_str());
 
@@ -182,32 +185,84 @@ int	CgiHandler::POLL_initializeCgi( Client& client, ServerManager& server_manage
 		this->ClearCgiHandler();
 		return E_CGI_SERVERERROR;
 	}
-	if ((result = this->createCgiArguments_(request)) != E_CGI_OK) {
+	if ((result = this->createCgiArguments_(uri)) != E_CGI_OK) {
 		this->ClearCgiHandler();
 		return result;
 	}
-	if ((result = this->POLL_setUpCgiPipes_(server_manager)) != E_CGI_OK) {
+	if ((result = this->POLL_setUpCgiPipes_()) != E_CGI_OK) {
 		this->ClearCgiHandler();
 	}
 	return result;
 }
 
-int	CgiHandler::POLL_cgiFinish( Request& request, ServerManager& server_manager) {
+int	CgiHandler::POLL_cgiFinish( Response& response ) {
 
 	int	result;
 
-	if ((result = this->POLL_executeCgi_(request, server_manager)) != E_CGI_OK) {
+	if ((result = this->POLL_executeCgi_(response.getFileDataBegin(), response.getFileDataEnd())) != E_CGI_OK) {
 		this->ClearCgiHandler();
 		return result;
 	}
 
-	result = this->POLL_storeCgiOutput_(server_manager);
+	result = this->POLL_storeCgiOutput_();
 	this->ClearCgiHandler();
 	return result;
 }
 
 /* CLASS PRIVATE METHODS */
 
+void	CgiHandler::SELECT_cgiRemoveFdFromSets_( int fd ) {
+	
+	if (FD_ISSET(fd, &this->read_fd_set_))
+		FD_CLR(fd, &this->read_fd_set_);
+	if (FD_ISSET(fd, &this->write_fd_set_))
+		FD_CLR(fd, &this->write_fd_set_);
+}
+
+void	CgiHandler::SELECT_cgiRemoveCgiPipeEndsFromSets_( int pipe_in, int pipe_out ) {
+
+	if (FD_ISSET(pipe_in, &this->read_fd_set_))
+		FD_CLR(pipe_in, &this->read_fd_set_);
+	if (FD_ISSET(pipe_out, &this->write_fd_set_))
+		FD_CLR(pipe_out, &this->write_fd_set_);
+}
+
+void	CgiHandler::SELECT_cgiAddFdToReadSet_( int fd ) {
+
+	if (!FD_ISSET(fd, &this->read_fd_set_))
+		FD_SET(fd, &this->read_fd_set_);
+}
+
+void	CgiHandler::SELECT_cgiAddFdToWriteSet_( int fd ) {
+
+	if (!FD_ISSET(fd, &this->write_fd_set_))
+		FD_SET(fd, &this->write_fd_set_);
+}
+
+void	CgiHandler::POLL_cgiRemoveFdFromPollfds_( int fd ) {
+
+	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+		if (it->fd == fd) {
+			this->pollfds_.erase(it);
+			break;
+		}
+	}
+}
+
+void	CgiHandler::POLL_cgiRemoveCgiPipeEndsFromPollfds_( int pipe_in, int pipe_out ) {
+	
+	this->POLL_cgiRemoveFdFromPollfds_(pipe_in);
+	this->POLL_cgiRemoveFdFromPollfds_(pipe_out);
+}
+
+/*! \brief Add a file descriptor to the pollfds vector.
+*		Mode should be either POLLIN or POLLOUT!
+*/
+void	CgiHandler::POLL_cgiAddFdtoPollfds_( int fd, int mode ) {
+
+	pollfd new_pollfd = {fd, mode, 0};
+	this->pollfds_.push_back(new_pollfd);
+}
 
 /*! \brief Fill metavariables_map_ with key/value-data. Later on the map will be converted into a
 *			c-style string array which will be passed to the cgi script as the environment.
@@ -310,10 +365,10 @@ std::string	CgiHandler::getExtension( std::string uri ) {
 *	(for example if bash, args_[0] should be "bin/bash"), and set the path to the
 *	actual script as the second argument. Last arg has to be NULL!
 */
-int	CgiHandler::createCgiArguments_( Request& request ) {
+int	CgiHandler::createCgiArguments_( std::string uri ) {
 	
 	int size;
-	std::string	extension = this->getExtension(request.getRequestLineValue("uri"));
+	std::string	extension = this->getExtension(uri);
 
 	try {
 		if (extension == "cgi") // get extension, if ".cgi" malloc an string array of 2, else 3
@@ -366,9 +421,31 @@ void	CgiHandler::cgiTimer_( int& status ) {
 	waitpid(this->pid_, &status, 0);
 }
 
+/****************************** getters ******************************/
+
+const std::string&	CgiHandler::getCgiOutput( void ) const {
+	
+	return this->cgi_output_;
+}
+
+std::vector<pollfd>&	CgiHandler::getCgiPollfds( void ) {
+
+	return this->pollfds_;
+}
+
+fd_set&					CgiHandler::getCgiReadSet( void ) {
+
+	return this->read_fd_set_;
+}
+
+fd_set&					CgiHandler::getCgiwriteSet( void ) {
+
+	return this->write_fd_set_;
+}
+
 /****************************** SELECT methods ******************************/
 
-int	CgiHandler::SELECT_setUpCgiPipes_( ServerManager& server_manager ) {
+int	CgiHandler::SELECT_setUpCgiPipes_( void ) {
 
 	if (pipe(pipe_in_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
@@ -388,16 +465,21 @@ int	CgiHandler::SELECT_setUpCgiPipes_( ServerManager& server_manager ) {
 		return E_CGI_SERVERERROR;
 	}
 	
-	server_manager.SELECT_addFdToReadSet(this->pipe_in_[1]);
-	server_manager.SELECT_addFdToWriteSet(this->pipe_out_[0]);
+	this->SELECT_cgiAddFdToReadSet_(this->pipe_in_[1]);
+	this->SELECT_cgiAddFdToWriteSet_(this->pipe_out_[0]);
 
 	this->piping_successful_ = true;
 	return E_CGI_OK;
 }
 
-int	CgiHandler::SELECT_executeCgi_( Request& request, ServerManager& server_manager ) {
+/*! \brief send body-info to pipe, fork a process and execute cgi script.
+*
+*	Talk with Jenny about how to get the bodyinfo into a string or an array of characters!
+*/
+int	CgiHandler::SELECT_executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end ) {
 
-	(void)request;
+	(void)it_start;
+	(void)it_end;
 	std::string	body_string = "test";	// get body into string
 
 	if (body_string.empty())
@@ -405,7 +487,7 @@ int	CgiHandler::SELECT_executeCgi_( Request& request, ServerManager& server_mana
 	else
 		send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
 	
-	server_manager.SELECT_removeFdFromSets(this->pipe_in_[1]);
+	// server_manager.SELECT_removeFdFromSets(this->pipe_in_[1]);
 	close(pipe_in_[1]);
 	
 	if ((this->pid_ = fork()) == -1) {
@@ -440,14 +522,43 @@ int	CgiHandler::SELECT_executeCgi_( Request& request, ServerManager& server_mana
 	return E_CGI_OK;
 }
 
-int	CgiHandler::SELECT_storeCgiOutput_( ServerManager& server_manager ) {
-	(void)server_manager;
-	return 0;
+/*! \brief Store cgi output into a string that will be sent to the client.
+*
+*	Most likely will need heavy refactoring. CREATE MACROS!
+*/
+int	CgiHandler::SELECT_storeCgiOutput_( void ) {
+	
+	int	ret = 1;
+	int	bytesread = 0;
+	char	buffer[10000]; // change buffer size later; make a macro for it!
+
+	this->cgi_output_.clear();
+	memset(buffer, 0, 10000);
+
+	while (ret > 0) {
+		ret = recv(this->pipe_out_[0], buffer, 1024, 0); // set up a read_max
+		if (ret > 0) {
+			this->cgi_output_.append(buffer);
+			bytesread += ret;
+		}
+		if (bytesread >= 10000) {
+			this->closeCgiPipes();
+			return E_CGI_SERVERERROR;
+		}
+	}
+	if (ret < 0) {
+		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput: ", strerror(errno));
+		this->closeCgiPipes();
+		return E_CGI_SERVERERROR;
+	}
+	this->closeCgiPipes();
+
+	return E_CGI_OK;
 }
 
 /****************************** POLL methods ******************************/
 
-int	CgiHandler::POLL_setUpCgiPipes_( ServerManager& server_manager ) {
+int	CgiHandler::POLL_setUpCgiPipes_( void ) {
 
 	if (pipe(pipe_in_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
@@ -467,16 +578,21 @@ int	CgiHandler::POLL_setUpCgiPipes_( ServerManager& server_manager ) {
 		return E_CGI_SERVERERROR;
 	}
 
-	server_manager.POLL_addFdtoPollfds(this->pipe_in_[1], POLLIN);
-	server_manager.POLL_addFdtoPollfds(this->pipe_out_[0], POLLOUT);
+	this->POLL_cgiAddFdtoPollfds_(this->pipe_in_[1], POLLIN);
+	this->POLL_cgiAddFdtoPollfds_(this->pipe_out_[0], POLLOUT);
 
 	this->piping_successful_ = true;
 	return E_CGI_OK;
 }
 
-int		CgiHandler::POLL_executeCgi_( Request& request, ServerManager& server_manager ) {
+/*! \brief send body-info to pipe, fork a process and execute cgi script.
+*
+*	Talk with Jenny about how to get the bodyinfo into a string or an array of characters!
+*/
+int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end ) {
 
-	(void)request;
+	(void)it_start;
+	(void)it_end;
 	std::string	body_string = "test";	// get body into string
 
 	if (body_string.empty())
@@ -484,7 +600,7 @@ int		CgiHandler::POLL_executeCgi_( Request& request, ServerManager& server_manag
 	else
 		send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
 	
-	server_manager.POLL_removeFdFromPollfds(this->pipe_in_[1]);
+	// server_manager.POLL_removeFdFromPollfds(this->pipe_in_[1]);
 	close(pipe_in_[1]);
 	
 	if ((this->pid_ = fork()) == -1) {
@@ -519,7 +635,11 @@ int		CgiHandler::POLL_executeCgi_( Request& request, ServerManager& server_manag
 	return E_CGI_OK;
 }
 
-int		CgiHandler::POLL_storeCgiOutput_( ServerManager& server_manager ) {
+/*! \brief Store cgi output into a string that will be sent to the client.
+*
+*	Most likely will need heavy refactoring. CREATE MACROS!
+*/
+int		CgiHandler::POLL_storeCgiOutput_( void ) {
 
 	int	ret = 1;
 	int	bytesread = 0;
@@ -535,7 +655,6 @@ int		CgiHandler::POLL_storeCgiOutput_( ServerManager& server_manager ) {
 			bytesread += ret;
 		}
 		if (bytesread >= 10000) {
-			server_manager.POLL_removeFdFromPollfds(this->pipe_out_[0]);
 			this->closeCgiPipes();
 			return E_CGI_SERVERERROR;
 		}
@@ -545,14 +664,7 @@ int		CgiHandler::POLL_storeCgiOutput_( ServerManager& server_manager ) {
 		this->closeCgiPipes();
 		return E_CGI_SERVERERROR;
 	}
-	server_manager.POLL_removeFdFromPollfds(this->pipe_out_[0]);
 	this->closeCgiPipes();
 
 	return E_CGI_OK;
-}
-
-/********************* getters ********************/
-const std::string&	CgiHandler::getCgiOutput( void ) const {
-	
-	return this->cgi_output_;
 }

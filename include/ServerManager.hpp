@@ -38,6 +38,12 @@ class	ServerManager {
 		std::map<int, Client>		client_map_;			// map of client socket descriptors and Client objects
 		time_t						last_client_time_;		// for automatic shutdown
 
+		void						POLL_addCgiFdsToPollfds_( Client& client );
+		void						POLL_removeCgiFdsFromPollfds_( Client& client );
+
+		void						SELECT_addCgiFdsToSets_( Client& client );
+		void						SELECT_removeCgiFdsFromSets_( Client& client );
+
 	public:
 		ServerManager( void );
 		ServerManager( std::vector<Server>& server_vector );
@@ -68,9 +74,8 @@ class	ServerManager {
 		void	SELECT_receiveFromClient( int client_fd );
 		void	SELECT_sendResponseToClient( int client_fd );
 		void	SELECT_printSetData( void );
-		void	SELECT_removeCgiPipeEndsFromSets( int pipe_in, int pipe_out );
-		void	SELECT_addFdToReadSet( int fd );
-		void	SELECT_addFdToWriteSet( int fd );
+		void	SELECT_addFdsToFdSets( Client& client );
+		void	SELECT_removeFdsFromFdSets( Client& client );
 
 
 		bool	POLL_initializeServers( void );
@@ -83,9 +88,8 @@ class	ServerManager {
 		void	POLL_receiveFromClient( int client_fd );
 		void	POLL_sendResponseToClient( int client_fd );
 		void	POLL_printData( void );
-		void	POLL_removeCgiPipeEndsFromPollfds( int pipe_in, int pipe_out );
-		void	POLL_addFdtoPollfds( int fd, int mode );
-
+		void	POLL_addFdsToPollfds( Client& client );
+		void	POLL_removeFdsFromPollfds( Client& client );
 };
 
 #endif
