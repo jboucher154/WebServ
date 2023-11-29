@@ -7,7 +7,8 @@
 # include <time.h>
 # include <ostream>
 # include <map>
-#include <unistd.h>
+# include <unistd.h>
+# include <cstdio>
 
 // # include <vector>
 
@@ -70,13 +71,7 @@ class	Response {
 		void	setMimeType( void );
 		bool	validateResource_( void );
 
-
 		/*POST*/
-		// std::string		getExtension_( void );
-		// void			uploadFile_( std::string filepath );
-		// std::string		createFile_( std::string& extension );
-		// std::string		getBoundry_( void );
-		// std::string 	MimeTypeFromContentType_( void );
 		std::vector<std::string> 	GetContentTypeValues_( void );
 		void						parseMultiPartFormData( std::string& boundary );
 
@@ -113,8 +108,6 @@ class	Response {
 };
 
 #endif
-
-
 
 /*
 - verify path to cgi script before handing over to cgi
