@@ -17,18 +17,16 @@ int  main( int argc, char *argv[]) {
     Logger::log(E_INFO, COLOR_GREEN, "Usage: ./Webserver config.conf or ./Webserver");
     return 1;
   }
-  else if (argc == 2 && Validator::parse(argv[1]) != NULL) {
+  else if (argc == 2 && Validator::parse(argv[1]) == NULL) {
     return 1;
   }
   else if (argc == 1){
-    std::cout << "here" << std::endl;
-    if (Validator::parse("config/good/default.conf") != NULL){
+    if (Validator::parse("config/good/default.conf") == NULL){
       Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
       return 1;
     }
-
   }
-    
+  std::cout << " server 1 index: " << Validator::servers[0].getIndex() << std::endl; 
   std::vector<Server> server_vector;
 
   Server  server1("Server-1", 8080, "127.0.0.1", "./resources", "index,html", "2147483647");
@@ -39,7 +37,7 @@ int  main( int argc, char *argv[]) {
   server_vector.push_back(server2);
   //SELECT VERSION
   while (true) {
-    ServerManager server_manager(server_vector);
+    ServerManager server_manager(server_vector); // Validator::servers
     if (!server_manager.SELECT_initializeServers()) {  
       server_manager.closeServerSockets();
       Logger::closeLogFiles();

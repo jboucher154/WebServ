@@ -528,3 +528,8 @@ bool	Server::isScriptOnCgiList( std::string script ) const{
 
 	return (isValueListedForKey("/cgi-bin", "index", script));
 }
+
+//to Do
+// a getter that takes an exten returns a cgi path
+// is there error page(int error cod)
+//change getters for error pages so they take int error code and return a path

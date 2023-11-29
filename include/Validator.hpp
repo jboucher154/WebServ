@@ -18,6 +18,7 @@ class Validator
 private:
 	static std::string				string;
 	static std::vector<std::string>	lines;
+	static size_t serverLines;
 	static std::map<std::string, std::vector<std::string> >	innerBlock;
 
 	static std::vector<std::string> valid_main_keys_;
@@ -36,18 +37,22 @@ private:
 	static bool returnKey( std::string value );
 	static bool alias( std::string value );
 	static bool cgiExt( std::string value );
+	static bool cgiIndex( std::string value );
+	static bool cgiRoot( std::string value );
 	static bool clientBodyLimit( std::string value );
 	static bool cgiPath( std::string value );
 	static bool store_lines(std::string	input);
-	static bool checkMainBlock(std::vector<std::string>*	lines, size_t serverLines);
+	static bool checkMainBlock(std::vector<std::string>*	lines);
 	static bool validate_lines(std::vector<std::string>*	lines);
-	static bool validate_server(std::vector<std::string>*	lines, size_t serverLines);
-	static bool storeInnerBlock(std::vector<std::string>*	lines, size_t serverLines, size_t i);
+	static bool validate_server(std::vector<std::string>*	lines);
+	static bool storeInnerBlock(std::vector<std::string>*	lines, size_t i);
 	static bool checkMainBlockKeyValues(void);
-	static bool checkLocationBlock(std::vector<std::string>*	lines, size_t serverLines);
-	static bool checkBraces(std::vector<std::string>*	lines, size_t serverLines);
+	static bool checkLocationBlock(std::vector<std::string>*	lines);
+	static bool checkBraces(std::vector<std::string>*	lines);
 	static size_t countServerLines(std::vector<std::string>*	lines);
 	static bool validate( std::string	infile );
+	static bool checkLocationBlockKeyValues(std::string	locationKey);
+	static bool checkCgiBlockKeyValues();
 
 	Validator();
 	Validator( const Validator& src );
