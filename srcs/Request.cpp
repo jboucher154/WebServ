@@ -81,7 +81,7 @@ void	Request::add( std::string to_add ) {
 		Logger::log(E_ERROR, COLOR_RED, e.what());
 		this->sever_error_ = true;
 	}
-	// std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
+	std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
 	printRequest();//debugging
 }
 
@@ -235,12 +235,17 @@ std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
 void	Request::setBodySize( void ) {
 
 	std::string	content_length = this->headers_["Content-Length"];
-	try {
-		this->body_size_ = ft_stoi(content_length);
+	if (content_length.empty()) {
+		this->body_size_ = 0;
 	}
-	catch (std::exception& e){
-		Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on coversion.");
-		//413 content too large
+	else {
+		try {
+			this->body_size_ = ft_stoi(content_length);
+		}
+		catch (std::exception& e){
+			Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on conversion.");
+			//413 content too large
+		}
 	}
 }
 

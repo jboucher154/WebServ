@@ -145,7 +145,7 @@ std::string&	Response::get( void ) {
 	
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400 || this->status_code_ == 0) { // any code that should trigger the mnimal response
-		//check it there is fancy error page in server
+		//check it there is fancy error page in server (remember to check access rights to it)
 		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
 		this->response_mime_ = Response::mime_types_["html"];
 	}
@@ -307,11 +307,12 @@ void	Response::intializeMimeTypes( void ) {
 	Response::mime_types_["jpg"] = "image/jpeg";
 	Response::mime_types_["png"] = "image/png";
 	Response::mime_types_["tiff"] = "image/tiff";
+	Response::mime_types_["ico"] = "image/x-icon";
 
 	//message
 
-	//model
 
+	//model
 	//multipart
 
 	//video
@@ -442,7 +443,8 @@ std::string Response::contentLocationHeader_( void ) const {
 *  
 */
 int	Response::setResourceLocationAndName( std::string uri ) {
-
+	
+	/* NEED TO ADD HANDLING FOR ALIAS AND REDIRECTION HERE */
 	size_t	last_slash_pos = uri.find_last_of('/');
 
 	if (last_slash_pos != std::string::npos && (last_slash_pos != uri.length() || uri == "/")) {
@@ -645,18 +647,38 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 	//check if body was too large 431 or 424
 }
 
-/*! \brief	not yet developed
+/****************************************** HEAD ******************************************/
+
+/*! \brief	implements HEAD method, returns 200 if resource acceptable to client
+*				and 415 if not.
 *
-*
-*
+*	Checks the MIME type of the requested resource agains the acceptable formats
+*	from client. If MIME is unsuported or unacceptable the error status code 
+*	is set. Else to 200 OK status code is set.
 *
 */
 void	Response::headMethod_( void ) {
 
-	this->status_code_ = 501;
+	std::vector<std::string>	accepted_formats = getAcceptedFormats();
+
+	setMimeType();
+	if (this->status_code_ >= 400) {
+		return ;
+	}
+	if (accepted_formats.empty() || std::count(accepted_formats.begin(), accepted_formats.end(), "*/*") || std::count(accepted_formats.begin(), accepted_formats.end(), this->response_mime_)) {
+		if (this->status_code_ < 400) {
+			this->status_code_ = 200; //OK, everything worked!
+		}
+	}
+	else {
+		this->status_code_ = 415;
+		Logger::log(E_DEBUG, COLOR_CYAN, "HEAD: 415 MIME type of resource not in client `Accept` list: %s.", this->request_->getRequestLineValue("uri").c_str());
+	}
 }
 
-/*! \brief not yet developed
+/****************************************** DELETE ******************************************/
+
+/*! \brief if no cgi present, calls remove on resource path to delete file
 *
 *
 *
@@ -664,7 +686,17 @@ void	Response::headMethod_( void ) {
 */
 void	Response::deleteMethod_( void ) {
 
-	this->status_code_ = 501;
+	if (this->request_->getCgiFlag()) {
+		return ;
+	}
+	
+	if (std::remove(this->resource_path_.c_str()) != 0 ) {
+		Logger::log(E_ERROR, COLOR_RED, "DELETE METHOD, removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
+		this->status_code_ = 500; //internal server error for now
+	}
+	else {
+		this->status_code_ = 200;
+	}
 }
 
 /****************************************** POST ******************************************/
