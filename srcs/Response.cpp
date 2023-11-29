@@ -146,7 +146,7 @@ std::string&	Response::get( void ) {
 	
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400 || this->status_code_ == 0) { // any code that should trigger the mnimal response
-		//check it there is fancy error page in server
+		//check it there is fancy error page in server (remember to check access rights to it)
 		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
 		this->response_mime_ = Response::mime_types_["html"];
 	}
@@ -174,7 +174,6 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->resource_path_ = "";
 	this->resource_location_ = "";
 	this->status_code_ = 0;
-	// this->server_ = NULL;
 	this->request_ = NULL;
 }
 
