@@ -7,6 +7,9 @@
 # include <time.h>
 # include <ostream>
 # include <map>
+# include <unistd.h>
+# include <cstdio>
+
 // # include <vector>
 
 # include "utility.hpp"
@@ -17,20 +20,6 @@
 # ifndef CRLF
 #  define CRLF "\r\n"
 # endif
-
-// /*! \brief Holds relevant MIME type information for a given extension.
-// *       
-// *
-// *  Hold MIME type information for a given extension including the mime_type notation
-// *  and if the type should be sent as binary.
-// *  
-// */
-// struct s_mime
-// {
-// 	std::string	extension;
-// 	std::string mime_type;
-// 	bool		binary;
-// };
 
 
 /*! \brief Class for handling HTTP responses.
@@ -54,14 +43,15 @@ class	Response {
 		std::string			body_;
 		std::vector<char>	binary_data_;
 		std::string			response_mime_;
-		std::string			resource_name_;
-		std::string			resource_location_;
+		std::string			resource_path_; //path for opening/ manipulating etc
+		std::string			resource_location_; // location for looking up in server
 		int					status_code_;
 		Server*				server_;
 		Request*			request_;
+		std::string			query_string_;
+		std::vector<std::string> file_data_;
+		//maybe add map of headers, create them as I go?
 		
-
-
 		void	intializeMimeTypes( void );
 
 		/*HEADER GENERATORS*/
@@ -77,14 +67,16 @@ class	Response {
 		void	postMethod_( void );
 		bool	methodAllowed_( std::string method );
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
-		bool	uriLocationValid_( void );
-		void	setResourceLocationAndName( std::string uri );
-		// void	setResourceLocation( std::string& uri );
-		// void	setResourceName( std::string& uri );
+		int		setResourceLocationAndName( std::string uri );
 		void	setMimeType( void );
+		bool	validateResource_( void );
+
+		/*POST*/
+		std::vector<std::string> 	GetContentTypeValues_( void );
+		void						parseMultiPartFormData( std::string& boundary );
+
 
 		std::vector<std::string>	getAcceptedFormats( void );
-		std::string					buildResourcePath( void );
 
 		/*TYPEDEF*/
 		typedef	void	(Response::*response_methods_[]) ( void );
@@ -101,7 +93,24 @@ class	Response {
 
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
-		std::string&		get();
+		std::string&	get();
+
+		/* GETTERS */
+		int									getStatusCode( void ) const;
+		const std::string&					getResourcePath( void ) const;
+		const std::string&					getQueryString( void ) const;
+		std::vector<std::string>::iterator	getFileDataBegin( void );
+		std::vector<std::string>::iterator	getFileDataEnd( void );
+		
+
+		/* SETTERS */
+		void				setStatusCode( unsigned int	new_code );
 };
 
 #endif
+
+/*
+- verify path to cgi script before handing over to cgi
+- check access/ permissions to the resource
+
+*/ 

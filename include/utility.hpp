@@ -14,6 +14,7 @@ std::string	intToString(int integer);
 bool		isValidIpAddress(const char* ipAddress);
 bool		isFile( std::string& path );
 bool		isDirectory( std::string& path );
+std::string	urlEncode( std::string to_encode );
 bool 		isAllDigit(const std::string& s);
 
 #endif

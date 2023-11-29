@@ -32,7 +32,7 @@ Server::Server( std::string serverName, int port,  std::string host, std::string
 	this->setIndex(index);
 	this->setClientMaxBodySize(ft_stoi(client_max_body_size));
 	this->setListeningPort(port);
-	std::string innerValues[] = {"HEAD", "GET"};
+	std::string innerValues[] = {"HEAD", "GET", "POST"};//
 	size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
 	std::vector<std::string> values(innerValues, innerValues + numValues);
 	this->setKeyValueInLocation( "/blue", "allow_methods", values );
