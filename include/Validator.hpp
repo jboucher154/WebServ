@@ -1,13 +1,17 @@
 #ifndef VALIDATOR_HPP
 # define VALIDATOR_HPP
 
+# include "Logger.hpp"
+# include "Color.hpp"
+# include "Server.hpp"
 # include <iostream>
 # include <vector>
 # include <string>
 # include <map>
-# include "Logger.hpp"
-# include "Color.hpp"
-# include "Server.hpp"
+# include <cstring>
+# include <netdb.h>
+# include <arpa/inet.h>
+# include <unistd.h>
 # include <fstream>
 # include <sstream>
 # include <limits>
@@ -16,6 +20,7 @@
 class Validator
 {
 private:
+	static std::map<std::string, std::string> validIpHostMap;
 	static std::string				string;
 	static std::vector<std::string>	lines;
 	static size_t serverLines;
@@ -50,9 +55,9 @@ private:
 	static bool checkLocationBlock(std::vector<std::string>*	lines);
 	static bool checkBraces(std::vector<std::string>*	lines);
 	static size_t countServerLines(std::vector<std::string>*	lines);
-	static bool validate( std::string	infile );
 	static bool checkLocationBlockKeyValues(std::string	locationKey);
 	static bool checkCgiBlockKeyValues();
+	static bool validIpHostBuilder();
 
 	Validator();
 	Validator( const Validator& src );
@@ -62,8 +67,7 @@ private:
 public:
 
 	static std::vector<Server>			servers;
-	static std::vector<Server>* parse(std::string	input);
-	
+	static bool validate( std::string	infile );
 	
 };
 

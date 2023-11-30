@@ -15,14 +15,17 @@ int  main( int argc, char *argv[]) {
   (void)argv;
   if (argc > 2) {
     Logger::log(E_INFO, COLOR_GREEN, "Usage: ./Webserver config.conf or ./Webserver");
+    Logger::closeLogFiles();
     return 1;
   }
-  else if (argc == 2 && Validator::parse(argv[1]) == NULL) {
+  else if (argc == 2 && !Validator::validate(argv[1])) {
+    Logger::closeLogFiles();
     return 1;
   }
   else if (argc == 1){
-    if (Validator::parse("config/good/default.conf") == NULL){
+    if (!Validator::validate("config/good/default.conf")){
       Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
+      Logger::closeLogFiles();
       return 1;
     }
   }

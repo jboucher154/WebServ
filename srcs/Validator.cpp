@@ -14,6 +14,7 @@ std::vector<std::string>							Validator::lines;
 std::map<std::string, std::vector<std::string> >	Validator::innerBlock;
 std::vector<Server>									Validator::servers;
 size_t 												Validator::serverLines = 0;
+std::map<std::string, std::string> 					Validator::validIpHostMap;
 
 /*! \brief Validator's class constructor
 *       
@@ -52,6 +53,63 @@ Validator& Validator::operator=( const Validator& rhs ){
 	
 	(void)rhs;
 	return *this;
+}
+
+bool Validator::validIpHostBuilder(){
+	std::string key;
+	std::string value;
+    // Read the /etc/hosts file
+    std::ifstream hostsFile("/etc/hosts");
+    if (hostsFile.is_open()) {
+        std::string line;
+        while (std::getline(hostsFile, line)) {
+			if (line[0] == '#')
+				continue;
+			std::stringstream ss(line);
+			if (std::getline(ss, key, ' ') && (ss >> value))
+				validIpHostMap[key] = value;
+        }
+        hostsFile.close();
+    }
+	else{
+        Logger::log(E_ERROR, COLOR_RED,"Error opening /etc/hosts file.");
+		return false;
+	}
+    // Get the host name
+    char hostname[256];
+    if (gethostname(hostname, sizeof(hostname)) != 0){
+        Logger::log(E_ERROR, COLOR_RED, "Error getting host name.");
+		return false;
+	}
+    // Structure to store address information
+    struct addrinfo hints, *result, *rp;
+    std::memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM; // Use a stream socket
+    // Get address information
+    if (getaddrinfo(hostname, nullptr, &hints, &result) != 0) {
+        Logger::log(E_ERROR, COLOR_RED, "Error getting address information for %s", hostname);
+        return false;
+    }
+	// Iterate through the results and build the IP address
+    for (rp = result; rp != nullptr; rp = rp->ai_next) {
+		void* addr;
+		char ipstr[INET6_ADDRSTRLEN];
+
+		if (rp->ai_family == AF_INET) { // IPv4
+			struct sockaddr_in* ipv4 = reinterpret_cast<struct sockaddr_in*>(rp->ai_addr);
+			addr = &(ipv4->sin_addr);
+		} else { // IPv6
+			struct sockaddr_in6* ipv6 = reinterpret_cast<struct sockaddr_in6*>(rp->ai_addr);
+			addr = &(ipv6->sin6_addr);
+		}
+		// Convert the IP address to a readable format
+		inet_ntop(rp->ai_family, addr, ipstr, sizeof(ipstr));
+		validIpHostMap[hostname] = std::string(ipstr);
+	}
+    // Free allocated memory
+    freeaddrinfo(result);
+    return true;
 }
 
 /*! \brief validates listening port's value
@@ -415,7 +473,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 
 	if (locationKey.empty() || locationKey.compare("/")){
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block has to be enclosed in curly braces!");
-		return false
+		return false;
 	}
 	if (lines[1] == lines.back() || lines[1].compare("{") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block has to be enclosed in curly braces!");
@@ -440,7 +498,7 @@ bool Validator::checkLocationBlock(std::vector<std::string>*	lines){
 	}
 	while ((*lines)[0] != lines->back()){
 		if((*lines)[2].compare(0, 9, "location ") != 0){
-			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", (*lines)[2]);
+			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", (*lines)[2].c_str());
 			return false;
 		}
 		if(!checkLocationBlockKeyValues((*lines)[2].substr ((*lines)[2].find("location ")))){
@@ -644,6 +702,16 @@ bool Validator::store_lines(std::string	input){
 */
 bool Validator::validate(std::string	input){
 
+	if (!validIpHostBuilder()){
+		Logger::log(E_ERROR, COLOR_RED, "Server failed to read host name and/or ip addresses from the system!");
+		return false;
+	}
+
+	for (std::map<std::string,std::string>::iterator it = validIpHostMap.begin(); it != validIpHostMap.end(); it++){
+		std::cout << "key: " << it->first;
+		std::cout << "        value:" << it->second << std::endl;
+	}
+
 	if ( !store_lines(input) || lines.empty()){
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 		return false;
@@ -668,13 +736,6 @@ bool Validator::validate(std::string	input){
 	//if there are more lines 
 }
 
-std::vector<Server>* Validator::parse(std::string	input){
-	if (Validator::validate(input)){
-		std::cout << " server 1 index: " << Validator::servers[0].getIndex() << std::endl; 
-		return &servers;
-	}
-	return NULL;
-}
 //To do:
 //check if error pages exist.
 //check if files like index.html can be opened.
