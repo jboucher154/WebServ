@@ -26,15 +26,15 @@ Server::Server( std::string serverName, int port,  std::string host ){
 	this->setLocation( "/blue", "allow_methods", values );
 	this->setLocation( "/", "allow_methods", values );
 	//for cgi testing
-	this->setLocation("/cgi-bin", "allow_methods", values);
+	this->setLocation("/cgi-bin/", "allow_methods", values);
 	std::string innerValues2[] = {".sh"};
 	size_t numValues2 = sizeof(innerValues2) / sizeof(innerValues2[0]);
 	std::vector<std::string> values2(innerValues2, innerValues2 + numValues2);
-	this->setLocation("/cgi-bin", "cgi_ext", values2);
+	this->setLocation("/cgi-bin/", "cgi_ext", values2); //
 	std::string innerValues3[] = {"test.sh"};
 	size_t numValues3 = sizeof(innerValues3) / sizeof(innerValues3[0]);
 	std::vector<std::string> values3(innerValues3, innerValues3 + numValues3);
-	this->setLocation("/cgi-bin", "index", values3);
+	this->setLocation("/cgi-bin/", "index", values3);
 }
 
 Server::Server( const Server& src ){

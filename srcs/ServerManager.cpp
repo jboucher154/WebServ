@@ -306,9 +306,9 @@ void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
 		return;
 	}
 
-	std::cout << "adding client to map" << std::endl;
-	this->client_map_.insert(std::make_pair(client_fd, Client(server_fd, server)));
-	std::cout << "added client to map" << std::endl;
+	Client client(server_fd, server);
+
+	this->client_map_[client_fd] = client; 
 	this->client_map_[client_fd].setLatestTime();
 
 	FD_SET(client_fd, &this->read_fd_set_);

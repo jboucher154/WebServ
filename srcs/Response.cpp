@@ -449,7 +449,7 @@ int	Response::setResourceLocationAndName( std::string uri ) {
 
 	if (last_slash_pos != std::string::npos && (last_slash_pos != uri.length() || uri == "/")) {
 		std::string path;
-		if (uri == "/")
+		if (uri == "/") // in future make different check for cgi paths
 			path = this->server_->getRoot();
 		else
 			path = this->server_->getRoot() + uri;
@@ -477,8 +477,12 @@ int	Response::setResourceLocationAndName( std::string uri ) {
 		else {
 			this->resource_location_ = uri.substr(0, last_slash_pos + 1); //path only
 			std::string	filename = uri.substr(last_slash_pos + 1);
-			this->resource_path_ =  this->server_->getRoot() + uri;
-			if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
+			if (!this->request_->getCgiFlag())
+				this->resource_path_ =  this->server_->getRoot() + uri;
+			else if (this->request_->getCgiFlag()) {
+				this->resource_path_ =  "." + uri; //need to check this for correct path
+			}
+			else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
 				this->status_code_ = 404;
 				Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
 			}
@@ -584,13 +588,8 @@ void	Response::getMethod_( void ) {
 	if (accepted_formats.empty() || std::count(accepted_formats.begin(), accepted_formats.end(), "*/*") || std::count(accepted_formats.begin(), accepted_formats.end(), this->response_mime_)) {
 		
 		if (this->request_->getCgiFlag()) {
-			//call the cgi here to get the generated body
-			//need cgi to return or set the body of the response
-
-			/*
-			1. int result = initializeCgi();
-			*/
-			// RETURN
+			Logger::log(E_DEBUG, COLOR_CYAN, "getMethod_ cgiFlag true");
+			return ;
 		}
 		else if (this->response_mime_.compare(0, 4, "text") == 0) {
 			buildBody_(this->resource_path_, std::ifstream::in);

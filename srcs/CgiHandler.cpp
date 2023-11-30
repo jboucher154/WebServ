@@ -6,9 +6,9 @@
 
 CgiHandler::CgiHandler( void )
 	:	cgi_output_(""),
-		metavariables_(nullptr),
-		args_(nullptr),
-		path_(nullptr),
+		metavariables_(NULL),
+		args_(NULL),
+		path_(NULL),
 		piping_successful_(false),
 		forking_successful_(false),
 		pid_(-1)
@@ -21,9 +21,9 @@ CgiHandler::CgiHandler( void )
 
 CgiHandler::CgiHandler( const CgiHandler& to_copy )
 	:	cgi_output_(""),
-		metavariables_(nullptr),
-		args_(nullptr),
-		path_(nullptr),
+		metavariables_(NULL),
+		args_(NULL),
+		path_(NULL),
 		piping_successful_(false),
 		forking_successful_(false),
 		pid_(-1)
@@ -34,14 +34,10 @@ CgiHandler::CgiHandler( const CgiHandler& to_copy )
 
 CgiHandler::~CgiHandler( void ) {
 
-	std::cout << "des 1" << std::endl;
 	deleteAllocatedCStringArray(this->metavariables_);
-	std::cout << "des 2" << std::endl;
 	deleteAllocatedCStringArray(this->args_);
-	std::cout << "des 3" << std::endl;
 	if (this->path_ != NULL)
 		delete [] this->path_;
-	std::cout << "des 4" << std::endl;
 } 
 
 /* OPERATOR OVERLOADS */
@@ -383,37 +379,29 @@ int	CgiHandler::createCgiArguments_( std::string uri ) {
 	std::string	extension = this->getExtension(uri);
 
 	try {
-		if (extension == "cgi") // get extension, if ".cgi" malloc an string array of 2, else 3
+		if (extension == ".cgi") // get extension, if ".cgi" malloc an string array of 2, else 3
 			size = 1;
 		else
 			size = 2;
 		this->args_ = new char*[size + 1];
 		this->args_[size] = NULL;
 	} catch (std::exception& e) {
-		Logger::log(E_ERROR, COLOR_RED, "strdup error: %s", e.what());
+		Logger::log(E_ERROR, COLOR_RED, "CreateCgiArguments allocation error: %s", e.what());
 		return E_CGI_SERVERERROR;
 	}
-	if (size == 1) {
-		this->args_[0] = ft_strdup(this->path_);
-		if (!this->args_[0]) {
-			deleteAllocatedCStringArray(this->args_);
-			this->args_ = NULL;
-			return E_CGI_SERVERERROR;
+	try {
+		if (size == 1)
+			this->args_[0] = ft_strdup(this->path_);
+		else {
+			// args_[0] = extension executable, for example /bin/bash"
+			this->args_[0] = ft_strdup("/bin/bash"); 	// THIS IS HARDCODED, CHANGE LATER, MOFO!
+			this->args_[1] = ft_strdup(this->path_);
 		}
-	} else {
-		// args_[0] = extension executable, for example /bin/bash"
-		this->args_[0] = ft_strdup("/bin/bash");
-		if (this->args_[0]) {
-			deleteAllocatedCStringArray(this->args_);
-			this->args_ = NULL;
-			return E_CGI_SERVERERROR;
-		}
-		this->args_[1] = ft_strdup(this->path_);
-		if (!this->args_[1]) {
-			deleteAllocatedCStringArray(this->args_);
-			this->args_ = NULL;
-			return E_CGI_SERVERERROR;
-		}
+	} catch(std::exception& e) {
+		Logger::log(E_ERROR, COLOR_RED, "strdup error: %s", e.what());
+		deleteAllocatedCStringArray(this->args_);
+		this->args_ = NULL;
+		return E_CGI_SERVERERROR;
 	}
 	return E_CGI_OK;
 }
@@ -605,12 +593,10 @@ int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, 
 
 	(void)it_start;
 	(void)it_end;
-	std::string	body_string = "test";	// get body into string
+	std::string	body_string = "";	// get body into string
 
-	if (body_string.empty())
-		send(this->pipe_in_[1], "\0", 1, 0);
-	else
-		send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
+	std::cout << "POLL_executeCgi_" << std::endl;
+
 	
 	// server_manager.POLL_removeFdFromPollfds(this->pipe_in_[1]);
 	close(pipe_in_[1]);
@@ -627,7 +613,12 @@ int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, 
 		dup2(this->pipe_in_[0], STDIN_FILENO);
 		this->closeCgiPipes();
 
-		execve(this->path_, this->args_, this->metavariables_);
+		if (body_string.empty())
+			send(this->pipe_in_[1], "\0", 1, 0);
+		else
+			send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
+
+		// execve(this->path_, this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
 		delete [] this->path_;
