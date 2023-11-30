@@ -9,7 +9,6 @@ std::string valid_location_keys_array[] = {" autoindex", "return",
 std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_location_keys_array
 	+ sizeof(valid_location_keys_array) / sizeof(valid_location_keys_array[0]));
 
-std::string											Validator::string = "";
 std::vector<std::string>							Validator::lines;
 std::map<std::string, std::vector<std::string> >	Validator::innerBlock;
 std::vector<Server>									Validator::servers;
@@ -693,15 +692,18 @@ bool Validator::store_lines(std::string	input){
     	}
 		if( line.empty() || startPos == std::string::npos)
 			continue ;
+		if(line[0] == '#')
+			continue;
+		if (line.find_first_of("#") != std::string::npos){
+			size_t endPos =line.find_first_of("#");
+			line = line.substr(0, endPos);
+		}
 		lines.push_back(line);
 		std::string temp;
 		while (ss >> temp) {
-			string += temp;
 			if (!ss.eof()){
-				string += " ";
 			}
 		}
-		string += "\n";
 		ss.str("");
 	}
 	return true;

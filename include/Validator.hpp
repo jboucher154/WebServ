@@ -21,7 +21,6 @@ class Validator
 {
 private:
 	static std::map<std::string, std::string> validIpHostMap;
-	static std::string				string;
 	static std::vector<std::string>	lines;
 	static size_t serverLines;
 	static std::map<std::string, std::vector<std::string> >	innerBlock;
