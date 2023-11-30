@@ -37,6 +37,7 @@ en.subject.pdf
 *.i*86
 *.x86_64
 *.hex
+WebServ
 
 # Debug files
 *.dSYM/

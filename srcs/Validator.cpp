@@ -55,6 +55,13 @@ Validator& Validator::operator=( const Validator& rhs ){
 	return *this;
 }
 
+/*! \brief Reterieves host name and ip addresses from the system
+*       
+*  Reads the /etc/hosts file into a line and splits the line
+*  into keys and values that are saved in the validIpHostMap.
+*  Then gets host name and it ip from the system and adds the 
+*  to the map.
+*/
 bool Validator::validIpHostBuilder(){
 	std::string key;
 	std::string value;
@@ -148,18 +155,21 @@ bool Validator::listen( std::string value ){
 /*! \brief validates server name value
 *       
 *  Checks if listening port has a value and that it is
-*  a string consist of only ascii chatacters, digits, undescore and dot.
+*  the hostname asociated with the already validated host ip.
 *  when server name is checkd its value is pushed back to its server.
 */
 bool Validator::serverName( std::string value ){
 
 	if ( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for server name vallue can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for server name value can not be empty!");
 		return false;
 	}
-	if( value.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789.")
-		!= std::string::npos ){
-		Logger::log(E_ERROR, COLOR_RED, "Server name can not have chatacters other than digits alphabetical characters, undescore and dot!");
+	if (servers[servers.size() - 1].getHost() == ""){
+		Logger::log(E_ERROR, COLOR_RED, "The field for host value can not be empty!");
+		return false;
+	}
+	if (validIpHostMap.find(servers[servers.size() - 1].getHost())->second != value){
+		Logger::log(E_ERROR, COLOR_RED, "The host you provided: %s does not match your servername: %s!",servers[servers.size() - 1].getHost().c_str(), value.c_str());
 		return false;
 	}
 	//push back to its serve
@@ -181,6 +191,10 @@ bool Validator::host( std::string value ){
 	}
 	if (!isValidIpAddress(value.c_str())){
 		Logger::log(E_ERROR, COLOR_RED, "Host has to have a valid IP as it's value!");
+		return false;
+	}
+	if (validIpHostMap.find(value) == validIpHostMap.end()){
+		Logger::log(E_ERROR, COLOR_RED, "Host is not a valid ip address for this system!");
 		return false;
 	}
 	//push back to its serve
@@ -707,10 +721,10 @@ bool Validator::validate(std::string	input){
 		return false;
 	}
 
-	for (std::map<std::string,std::string>::iterator it = validIpHostMap.begin(); it != validIpHostMap.end(); it++){
-		std::cout << "key: " << it->first;
-		std::cout << "        value:" << it->second << std::endl;
-	}
+	// for (std::map<std::string,std::string>::iterator it = validIpHostMap.begin(); it != validIpHostMap.end(); it++){
+	// 	std::cout << "key: " << it->first;
+	// 	std::cout << "        value:" << it->second << std::endl;
+	// }
 
 	if ( !store_lines(input) || lines.empty()){
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
