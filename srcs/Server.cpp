@@ -63,9 +63,7 @@ Server& Server::operator=( const Server& rhs ){
 		this->address_ = rhs.getAddress();
 		this->client_max_body_size_ = rhs.getClientMaxBodySize();
 		this->index_ = rhs.getIndex();
-		this->error_page_404 = rhs.getErrorPage_404();
-		this->error_page_405 = rhs.getErrorPage_405();
-		this->error_page_500 = rhs.getErrorPage_500();
+		this->error_pages = rhs.error_pages;
 		this->location = rhs.location;
 	}
 	return *this;
@@ -143,29 +141,9 @@ void	Server::setIndex( std::string index ){
 *
 *  sets a vlaue for error page 404.
 */
-void	Server::setErrorPage_404( std::string errorPage ){
+void	Server::setErrorPage( std::string error_code, std::string errorPage ){
 
-	this->error_page_404 = errorPage;
-}
-
-/*! \brief sets a vlaue for error page 405
-*       
-*
-*  sets a vlaue for error page 405.
-*/
-void	Server::setErrorPage_405( std::string errorPage ){
-
-	this->error_page_405 = errorPage;
-}
-
-/*! \brief sets a vlaue for error page 500
-*       
-*
-*  sets a vlaue for error page 500.
-*/
-void	Server::setErrorPage_500( std::string errorPage ){
-
-	this->error_page_500 = errorPage;
+	this->error_pages[error_code] = errorPage;
 }
 
 /*! \brief add a new element to the location map
@@ -340,40 +318,26 @@ std::string	Server::getIndex( void ) const{
 	return (this->index_);
 }
 
-/*! \brief returns the error 404 html
+/*! \brief returns if there is an html page for the given error code
 *       
 *
-*  Returns the error 404 html.
+*  Returns if there is an html page for the given error code.
 */
-std::string	Server::getErrorPage_404( void ) const{
+bool	Server::isErrorPage( std::string error_code ) const{
 
-	return (this->error_page_404);
+	if (this->error_pages.find(error_code) != error_pages.end())
+		return true;
+	return false;
 }
 
-/*! \brief returns the error 405 html
+/*! \brief returns the html page for the given error code
 *       
 *
-*  Returns the error 405 html.
+*  Returns the html page for the given error code.
 */
-std::string	Server::getErrorPage_405( void ) const{
+std::string	Server::getErrorPage( std::string error_code ) const{
 
-	return (this->error_page_405);
-}
-
-/*! \brief returns the error 500 html
-*       
-*
-*  Returns the error 500 html.
-*/
-std::string	Server::getErrorPage_500( void ) const{
-
-	return (this->error_page_500);
-}
-
-
-struct sockaddr_in	Server::getAddress( void ) const{
-
-	return(this->address_);
+	return (this->error_pages.find(error_code)->second);
 }
 
 /*! \brief returns the number of location blocks

@@ -15,16 +15,14 @@
 class Server
 {
 private:
-	int					listening_port_; 
-	std::string			server_name_;
-	std::string			host_;
-	std::string			root_;
-	struct sockaddr_in	address_;
-	int					client_max_body_size_;
-	std::string			index_;
-	std::string			error_page_404;
-	std::string			error_page_405;
-	std::string			error_page_500;
+	int										listening_port_; 
+	std::string								server_name_;
+	std::string								host_;
+	std::string								root_;
+	struct sockaddr_in						address_;
+	int										client_max_body_size_;
+	std::string								index_;
+	std::map<std::string, std::string>		error_pages;
 	std::map<std::string, std::map<std::string, std::vector<std::string> > >	location;
 
 
@@ -42,9 +40,7 @@ public:
 	void						setHost( std::string host );
 	void						setClientMaxBodySize( int clientMaxBodySize );
 	void						setIndex( std::string index );
-	void						setErrorPage_404( std::string errorPage );
-	void						setErrorPage_405( std::string errorPage );
-	void						setErrorPage_500( std::string errorPage );
+	void						setErrorPage( std::string error_code, std::string errorPage );
 	void						setKeyValueInLocation( std::string locationBlockKey
 									, std::string key, std::vector<std::string> values );
 	void						setLocation( std::map<std::string, std::vector<std::string> >	innerBlock, std::string key );
@@ -60,9 +56,8 @@ public:
 	in_addr_t						getHostInAddr_t( void ) const;
 	int								getClientMaxBodySize( void ) const;
 	std::string						getIndex( void ) const;
-	std::string						getErrorPage_404( void ) const;
-	std::string						getErrorPage_405( void ) const;
-	std::string						getErrorPage_500( void ) const;
+	std::string						getErrorPage( std::string error_code ) const;
+	bool							isErrorPage( std::string error_code ) const;
 	struct sockaddr_in				getAddress( void ) const;
 	int								getLocationBlockCount( void ) const;
 	int								getLocationBlockCount( std::string locationBlockKey ) const;
