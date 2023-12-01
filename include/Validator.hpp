@@ -36,7 +36,7 @@ private:
 	static bool root( std::string value );
 	static bool clientMaxBodySize( std::string value );
 	static bool index( std::string value );
-	static bool errorPage( std::string value );
+	static bool errorPage( std::string value, std::string key );
 	static bool allowedMethods( std::string value );
 	static bool autoIndex( std::string value );
 	static bool returnKey( std::string value );

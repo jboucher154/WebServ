@@ -281,16 +281,36 @@ bool Validator::index( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
 	}
+	if (!canOpen(temp) ){
+		Logger::log(E_ERROR, COLOR_RED, "index has to be a file with opening permission!");
+		return false;
+	}
 	//push back to its server
 	servers[servers.size() - 1].setIndex(temp);
 	return true;
 }
 
-bool Validator::errorPage( std::string value ){
+bool Validator::errorPage( std::string value, std::string key ){
 
-	//add root path to value
-	//open and close and return true if successful
-	(void)value;
+	if ( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
+		return false;
+	}
+	//adds root directory to the begining of the index file
+	std::string	temp = rootPath;
+	temp.append("/");
+	temp.append(value);
+	innerBlock.find(key)->second[0] = temp;
+	if (!isFile(temp)){
+		Logger::log(E_ERROR, COLOR_RED, "%s has to be an existing file!", key.c_str());
+		return false;
+	}
+	if (!canOpen(temp) ){
+		Logger::log(E_ERROR, COLOR_RED, "%s has to be a file with opening permission!", key.c_str());
+		return false;
+	}
+	//push back to its server
+	//servers[servers.size() - 1].setLocation(key, );
 	return true;
 }
 
@@ -544,7 +564,7 @@ bool Validator::checkLocationBlock(std::vector<std::string>*	lines){
 bool Validator::checkMainBlockKeyValues(void){
 
 	t_main_block_functs  mainFunct[] = { &Validator::listen, &Validator::serverName, &Validator::host, &Validator::root,
-				&Validator::clientMaxBodySize, &Validator::index, &Validator::errorPage, &Validator::errorPage, &Validator::errorPage};
+				&Validator::clientMaxBodySize, &Validator::index};
 	// if (!lines.empty()){
 
 	// 	for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
@@ -573,7 +593,7 @@ bool Validator::checkMainBlockKeyValues(void){
 			i = 6;
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
 			//std::cout << "value : " << *innerIt << std::endl;
-			if (!mainFunct[i](*innerIt)){
+			if ((i < 6 && !mainFunct[i](*innerIt)) || (i == 6 && !errorPage(*innerIt, outerIt->first))){
 				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
 				return false;
 			}
@@ -763,5 +783,6 @@ bool Validator::validate(std::string	input){
 }
 
 //To do:
-//check if error pages exist.
+//validated error pages should be pushed back to its server
 //check if files like index.html can be opened.
+//update documantation fo error pages and index
