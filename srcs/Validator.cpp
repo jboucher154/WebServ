@@ -1,7 +1,14 @@
 #include "Validator.hpp"
-
 std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
-		 "client_max_body_size", "index", "error_page_404", "error_page_405", "error_page_500"};
+		"client_max_body_size", "index", "error_page_400", "error_page_401", "error_page_402",
+		"error_page_403", "error_page_404", "error_page_405", "error_page_406", "error_page_407",
+		"error_page_408", "error_page_409", "error_page_410", "error_page_411", "error_page_412",
+		"error_page_413", "error_page_414", "error_page_415", "error_page_416", "error_page_417",
+		"error_page_418", "error_page_421", "error_page_422", "error_page_423", "error_page_424",
+		"error_page_425", "error_page_426", "error_page_428", "error_page_429", "error_page_431",
+		"error_page_451", "error_page_500", "error_page_501", "error_page_502", "error_page_503",
+		"error_page_504", "error_page_505", "error_page_506", "error_page_507", "error_page_508",
+		"error_page_510", "error_page_511"};
 std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_array
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
 std::string valid_location_keys_array[] = {" autoindex", "return",
@@ -14,6 +21,7 @@ std::map<std::string, std::vector<std::string> >	Validator::innerBlock;
 std::vector<Server>									Validator::servers;
 size_t 												Validator::serverLines = 0;
 std::map<std::string, std::string> 					Validator::validIpHostMap;
+std::string											Validator::rootPath = "";
 
 /*! \brief Validator's class constructor
 *       
@@ -263,17 +271,25 @@ bool Validator::index( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
 		return false;
 	}
-	if (!isFile(value)){
+	//adds root directory to the begining of the index file
+	std::string	temp = rootPath;
+	temp.append("/");
+	temp.append(value);
+	innerBlock.find("index")->second[0] = temp;
+
+	if (!isFile(temp)){
 		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
 	}
 	//push back to its server
-	servers[servers.size() - 1].setIndex(value);
+	servers[servers.size() - 1].setIndex(temp);
 	return true;
 }
 
 bool Validator::errorPage( std::string value ){
 
+	//add root path to value
+	//open and close and return true if successful
 	(void)value;
 	return true;
 }
@@ -415,7 +431,7 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
 		
     std::string key;
     std::string value;
-	std::string	root = "";
+	std::string	temp = "";
 
 	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines - 1){
 			//first checks that line ends in semicolon and has key and value seperated by a space 
@@ -434,8 +450,10 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
 				while ( std::getline(valuesVec, value, ' ' )){
 					values.push_back(value);
 				}
-				if (key.compare("root") == 0 && values.size() >= 1) 
-					root = values[0]; 
+				if (key.compare("root") == 0 && values.size() >= 1){
+					//root = values[0]; 
+					rootPath = values[0];
+				} 
 				if ( innerBlock.find(key) == innerBlock.end() )
 					innerBlock[key] = values;
 				else{
@@ -448,12 +466,6 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
 				return false;
 			}
 			i++;
-	}
-	//adds root directory to the begining of the index file
-	if ( innerBlock.find("index") != innerBlock.end() ){
-		root.append("/");
-		root.append(innerBlock.find("index")->second[0]);
-		innerBlock.find("index")->second[0] = root;
 	}
 	//when innerBlock is saved in inner block map removes the coresponding lines from lines 
 	while (i >= 0){
@@ -546,9 +558,9 @@ bool Validator::checkMainBlockKeyValues(void){
 		//std::cout << "key : " << outerIt->first << std::endl;
 		//std::cout << "value : " << outerIt->second[0] << std::endl;
 		int i = 0;
-		while (i < 9 && valid_main_keys[i].compare(outerIt->first))
+		while (i < 46 && valid_main_keys[i].compare(outerIt->first))
 			i++ ;
-		if (i == 9){
+		if (i == 46){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key.", (*outerIt).first.c_str());
 			return false;
 		}
@@ -557,7 +569,8 @@ bool Validator::checkMainBlockKeyValues(void){
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
 		}
-		//push back one more server to the server vector
+		if (i >= 6)
+			i = 6;
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
 			//std::cout << "value : " << *innerIt << std::endl;
 			if (!mainFunct[i](*innerIt)){
@@ -566,7 +579,7 @@ bool Validator::checkMainBlockKeyValues(void){
 			}
 		}
 	}
-	for (int i = 0; i < 9; i++){
+	for (int i = 0; i < 6; i++){
 		if (std::find(keys.begin(), keys.end(), i) == keys.end()){
 			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_main_keys[i].c_str());
 			return false;
@@ -575,8 +588,6 @@ bool Validator::checkMainBlockKeyValues(void){
 	}
 	return true;
 }
-
-
 
 /*! \brief checks the main block
 *       
@@ -611,7 +622,6 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines){
 	}
 	return true;
 }
-
 
 /*! \brief validates one server
 *       
@@ -709,7 +719,6 @@ bool Validator::store_lines(std::string	input){
 	}
 	return true;
 }
-
 
 /*! \brief validates the config file the config file
 *       

@@ -20,9 +20,10 @@
 class Validator
 {
 private:
-	static std::map<std::string, std::string> validIpHostMap;
-	static std::vector<std::string>	lines;
-	static size_t serverLines;
+	static std::map<std::string, std::string>				validIpHostMap;
+	static std::vector<std::string>							lines;
+	static size_t 											serverLines;
+	static std::string 										rootPath;
 	static std::map<std::string, std::vector<std::string> >	innerBlock;
 
 	static std::vector<std::string> valid_main_keys_;
