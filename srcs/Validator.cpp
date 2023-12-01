@@ -261,8 +261,10 @@ bool Validator::clientMaxBodySize( std::string value ){
 }
 
 /*! \brief validates index's value
-*       
+*  
+*  Builds up the full path by adding root to index.     
 *  Checks if the index is an existing
+*  Opens the file and checks if openning permission is there.
 *  when index is checkd its value is pushed back to its server.
 */
 bool Validator::index( std::string value ){
@@ -290,6 +292,13 @@ bool Validator::index( std::string value ){
 	return true;
 }
 
+/*! \brief validates indexes for error pages
+*  
+*  Builds up the full path by adding root to index.     
+*  Checks if the index for a specific error pages exists
+*  Opens the file and checks if openning permission is there.
+*  when index is checkd its value is pushed back to its server.
+*/
 bool Validator::errorPage( std::string value, std::string key ){
 
 	if ( value.empty() ){
@@ -310,7 +319,7 @@ bool Validator::errorPage( std::string value, std::string key ){
 		return false;
 	}
 	//push back to its server
-	//servers[servers.size() - 1].setLocation(key, );
+	servers[servers.size() - 1].setErrorPage(key, value);
 	return true;
 }
 
@@ -781,8 +790,3 @@ bool Validator::validate(std::string	input){
 	//if there are more lines do step 2. to 3. again
 	//if there are more lines 
 }
-
-//To do:
-//validated error pages should be pushed back to its server
-//check if files like index.html can be opened.
-//update documantation fo error pages and index
