@@ -304,6 +304,7 @@ bool Validator::alias( std::string value ){
 
 bool Validator::cgiExt( std::string value ){
 
+	//for every extention there has to be a path except fot the last one if the last one is .cgi
 	(void)value;
 	return true;
 }

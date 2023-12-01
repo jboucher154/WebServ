@@ -463,6 +463,25 @@ const std::vector<std::string>*	Server::getLocationValue( std::string locationBl
 	return NULL;
 }
 
+/*! \brief finds the cgi executer's path and returns it
+*       
+*
+*  Given that the config file requires same indexes for allowed extentions 
+*  and their associated executer's path(for example the pyhton3 interpreter)
+*  this method loops through the extentions and at the same time increments
+*  the cgi path iterator, returning the matched path to the extention.
+*/
+std::string	Server::getCgiExecutor( std::string extention ) const{
+	
+	
+	std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin", "cgi_path"))->begin();
+	for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin", "cgi_ext"))->end(); extIt++){
+		if (*extIt == extention)
+			break;
+		pathtIt++;
+	}
+	return (*pathtIt);
+}
 
 /*! \brief checks if a certain key exists in a certain location
 *       
