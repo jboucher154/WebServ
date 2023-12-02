@@ -480,7 +480,6 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
 					values.push_back(value);
 				}
 				if (key.compare("root") == 0 && values.size() >= 1){
-					//root = values[0]; 
 					rootPath = values[0];
 				} 
 				if ( innerBlock.find(key) == innerBlock.end() )
