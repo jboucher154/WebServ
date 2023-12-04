@@ -325,56 +325,113 @@ bool Validator::errorPage( std::string value, std::string key ){
 
 bool Validator::allowedMethods( std::string value ){
 
-	(void)value;
-	return true;
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for allowed methods value can not be empty!");
+		return false;
+	}
+	if(value.compare("GET") == 0 || value.compare("POST") == 0 ||
+		value.compare("HEAD") == 0 || value.compare("DELETE") == 0)
+		return true;
+	else
+		return false;
 }
 
 bool Validator::autoIndex( std::string value ){
 
-	(void)value;
-	return true;
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for allowed methods value can not be empty!");
+		return false;
+	}
+	if(value.compare("on") == 0 || value.compare("off") == 0)
+		return true;
+	else
+		return false;
 }
 
 bool Validator::returnKey( std::string value ){
 
-	(void)value;
-	return true;
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for return value can not be empty!");
+		return false;
+	}
+	if(servers[servers.size() - 1].isLocationInServer(value))
+		return true;
+	else
+		return false;
 }
 
 bool Validator::alias( std::string value ){
 
-	(void)value;
-	return true;
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for alias value can not be empty!");
+		return false;
+	}
+	if(servers[servers.size() - 1].isLocationInServer(value))
+		return true;
+	else
+		return false;
 }
 
 bool Validator::cgiExt( std::string value ){
 
-	//for every extention there has to be a path except fot the last one if the last one is .cgi
-	(void)value;
-	return true;
-}
-
-bool Validator::clientBodyLimit( std::string value ){
-
-	(void)value;
-	return true;
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for allowed methods value can not be empty!");
+		return false;
+	}
+	if(value.compare(".sh") == 0 || value.compare(".py") == 0)
+		return true;
+	else
+		return false;
 }
 
 bool Validator::cgiPath( std::string value ){
 
-	(void)value;
+	if ( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for root value can not be empty!");
+		return false;
+	}
+	if (!isDirectory(value)){
+		Logger::log(E_ERROR, COLOR_RED, "cgi path has to be an existing directory!");
+		return false;
+	}
 	return true;
 }
 
 bool Validator::cgiRoot( std::string value ){
 
-	(void)value;
+	if ( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for cgi root value can not be empty!");
+		return false;
+	}
+	if (!isDirectory(value)){
+		Logger::log(E_ERROR, COLOR_RED, "Cgi root has to be an existing directory!");
+		return false;
+	}
 	return true;
 }
 
 bool Validator::cgiIndex( std::string value ){
 
-	(void)value;
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for cgi index value can not be empty!");
+		return false;
+	}
+	std::string	temp = rootPath;
+	temp.append("/");
+	temp.append(value);
+	std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.find("index");
+    // Find the member in the vector
+    std::vector<std::string>::iterator vecIt = std::find(outerIt->second.begin(), outerIt->second.end(), value);
+    *vecIt = temp;
+
+	if (!isFile(temp)){
+		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
+		return false;
+	}
+	if (!canOpen(temp) ){
+		Logger::log(E_ERROR, COLOR_RED, "index has to be a file with opening permission!");
+		return false;
+	}
 	return true;
 }
 
@@ -515,8 +572,53 @@ bool Validator::checkCgiBlockKeyValues(){
 	if (!storeInnerBlock(&lines, 1)){
 		return false;
 	}
-	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::cgiRoot, &Validator::cgiIndex, &Validator::autoIndex, &Validator::cgiExt, &Validator::cgiPath};
+	if (innerBlock.empty()) { //?
+		Logger::log(E_ERROR, COLOR_RED, "Cgi location block can not be empty!");
+		return false;
+	}
+	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::cgiRoot, &Validator::cgiIndex, &Validator::cgiExt, &Validator::cgiPath};
 	//validate key values till the closing }
+	std::vector<int> keys;
+	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
+		//std::cout << "key : " << outerIt->first << std::endl;
+		//std::cout << "value : " << outerIt->second[0] << std::endl;
+		int i = 0;
+		while (i < 5 && valid_location_keys[i + 4].compare(outerIt->first))
+			i++ ;
+		if (i == 5){
+			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for Cgi location.", (*outerIt).first.c_str());
+			return false;
+		}
+		keys.push_back(i);
+		if ( outerIt->first == "root" && outerIt->second.size() > 1 ){
+			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
+			return false;
+		}
+		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
+			//std::cout << "value : " << *innerIt << std::endl;
+			if (!locationFunct[i](*innerIt)){
+				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
+				return false;
+			}
+		}
+	}
+	for (int i = 0; i < 5; i++){
+		if (std::find(keys.begin(), keys.end(), i) == keys.end()){
+			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_main_keys[i].c_str());
+			return false;
+		}
+
+	}
+	//check for no deplication
+	//add to server vector
+	if ( servers[servers.size() - 1].isLocationInServer("/cgi-bin")){
+		Logger::log(E_ERROR, COLOR_RED, "Ambiguity warning: Cgi block dublication is not allowed in the server!");
+		return false;
+	}
+	else{
+		servers[servers.size() - 1].setLocation(innerBlock, "/cgi-bin");
+	}
+	//creat cgi exe path map
 	return true;
 }
 
@@ -525,25 +627,62 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		return(checkCgiBlockKeyValues());
 	}
 
-	if (locationKey.empty() || locationKey.compare("/")){
-		Logger::log(E_ERROR, COLOR_RED, "Cgi location block has to be enclosed in curly braces!");
+	if (locationKey.empty() || locationKey.find_first_of(" #") != std::string::npos){
+		Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", locationKey.c_str());
 		return false;
 	}
 	if (lines[1] == lines.back() || lines[1].compare("{") != 0){
-		Logger::log(E_ERROR, COLOR_RED, "Cgi location block has to be enclosed in curly braces!");
+		Logger::log(E_ERROR, COLOR_RED, "%s Location block has to be enclosed in curly braces!", locationKey.c_str());
 		return false;
 	}
 	if (!storeInnerBlock(&lines, 1)){
 		return false;
 	}
+	if (innerBlock.empty()) { //?
+		Logger::log(E_ERROR, COLOR_RED, "%s location block can not be empty!", locationKey.c_str());
+		return false;
+	}
 	t_location_block_functs  locationFunct[] = {&Validator::autoIndex, &Validator::returnKey,
-				&Validator::alias, &Validator::clientBodyLimit, &Validator::allowedMethods};
+				&Validator::alias, &Validator::clientMaxBodySize, &Validator::allowedMethods};
 	//validate key values till the closing }
+	std::vector<int> keys;
+	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
+		//std::cout << "key : " << outerIt->first << std::endl;
+		//std::cout << "value : " << outerIt->second[0] << std::endl;
+		int i = 0;
+		while (i < 6 && valid_location_keys[i].compare(outerIt->first))
+			i++ ;
+		if (i == 6){
+			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for Cgi location.", (*outerIt).first.c_str());
+			return false;
+		}
+		keys.push_back(i);
+		if ( outerIt->first == "root" && outerIt->second.size() > 1 ){
+			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
+			return false;
+		}
+		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
+			//std::cout << "value : " << *innerIt << std::endl;
+			if (!locationFunct[i](*innerIt)){
+				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
+				return false;
+			}
+		}
+	}
+	//check for no deplication
+	//add to server vector
+	if ( servers[servers.size() - 1].isLocationInServer(locationKey)){
+		Logger::log(E_ERROR, COLOR_RED, "Ambiguity warning: %s location block dublication is not allowed in the server!", locationKey);
+		return false;
+	}
+	else{
+		servers[servers.size() - 1].setLocation(innerBlock, locationKey);
+	}
 	return true;
 }
 
 bool Validator::checkLocationBlock(std::vector<std::string>*	lines){	
-	if ((*lines)[0] == lines->back() || (*lines)[2].compare("location /") != 0){
+	if ((*lines)[0] == lines->back() || (*lines)[2].compare(0, 10,"location /") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to at least have a location block for root!");
 		return false;
 	}
@@ -551,7 +690,7 @@ bool Validator::checkLocationBlock(std::vector<std::string>*	lines){
 		return false;
 	}
 	while ((*lines)[0] != lines->back()){
-		if((*lines)[2].compare(0, 9, "location ") != 0){
+		if((*lines)[2].compare(0, 10, "location /") != 0){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", (*lines)[2].c_str());
 			return false;
 		}
