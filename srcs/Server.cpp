@@ -136,10 +136,20 @@ void	Server::setIndex( std::string index ){
 	this->index_ = index;
 }
 
-/*! \brief sets a vlaue for error page 404
+/*! \brief gets address
 *       
 *
-*  sets a vlaue for error page 404.
+* details here
+*/
+struct sockaddr_in	Server::getAddress( void ) const{
+
+	return(this->address_);
+}
+
+/*! \brief sets a vlaue for error page
+*       
+*
+*  sets a vlaue for error page.
 */
 void	Server::setErrorPage( std::string error_code, std::string errorPage ){
 

@@ -672,7 +672,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 	//check for no deplication
 	//add to server vector
 	if ( servers[servers.size() - 1].isLocationInServer(locationKey)){
-		Logger::log(E_ERROR, COLOR_RED, "Ambiguity warning: %s location block dublication is not allowed in the server!", locationKey);
+		Logger::log(E_ERROR, COLOR_RED, "Ambiguity warning: %s location block dublication is not allowed in the server!", locationKey.c_str());
 		return false;
 	}
 	else{
