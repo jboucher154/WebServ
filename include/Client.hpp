@@ -34,14 +34,14 @@ class	Client {
 
 		Client&	operator=( const Client& rhs );
 
-		bool	SELECT_startCgiResponse( void );
-		void	SELECT_finishCgiResponse( void );
+		bool					SELECT_startCgiResponse( void );
+		void					SELECT_finishCgiResponse( void );
 
-		bool	POLL_startCgiResponse( void );
-		void	POLL_finishCgiResponse( void );
+		bool					POLL_startCgiResponse( void );
+		void					POLL_finishCgiResponse( void );
 
 		// setters
-		void				setLatestTime( void );
+		void					setLatestTime( void );
 
 		// getters
 		int						getFd( void ) const;
@@ -58,6 +58,7 @@ class	Client {
 		void					addToRequest( std::string message );
 		void					resetResponse( void );
 		void					resetRequest( void );
+
 };
 
 #endif

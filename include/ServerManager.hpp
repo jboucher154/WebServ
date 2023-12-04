@@ -27,6 +27,8 @@ class	ServerManager {
 	private:
 		std::vector<Server>			servers_;				// vector of all servers
 
+		std::map<int, int*>			client_cgi_map_;		// map of clients and their pipe fds (cgi)
+
 		fd_set						read_fd_set_;			// set of file descriptors ready for read (SELECT)
 		fd_set						write_fd_set_;			// set of file descriptors ready for write (SELECT)
 		int							biggest_fd_;			// biggest fd value (SELECT)
@@ -38,11 +40,15 @@ class	ServerManager {
 		std::map<int, Client>		client_map_;			// map of client socket descriptors and Client objects
 		time_t						last_client_time_;		// for automatic shutdown
 
-		void						POLL_addCgiFdsToPollfds_( Client& client );
-		void						POLL_removeCgiFdsFromPollfds_( Client& client );
+		void	addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out );
 
-		void						SELECT_addCgiFdsToSets_( Client& client );
-		void						SELECT_removeCgiFdsFromSets_( Client& client );
+		void	POLL_addClientCgiFdsToPollfds_( int pipe_in, int pipe_out );
+		void	POLL_removeClientCgiFdsFromPollfds_( int client_fd );
+		void	POLL_handleClientCgi_( int client_fd );
+
+		void	SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out );
+		void	SELECT_removeClientCgiFdsFromSets_( int client_fd );
+		void	SELECT_handleClientCgi_( int client_fd );
 
 	public:
 		ServerManager( void );
@@ -59,6 +65,7 @@ class	ServerManager {
 		void	removeClient( int client_fd );
 		bool	receiveFromClient( int client_fd );
 		bool	sendResponseToClient( int client_fd );
+		int		getClientFdByItsCgiPipeFd( int pipe_fd );
 
 
 		bool	SELECT_initializeServers( void );

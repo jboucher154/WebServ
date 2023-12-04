@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/* CONSTRUCTORS */
+
 ServerManager::ServerManager( void ) {
 	
 	this->servers_.clear();
@@ -45,7 +47,11 @@ ServerManager::ServerManager( const ServerManager& other ) {
 	*this = other;
 }
 
+/* DESTRUCTOR */
+
 ServerManager::~ServerManager( void ) {}
+
+/* OPERATOR OVERLOADS */
 
 ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 
@@ -64,6 +70,18 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 }
 
 
+/*! \brief get a client by it's cgi pipe fd.
+*       
+*/
+int	ServerManager::getClientFdByItsCgiPipeFd( int pipe_fd ) {
+
+	for (std::map<int, int*>::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+		if (it->second[0] == pipe_fd || it->second[1] == pipe_fd)
+			return it->first;
+	}
+	
+	return -1;
+}
 
 void	ServerManager::closeServerSockets( void ) {
 
@@ -173,7 +191,6 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
 				server->getServerName().c_str(), client_fd, -42);										// ADD STAT CODE WHEN JENNY MAKES GETSTAT!
 	}
-	// if bytes_sent == 0 do something?
 
 	client->resetResponse();
 	client->resetRequest();
@@ -253,7 +270,11 @@ bool	ServerManager::SELECT_runServers( void ) {
 				if (this->server_map_.count(fd)) {}
 					// server receiving stuff from client?		// I don't think anything happens here, remove
 				if (this->client_map_.count(fd))
-					this->SELECT_sendResponseToClient(fd);				// send a response to client
+					this->SELECT_sendResponseToClient(fd);			// send a response to client
+				else {
+					std::cout << "\tSELECT_handleClientCgi_" << std::endl;
+					this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
+				}
 			}
 		}
 	
@@ -360,7 +381,7 @@ void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
 
 	if (client.getRequest().getCgiFlag()) {
 		client.SELECT_finishCgiResponse();
-		this->SELECT_removeCgiFdsFromSets_(client);
+		this->SELECT_removeClientCgiFdsFromSets_(client_fd);
 		this->SELECT_switchClientToWriteSet(client_fd);
 		return;
 	}
@@ -370,8 +391,11 @@ void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
 	else {
 		client.getResponse().generate(&client.getRequest());
 		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.SELECT_startCgiResponse()) == true)
-				this->SELECT_addCgiFdsToSets_(client);
+			if ((client.SELECT_startCgiResponse()) == true) {
+				CgiHandler* client_cgi = client.getCgiHandler();
+				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+				this->SELECT_addClientCgiFdsToSets_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+			}
 			return;
 		}
 		this->SELECT_switchClientToWriteSet(client_fd);
@@ -488,7 +512,14 @@ bool	ServerManager::POLL_runServers( void ) {
 			if (it->revents & POLLOUT) {
 				if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
 					this->POLL_sendResponseToClient(it->fd);
+				else {
+					std::cout << "\tPOLL_handleClientCgi_" << std::endl;
+					this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
+				}
 			}
+
+			if (it->revents & (POLLIN | POLLOUT))
+				std::cout << "\tREVENT\tfd: " << it->fd << "\trevent: " << it->revents << std::endl;
 		}
 	
 		if (this->checkLastClientTime())	// if there hasn't been any client activity in the server shutdown time, end run
@@ -585,7 +616,8 @@ void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 
 	if (client.getRequest().getCgiFlag()) {
 		client.POLL_finishCgiResponse();
-		this->POLL_removeCgiFdsFromPollfds_(client);
+		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
+		this->client_cgi_map_.erase(client_fd);
 		this->POLL_switchClientToPollout(client_fd);
 		return;
 	}
@@ -595,8 +627,12 @@ void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 	else {
 		client.getResponse().generate(&client.getRequest());
 		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.POLL_startCgiResponse()) == true)
-				this->POLL_addCgiFdsToPollfds_(client);
+			if ((client.POLL_startCgiResponse()) == true) {
+				CgiHandler* client_cgi = client.getCgiHandler();
+				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+				this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+			}
+
 			return;
 		}
 		this->POLL_switchClientToPollout(client_fd);
@@ -636,70 +672,90 @@ void	ServerManager::POLL_printData( void ) {
 	Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
 }
 
+
 /* CLASS PRIVATE METHODS */
 
-void	ServerManager::POLL_addCgiFdsToPollfds_( Client& client ) {
 
-	std::vector<pollfd>& cgi_pollfds = client.getCgiHandler()->getCgiPollfds();
+void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out ) {
 
-	for (std::vector<pollfd>::iterator it = cgi_pollfds.begin(); it != cgi_pollfds.end(); ++it) {
-		this->pollfds_.push_back(*it);
-		++this->pollfds_size_;
-	}
+	int	array[2] = {pipe_out, pipe_in};
+
+	if (!this->client_cgi_map_.count(client_fd)) {
+		this->client_cgi_map_[client_fd] = array;
+	} else
+		Logger::log(E_ERROR, COLOR_RED, "addClientCgiToCgiMap_; client %d is already in the map (THIS SHOULDN'T HAPPEN)", client_fd);
+		// handle error somehow
 }
 
-void	ServerManager::POLL_removeCgiFdsFromPollfds_( Client& client ) {
+/********************************************** POLL functions **********************************************************/
 
-	std::vector<pollfd>& cgi_pollfds = client.getCgiHandler()->getCgiPollfds();
+void	ServerManager::POLL_addClientCgiFdsToPollfds_( int pipe_in, int pipe_out ) {
 
-	for (std::vector<pollfd>::iterator it = cgi_pollfds.begin(); it != cgi_pollfds.end(); ++it) {
-		this->POLL_removeFdFromPollfds(it->fd);
-	}
+	pollfd pollfd_in = {pipe_in, POLLIN, 0};
+	pollfd pollfd_out = {pipe_out, POLLOUT, 0};
 
-	client.getCgiHandler()->getCgiPollfds();
+	this->pollfds_.push_back(pollfd_in);
+	this->pollfds_.push_back(pollfd_out);
+	this->pollfds_size_ += 2;
 }
 
+void	ServerManager::POLL_removeClientCgiFdsFromPollfds_( int client_fd ) {
 
-void	ServerManager::SELECT_addCgiFdsToSets_( Client& client ) {
-
-	fd_set&	cgi_read_set = client.getCgiHandler()->getCgiReadSet();
-	fd_set&	cgi_write_set = client.getCgiHandler()->getCgiwriteSet();
-
-	int	hits = 0;
-	for (int fd = FD_SETSIZE - 1; fd >= 0; --fd) {
-		if (FD_ISSET(fd, &cgi_read_set)) {
-			FD_SET(fd, &cgi_read_set);
-			++hits;
-		}
-		if (FD_ISSET(fd, &cgi_write_set)) {
-			FD_SET(fd, &cgi_write_set);
-			++hits;
-		}
-		if (hits >= 2)
+	for (std::map<int, int*>::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+		if (it->first == client_fd) {
+			this->POLL_removeFdFromPollfds(it->second[0]);
+			this->POLL_removeFdFromPollfds(it->second[1]);
 			break;
+		}
 	}
-
-	this->biggest_fd_ = this->SELECT_getBiggestFd(FD_SETSIZE - 1);
 }
 
-void	ServerManager::SELECT_removeCgiFdsFromSets_( Client& client ) {
+void	ServerManager::POLL_handleClientCgi_( int client_fd ) {
 
-	fd_set&	cgi_read_set = client.getCgiHandler()->getCgiReadSet();
-	fd_set&	cgi_write_set = client.getCgiHandler()->getCgiwriteSet();
+	Client&	client = this->client_map_[client_fd];
 
-	int	hits = 0;
-	for (int fd = FD_SETSIZE - 1; fd >= 0; --fd) {
-		if (FD_ISSET(fd, &cgi_read_set)) {
-			FD_CLR(fd, &this->read_fd_set_);
-			++hits;
-		}
-		if (FD_ISSET(fd, &cgi_write_set)) {
-			FD_SET(fd, &this->write_fd_set_);
-			++hits;
-		}
-		if (hits >= 2)
-			break;
+	if (client.getRequest().getCgiFlag()) {
+		client.POLL_finishCgiResponse();
+		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
+		this->client_cgi_map_.erase(client_fd);
+		this->POLL_switchClientToPollout(client_fd);
+		return;
+	} else {
+		Logger::log(E_ERROR, COLOR_RED, "POLL_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
+		// handle this error somehow
 	}
+}
 
-	client.getCgiHandler()->clearCgiHandlerPollfdsAndSets();
+/********************************************** SELECT functions **********************************************************/
+
+void	ServerManager::SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out ) {
+
+	FD_SET(pipe_in, &this->write_fd_set_);
+	FD_SET(pipe_out, &this->read_fd_set_);
+}
+
+void	ServerManager::SELECT_removeClientCgiFdsFromSets_( int client_fd ) {
+
+	for (std::map<int, int*>::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+		if (it->first == client_fd) {
+			this->SELECT_removeFdFromSets(it->second[0]);
+			this->SELECT_removeFdFromSets(it->second[1]);
+			break;
+		}
+	}
+}
+
+void	ServerManager::SELECT_handleClientCgi_( int client_fd ) {
+	
+	Client&	client = this->client_map_[client_fd];
+
+	if (client.getRequest().getCgiFlag()) {
+		client.SELECT_finishCgiResponse();
+		this->SELECT_removeClientCgiFdsFromSets_(client_fd);
+		this->SELECT_switchClientToWriteSet(client_fd);
+		return;
+	} else {
+		Logger::log(E_ERROR, COLOR_RED, "SELECT_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
+		// handle this error somehow
+	}
 }

@@ -40,20 +40,6 @@ class	CgiHandler {
 		int			pipe_in_[2];
 		int			pipe_out_[2];
 
-		// these are needed for POLL/SELECT
-		std::vector<pollfd>		pollfds_;
-		fd_set					read_fd_set_;
-		fd_set					write_fd_set_;
-
-		void	SELECT_cgiRemoveFdFromSets_( int fd );
-		void	SELECT_cgiRemoveCgiPipeEndsFromSets_( int pipe_in, int pipe_out );
-		void	SELECT_cgiAddFdToReadSet_( int fd );
-		void	SELECT_cgiAddFdToWriteSet_( int fd );
-
-		void	POLL_cgiRemoveFdFromPollfds_( int fd );
-		void	POLL_cgiRemoveCgiPipeEndsFromPollfds_( int pipe_in, int pipe_out );
-		void	POLL_cgiAddFdtoPollfds_( int fd, int mode );
-		// end of POLL/SELECT attributes and methods
 
 		int		fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
@@ -78,7 +64,6 @@ class	CgiHandler {
 
 		void	ClearCgiHandler( void );
 		void	closeCgiPipes( void );
-		void	clearCgiHandlerPollfdsAndSets( void );
 
 		int		SELECT_initializeCgi( Client& client );
 		int		SELECT_cgiFinish( Response& response );
@@ -87,11 +72,6 @@ class	CgiHandler {
 		int		POLL_initializeCgi( Client& client );
 		int		POLL_cgiFinish( Response& response );
 
-		// setters
-		void	setMetaVariables( const char** metavariables );
-		void	setPipingSuccessful( bool piping_result );
-		void	setForkingSuccessful( bool forking_result );
-
 		// getters
 		std::vector<std::string, std::string>&	getMetavariablesVector( void ) const;
 		std::vector<std::string, std::string>&	getCgiVector( void ) const;
@@ -99,16 +79,12 @@ class	CgiHandler {
 		std::string		getExtension( std::string uri );
 		const std::string&	getCgiOutput( void ) const;
 
-		std::vector<pollfd>&	getCgiPollfds( void );
-		fd_set&					getCgiReadSet( void );
-		fd_set&					getCgiwriteSet( void );
-
-		char**	getMetaVariables( void ) const;
-		char**	getArgs( void ) const;
-		bool	getPipingSuccessful( void ) const;
-		bool	getForkingSuccessful( void ) const;
-		int*	getPipeIn( void ) const;
-		int*	getPipeOut( void ) const;
+		char**		getMetaVariables( void ) const;
+		char**		getArgs( void ) const;
+		bool		getPipingSuccessful( void ) const;
+		bool		getForkingSuccessful( void ) const;
+		const int*	getPipeIn( void ) const;
+		const int*	getPipeOut( void ) const;
 };
 
 #endif

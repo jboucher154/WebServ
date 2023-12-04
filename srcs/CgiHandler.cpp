@@ -115,12 +115,6 @@ void	CgiHandler::closeCgiPipes( void ) {
 			close (this->pipe_out_[1]);
 }
 
-void	CgiHandler::clearCgiHandlerPollfdsAndSets( void ) {
-
-	this->pollfds_.clear();
-	FD_ZERO(&this->read_fd_set_);
-	FD_ZERO(&this->write_fd_set_);
-}
 
 /****************************** SELECT methods ******************************/
 
@@ -217,66 +211,15 @@ int	CgiHandler::POLL_cgiFinish( Response& response ) {
 	return result;
 }
 
+
+
 /* CLASS PRIVATE METHODS */
 
-void	CgiHandler::SELECT_cgiRemoveFdFromSets_( int fd ) {
-	
-	if (FD_ISSET(fd, &this->read_fd_set_))
-		FD_CLR(fd, &this->read_fd_set_);
-	if (FD_ISSET(fd, &this->write_fd_set_))
-		FD_CLR(fd, &this->write_fd_set_);
-}
-
-void	CgiHandler::SELECT_cgiRemoveCgiPipeEndsFromSets_( int pipe_in, int pipe_out ) {
-
-	if (FD_ISSET(pipe_in, &this->read_fd_set_))
-		FD_CLR(pipe_in, &this->read_fd_set_);
-	if (FD_ISSET(pipe_out, &this->write_fd_set_))
-		FD_CLR(pipe_out, &this->write_fd_set_);
-}
-
-void	CgiHandler::SELECT_cgiAddFdToReadSet_( int fd ) {
-
-	if (!FD_ISSET(fd, &this->read_fd_set_))
-		FD_SET(fd, &this->read_fd_set_);
-}
-
-void	CgiHandler::SELECT_cgiAddFdToWriteSet_( int fd ) {
-
-	if (!FD_ISSET(fd, &this->write_fd_set_))
-		FD_SET(fd, &this->write_fd_set_);
-}
-
-void	CgiHandler::POLL_cgiRemoveFdFromPollfds_( int fd ) {
-
-	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
-		if (it->fd == fd) {
-			this->pollfds_.erase(it);
-			break;
-		}
-	}
-}
-
-void	CgiHandler::POLL_cgiRemoveCgiPipeEndsFromPollfds_( int pipe_in, int pipe_out ) {
-	
-	this->POLL_cgiRemoveFdFromPollfds_(pipe_in);
-	this->POLL_cgiRemoveFdFromPollfds_(pipe_out);
-}
-
-/*! \brief Add a file descriptor to the pollfds vector.
-*		Mode should be either POLLIN or POLLOUT!
-*/
-void	CgiHandler::POLL_cgiAddFdtoPollfds_( int fd, int mode ) {
-
-	pollfd new_pollfd = {fd, mode, 0};
-	this->pollfds_.push_back(new_pollfd);
-}
 
 /*! \brief Fill metavariables_map_ with key/value-data. Later on the map will be converted into a
 *			c-style string array which will be passed to the cgi script as the environment.
 *			Returns a e_cgi_results enum value which tells if the function was successful or not.
 *       
-*	ASK JENNY. IS request.getHeaderValueByKey case sensitive? Is "user-agent" the same as "User-Agent"?
 */
 int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
@@ -288,6 +231,9 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 	this->metavariables_map_["HTTP_USER_AGENT"] = request.getHeaderValueByKey("User-Agent");
 	this->metavariables_map_["HTTP_COOKIE"] = request.getHeaderValueByKey("Cookie");
 	this->metavariables_map_["HTTP_REFERER"] = request.getHeaderValueByKey("Referer");
+	this->metavariables_map_["PATH_INFO"] = request.getRequestLineValue("uri");
+	this->metavariables_map_["PATH_TRANSLATED"] = this->path_;
+	this->metavariables_map_["QUERY_STRING"] = client.getResponse().getQueryString();
 	this->metavariables_map_["GATEWAY_INTERFACE"] = "CGI/1.1";
 
 	this->metavariables_map_["SERVER_NAME"] = client.getServer()->getServerName();
@@ -297,9 +243,6 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
 	this->metavariables_map_["REMOTE_HOST"] = client.getClientHost();
 	this->metavariables_map_["REMOTE_PORT"] = ntohs(client.getAddress().sin_port);
-	this->metavariables_map_["PATH_INFO"] = request.getRequestLineValue("uri");
-	this->metavariables_map_["PATH_TRANSLATED"] = this->path_;
-	this->metavariables_map_["QUERY_STRING"] = client.getResponse().getQueryString();
 
 	return E_CGI_OK;
 }
@@ -344,6 +287,8 @@ char**	CgiHandler::convertMetavariablesMapToCStringArray_( void ) {
 	return string_array;
 }
 
+/****************************** getters ******************************/
+
 /*! \brief
 *
 *
@@ -363,6 +308,24 @@ std::string	CgiHandler::getExtension( std::string uri ) {
 	}
 	return extension;
 }
+
+const std::string&	CgiHandler::getCgiOutput( void ) const {
+	
+	return this->cgi_output_;
+}
+
+const int*	CgiHandler::getPipeIn( void ) const {
+
+	return this->pipe_in_;
+}
+
+const int*	CgiHandler::getPipeOut( void ) const {
+
+	return this->pipe_out_;
+}
+
+
+/* CLASS PRIVATE METHODS */
 
 /*! \brief Create the arguments for running the CGI script.
 *
@@ -421,28 +384,6 @@ void	CgiHandler::cgiTimer_( int& status ) {
 	waitpid(this->pid_, &status, 0);
 }
 
-/****************************** getters ******************************/
-
-const std::string&	CgiHandler::getCgiOutput( void ) const {
-	
-	return this->cgi_output_;
-}
-
-std::vector<pollfd>&	CgiHandler::getCgiPollfds( void ) {
-
-	return this->pollfds_;
-}
-
-fd_set&					CgiHandler::getCgiReadSet( void ) {
-
-	return this->read_fd_set_;
-}
-
-fd_set&					CgiHandler::getCgiwriteSet( void ) {
-
-	return this->write_fd_set_;
-}
-
 /****************************** SELECT methods ******************************/
 
 int	CgiHandler::SELECT_setUpCgiPipes_( void ) {
@@ -464,9 +405,6 @@ int	CgiHandler::SELECT_setUpCgiPipes_( void ) {
 		this->piping_successful_ = false;
 		return E_CGI_SERVERERROR;
 	}
-	
-	this->SELECT_cgiAddFdToReadSet_(this->pipe_in_[1]);
-	this->SELECT_cgiAddFdToWriteSet_(this->pipe_out_[0]);
 
 	this->piping_successful_ = true;
 	return E_CGI_OK;
@@ -578,9 +516,6 @@ int	CgiHandler::POLL_setUpCgiPipes_( void ) {
 		return E_CGI_SERVERERROR;
 	}
 
-	this->POLL_cgiAddFdtoPollfds_(this->pipe_in_[1], POLLIN);
-	this->POLL_cgiAddFdtoPollfds_(this->pipe_out_[0], POLLOUT);
-
 	this->piping_successful_ = true;
 	return E_CGI_OK;
 }
@@ -595,7 +530,7 @@ int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, 
 	(void)it_end;
 	std::string	body_string = "";	// get body into string
 
-	std::cout << "POLL_executeCgi_" << std::endl;
+	std::cout << "\tPOLL_executeCgi_" << std::endl;
 
 	
 	// server_manager.POLL_removeFdFromPollfds(this->pipe_in_[1]);
