@@ -11,7 +11,7 @@ std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
 		"error_page_510", "error_page_511"};
 std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_array
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
-std::string valid_location_keys_array[] = {" autoindex", "return",
+std::string valid_location_keys_array[] = {"autoindex", "return",
 		 "alias", "client_body_limit", "allow_methods", "root", "index", "cgi_ext", "cgi_path"};
 std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_location_keys_array
 	+ sizeof(valid_location_keys_array) / sizeof(valid_location_keys_array[0]));
@@ -22,6 +22,7 @@ std::vector<Server>									Validator::servers;
 size_t 												Validator::serverLines = 0;
 std::map<std::string, std::string> 					Validator::validIpHostMap;
 std::string											Validator::rootPath = "";
+std::string											Validator::mainRootPath = "";
 
 /*! \brief Validator's class constructor
 *       
@@ -397,10 +398,10 @@ bool Validator::cgiPath( std::string value ){
 	return true;
 }
 
-bool Validator::cgiRoot( std::string value ){
+bool Validator::locationRoot( std::string value ){
 
 	if ( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for cgi root value can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for location root value can not be empty!");
 		return false;
 	}
 	if (!isDirectory(value)){
@@ -410,10 +411,10 @@ bool Validator::cgiRoot( std::string value ){
 	return true;
 }
 
-bool Validator::cgiIndex( std::string value ){
+bool Validator::locationIndex( std::string value ){
 
 	if( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for cgi index value can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for location index value can not be empty!");
 		return false;
 	}
 	std::string	temp = rootPath;
@@ -510,7 +511,7 @@ bool Validator::checkBraces(std::vector<std::string>*	lines){
 *  When innerBlock is saved in inner block map, removes the coresponding lines from lines
 */
 bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
-
+	std::cout << "here" << std::endl;
 	//if innerBlock is not empty loop through and earases all 
 	while (!innerBlock.empty())
 		innerBlock.erase(innerBlock.begin());
@@ -569,14 +570,14 @@ bool Validator::checkCgiBlockKeyValues(){
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block has to be enclosed in curly braces!");
 		return false;
 	}
-	if (!storeInnerBlock(&lines, 1)){
+	if (!storeInnerBlock(&lines, 2)){
 		return false;
 	}
 	if (innerBlock.empty()) { //?
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block can not be empty!");
 		return false;
 	}
-	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::cgiRoot, &Validator::cgiIndex, &Validator::cgiExt, &Validator::cgiPath};
+	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::locationRoot, &Validator::locationIndex, &Validator::cgiExt, &Validator::cgiPath};
 	//validate key values till the closing }
 	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
@@ -623,6 +624,8 @@ bool Validator::checkCgiBlockKeyValues(){
 }
 
 bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
+
+	std::cout << locationKey << std::endl;
 	if(locationKey.compare("/cgi-bin") == 0){
 		return(checkCgiBlockKeyValues());
 	}
@@ -635,15 +638,26 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		Logger::log(E_ERROR, COLOR_RED, "%s Location block has to be enclosed in curly braces!", locationKey.c_str());
 		return false;
 	}
-	if (!storeInnerBlock(&lines, 1)){
+	if (!storeInnerBlock(&lines, 2)){
 		return false;
 	}
 	if (innerBlock.empty()) { //?
 		Logger::log(E_ERROR, COLOR_RED, "%s location block can not be empty!", locationKey.c_str());
 		return false;
 	}
+	//add the location root to main root for compelete path
+	if (innerBlock.find("root") == innerBlock.end()){
+		std::vector<std::string> rootValue;
+		rootValue.push_back(locationKey);
+		innerBlock["root"] = rootValue;
+	}
+	std::string	temp = mainRootPath;
+	temp.append("/");
+	temp.append(rootPath);
+	rootPath = temp;
 	t_location_block_functs  locationFunct[] = {&Validator::autoIndex, &Validator::returnKey,
-				&Validator::alias, &Validator::clientMaxBodySize, &Validator::allowedMethods};
+				&Validator::alias, &Validator::clientMaxBodySize, &Validator::allowedMethods,
+				&Validator::locationRoot, &Validator::locationIndex};
 	//validate key values till the closing }
 	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
@@ -653,7 +667,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		while (i < 6 && valid_location_keys[i].compare(outerIt->first))
 			i++ ;
 		if (i == 6){
-			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for Cgi location.", (*outerIt).first.c_str());
+			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for %s location.", (*outerIt).first.c_str(), locationKey.c_str());
 			return false;
 		}
 		keys.push_back(i);
@@ -682,7 +696,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 }
 
 bool Validator::checkLocationBlock(std::vector<std::string>*	lines){	
-	if ((*lines)[0] == lines->back() || (*lines)[2].compare(0, 10,"location /") != 0){
+	if ((*lines)[0] == lines->back() || (*lines)[0].compare(0, 10,"location /") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to at least have a location block for root!");
 		return false;
 	}
@@ -690,11 +704,11 @@ bool Validator::checkLocationBlock(std::vector<std::string>*	lines){
 		return false;
 	}
 	while ((*lines)[0] != lines->back()){
-		if((*lines)[2].compare(0, 10, "location /") != 0){
-			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", (*lines)[2].c_str());
+		if((*lines)[0].compare(0, 10, "location /") != 0){
+			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", (*lines)[0].c_str());
 			return false;
 		}
-		if(!checkLocationBlockKeyValues((*lines)[2].substr ((*lines)[2].find("location ")))){
+		if(!checkLocationBlockKeyValues((*lines)[0].substr(9))){
 			return false;
 		}
 	}
@@ -787,6 +801,7 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines){
 		Logger::log(E_ERROR, COLOR_RED, "Main block can not be empty!");
 		return false;
 	}
+	mainRootPath = rootPath;
 	return true;
 }
 
@@ -915,16 +930,8 @@ bool Validator::validate(std::string	input){
 	// 		std::cout << *it << std::endl;
 	// 	}
 	// }
+	// for (std::map<std::string, std::string>::iterator it = validIpHostMap.begin(); it != validIpHostMap.end(); it++){
+	// 	std::cout << ":" << it->first << " :" << it->second << std::endl;
+	// }
 	return (validate_lines(&lines));
-	//1.check that the first line says server
-	// 2.check that the server block is opened and closed (this means that there are no unclosed curly braces)
-	//2.1 check the blocks within the server block if block is main send 
-	//	to 2.1.1 if location send to 2.1.2 if block is something else reject config file.
-	//	In the end check no duplication in the location block. 
-	//2.1.1 read the first word is it a valid key? is it's matching value a valid value for that key?
-	//	Did the read keys include the mandetory keys for the main block? Did we have any duplicate keys?
-	//2.1.2 Basicaly do the same thing as 2.1.1 but the fetch the valid values for the respective location blocks
-	//3.check that the next line after the server block says server
-	//if there are more lines do step 2. to 3. again
-	//if there are more lines 
 }

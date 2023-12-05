@@ -23,6 +23,7 @@ private:
 	static std::map<std::string, std::string>				validIpHostMap;
 	static std::vector<std::string>							lines;
 	static size_t 											serverLines;
+	static std::string 										mainRootPath;
 	static std::string 										rootPath;
 	static std::map<std::string, std::vector<std::string> >	innerBlock;
 
@@ -42,9 +43,8 @@ private:
 	static bool returnKey( std::string value );
 	static bool alias( std::string value );
 	static bool cgiExt( std::string value );
-	static bool cgiIndex( std::string value );
-	static bool cgiRoot( std::string value );
-	static bool clientBodyLimit( std::string value );
+	static bool locationIndex( std::string value );
+	static bool locationRoot( std::string value );
 	static bool cgiPath( std::string value );
 	static bool store_lines(std::string	input);
 	static bool checkMainBlock(std::vector<std::string>*	lines);
