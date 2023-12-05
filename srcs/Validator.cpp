@@ -391,10 +391,15 @@ bool Validator::cgiPath( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for root value can not be empty!");
 		return false;
 	}
-	if (!isDirectory(value)){
+	// if (!isDirectory(value)){
+	// 	Logger::log(E_ERROR, COLOR_RED, "cgi path has to be an existing directory!");
+	// 	return false;
+	// }
+	if (access (value.c_str(), X_OK) != 0){
 		Logger::log(E_ERROR, COLOR_RED, "cgi path has to be an existing directory!");
-		return false;
+		return false;	
 	}
+
 	return true;
 }
 
