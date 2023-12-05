@@ -46,7 +46,7 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 
 	if (this != &rhs) {
 		this->metavariables_map_ = rhs.metavariables_map_;
-		this->cgi_map_ = rhs.cgi_map_;
+		// this->cgi_map_ = rhs.cgi_map_;
 
 		if (rhs.metavariables_ != NULL)
 			this->metavariables_ = copyCStringArray(rhs.metavariables_);	// do somekind of check here, throw exception?
@@ -80,7 +80,7 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 void	CgiHandler::ClearCgiHandler( void ) {
 	
 	this->metavariables_map_.clear();
-	this->cgi_map_.clear();
+	// this->cgi_map_.clear();
 	deleteAllocatedCStringArray(this->metavariables_);
 	this->metavariables_ = NULL;
 	deleteAllocatedCStringArray(this->args_);

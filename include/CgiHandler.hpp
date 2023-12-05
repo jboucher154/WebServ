@@ -28,7 +28,7 @@ class	CgiHandler {
 
 	private:
 		std::map<std::string, std::string>	metavariables_map_;
-		std::map<std::string, std::string>	cgi_map_;
+		// std::map<std::string, std::string>	cgi_map_;
 
 		std::string	cgi_output_;
 		char**		metavariables_;
