@@ -144,7 +144,6 @@ bool Validator::listen( std::string value ){
 		return false;
 	}
 	try{
-		//std::cout << ft_stoi(value) << std::endl;
 		if (ft_stoi(value) < 1024 || ft_stoi(value) > 65535 ){
 			Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
 			return false;
@@ -391,10 +390,6 @@ bool Validator::cgiPath( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for root value can not be empty!");
 		return false;
 	}
-	// if (!isDirectory(value)){
-	// 	Logger::log(E_ERROR, COLOR_RED, "cgi path has to be an existing directory!");
-	// 	return false;
-	// }
 	if (access (value.c_str(), X_OK) != 0){
 		Logger::log(E_ERROR, COLOR_RED, "cgi path has to be an existing directory!");
 		return false;	
@@ -465,17 +460,7 @@ size_t Validator::countServerLines(std::vector<std::string>*	lines){
 */
 bool Validator::checkBraces(std::vector<std::string>*	lines){
 	size_t i = 1;
-	// if ((*lines)[i] == lines->back() || (*lines)[i].compare("{") != 0){
-	// 	Logger::log(E_ERROR, COLOR_RED, "Server block should be enclosed in curly braces!");
-	// 	return false;
-	// }
 	int openBraces = 1;
-	// if (!lines->empty()){
-
-	// 	for (std::vector<std::string>::iterator it = lines->begin(); it != lines->end(); it++){
-	// 		std::cout << *it << std::endl;
-	// 	}
-	// }
 	while (++i < serverLines ){
 		if ((*lines)[i].compare("{") == 0){
 			openBraces++;
@@ -516,7 +501,6 @@ bool Validator::checkBraces(std::vector<std::string>*	lines){
 *  When innerBlock is saved in inner block map, removes the coresponding lines from lines
 */
 bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
-	std::cout << "here" << std::endl;
 	//if innerBlock is not empty loop through and earases all 
 	while (!innerBlock.empty())
 		innerBlock.erase(innerBlock.begin());
@@ -586,8 +570,6 @@ bool Validator::checkCgiBlockKeyValues(){
 	//validate key values till the closing }
 	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
-		//std::cout << "key : " << outerIt->first << std::endl;
-		//std::cout << "value : " << outerIt->second[0] << std::endl;
 		int i = 0;
 		while (i < 5 && valid_location_keys[i + 4].compare(outerIt->first))
 			i++ ;
@@ -601,7 +583,6 @@ bool Validator::checkCgiBlockKeyValues(){
 			return false;
 		}
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
-			//std::cout << "value : " << *innerIt << std::endl;
 			if (!locationFunct[i](*innerIt)){
 				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
 				return false;
@@ -625,12 +606,12 @@ bool Validator::checkCgiBlockKeyValues(){
 		servers[servers.size() - 1].setLocation(innerBlock, "/cgi-bin");
 	}
 	//creat cgi exe path map
+
 	return true;
 }
 
 bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 
-	std::cout << locationKey << std::endl;
 	if(locationKey.compare("/cgi-bin") == 0){
 		return(checkCgiBlockKeyValues());
 	}
@@ -661,7 +642,6 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 			rootValue.push_back(rootPath);
 			innerBlock["root"] = rootValue;
 		}
-		std::cout << "rootPath: " << rootPath << " mainPath: " << mainRootPath << std::endl;
 		//add index default value if no index is specified
 		if (innerBlock.find("index") == innerBlock.end()){
 			std::vector<std::string> indexValue;
@@ -674,8 +654,6 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 				&Validator::locationRoot, &Validator::locationIndex};
 	//validate key values till the closing }
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
-		//std::cout << "key : " << outerIt->first << std::endl;
-		//std::cout << "value : " << outerIt->second[0] << std::endl;
 		int i = 0;
 		while (i < 7 && valid_location_keys[i].compare(outerIt->first))
 			i++ ;
@@ -688,7 +666,6 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 			return false;
 		}
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
-			//std::cout << "value : " << *innerIt << std::endl;
 			if (!locationFunct[i](*innerIt)){
 				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
 				return false;
@@ -737,18 +714,10 @@ bool Validator::checkMainBlockKeyValues(void){
 
 	t_main_block_functs  mainFunct[] = { &Validator::listen, &Validator::serverName, &Validator::host, &Validator::root,
 				&Validator::clientMaxBodySize, &Validator::index};
-	// if (!lines.empty()){
-
-	// 	for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
-	// 		std::cout << *it << std::endl;
-	// 	}
-	// }
 	std::vector<int> keys;
 	Server	server;
 	servers.push_back(server);
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
-		//std::cout << "key : " << outerIt->first << std::endl;
-		//std::cout << "value : " << outerIt->second[0] << std::endl;
 		int i = 0;
 		while (i < 46 && valid_main_keys[i].compare(outerIt->first))
 			i++ ;
@@ -764,7 +733,6 @@ bool Validator::checkMainBlockKeyValues(void){
 		if (i >= 6)
 			i = 6;
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
-			//std::cout << "value : " << *innerIt << std::endl;
 			if ((i < 6 && !mainFunct[i](*innerIt)) || (i == 6 && !errorPage(*innerIt, outerIt->first))){
 				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
 				return false;
@@ -779,7 +747,6 @@ bool Validator::checkMainBlockKeyValues(void){
 
 	}
 	mainRootPath = rootPath;
-	std::cout << "rootPath: " << rootPath << " mainPath: " << mainRootPath << std::endl;
 	return true;
 }
 
@@ -926,24 +893,9 @@ bool Validator::validate(std::string	input){
 		Logger::log(E_ERROR, COLOR_RED, "Server failed to read host name and/or ip addresses from the system!");
 		return false;
 	}
-
-	// for (std::map<std::string,std::string>::iterator it = validIpHostMap.begin(); it != validIpHostMap.end(); it++){
-	// 	std::cout << "key: " << it->first;
-	// 	std::cout << "        value:" << it->second << std::endl;
-	// }
-
 	if ( !store_lines(input) || lines.empty()){
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 		return false;
 	}
-	// if (!lines.empty()){
-
-	// 	for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); it++){
-	// 		std::cout << *it << std::endl;
-	// 	}
-	// }
-	// for (std::map<std::string, std::string>::iterator it = validIpHostMap.begin(); it != validIpHostMap.end(); it++){
-	// 	std::cout << ":" << it->first << " :" << it->second << std::endl;
-	// }
 	return (validate_lines(&lines));
 }

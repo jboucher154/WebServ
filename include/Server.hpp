@@ -34,19 +34,18 @@ public:
 	Server& operator=( const Server& rhs );
 	~Server();
 
-	void						setListeningPort( int port );
-	void						setServerName( std::string serverName );
-	void						setRoot( std::string root );
-	void						setHost( std::string host );
-	void						setClientMaxBodySize( int clientMaxBodySize );
-	void						setIndex( std::string index );
-	void						setErrorPage( std::string error_code, std::string errorPage );
-	void						setKeyValueInLocation( std::string locationBlockKey
+	void							setListeningPort( int port );
+	void							setServerName( std::string serverName );
+	void							setRoot( std::string root );
+	void							setHost( std::string host );
+	void							setClientMaxBodySize( int clientMaxBodySize );
+	void							setIndex( std::string index );
+	void							setErrorPage( std::string error_code, std::string errorPage );
+	void							setKeyValueInLocation( std::string locationBlockKey
 									, std::string key, std::vector<std::string> values );
-	void						setLocation( std::map<std::string, std::vector<std::string> >	innerBlock, std::string key );
-	// added by ssalmi for server management
-	int							setupServer();
-	std::string					getServerIdforLog() const;
+	void							setLocation( std::map<std::string, std::vector<std::string> >	innerBlock, std::string key );
+	int								setupServer();
+	std::string						getServerIdforLog() const;
 
 	int								getListeningPortInt( void ) const;
 	std::string						getListeningPortString( void ) const;
