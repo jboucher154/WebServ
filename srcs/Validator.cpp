@@ -12,7 +12,7 @@ std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
 std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_array
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
 std::string valid_location_keys_array[] = {"autoindex", "return",
-		 "alias", "client_body_limit", "allow_methods", "root", "index", "cgi_ext", "cgi_path"};
+		 "alias", "client_body_size", "allow_methods", "root", "index", "cgi_ext", "cgi_path"};
 std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_location_keys_array
 	+ sizeof(valid_location_keys_array) / sizeof(valid_location_keys_array[0]));
 
@@ -405,7 +405,7 @@ bool Validator::locationRoot( std::string value ){
 		return false;
 	}
 	if (!isDirectory(value)){
-		Logger::log(E_ERROR, COLOR_RED, "Cgi root has to be an existing directory!");
+		Logger::log(E_ERROR, COLOR_RED, "location root has to be an existing directory!");
 		return false;
 	}
 	return true;
@@ -631,7 +631,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 	}
 
 	if (locationKey.empty() || locationKey.find_first_of(" #") != std::string::npos){
-		Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", locationKey.c_str());
+		Logger::log(E_ERROR, COLOR_RED, "here %s is not a valid location block!", locationKey.c_str());
 		return false;
 	}
 	if (lines[1] == lines.back() || lines[1].compare("{") != 0){
@@ -645,32 +645,39 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		Logger::log(E_ERROR, COLOR_RED, "%s location block can not be empty!", locationKey.c_str());
 		return false;
 	}
-	//add the location root to main root for compelete path
-	if (innerBlock.find("root") == innerBlock.end()){
-		std::vector<std::string> rootValue;
-		rootValue.push_back(locationKey);
-		innerBlock["root"] = rootValue;
+	if (innerBlock.find("return") == innerBlock.end() && innerBlock.find("alias") == innerBlock.end()){
+		//add default root value if no root value is specified
+		if (innerBlock.find("root") == innerBlock.end()){
+			//add the location root to main root for compelete path
+			std::string	temp = mainRootPath;
+			temp.append(locationKey);
+			rootPath = temp;
+			std::vector<std::string> rootValue;
+			rootValue.push_back(rootPath);
+			innerBlock["root"] = rootValue;
+		}
+		std::cout << "rootPath: " << rootPath << " mainPath: " << mainRootPath << std::endl;
+		//add index default value if no index is specified
+		if (innerBlock.find("index") == innerBlock.end()){
+			std::vector<std::string> indexValue;
+			indexValue.push_back("index.html");
+			innerBlock["index"] = indexValue;
+		}
 	}
-	std::string	temp = mainRootPath;
-	temp.append("/");
-	temp.append(rootPath);
-	rootPath = temp;
 	t_location_block_functs  locationFunct[] = {&Validator::autoIndex, &Validator::returnKey,
 				&Validator::alias, &Validator::clientMaxBodySize, &Validator::allowedMethods,
 				&Validator::locationRoot, &Validator::locationIndex};
 	//validate key values till the closing }
-	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
 		//std::cout << "key : " << outerIt->first << std::endl;
 		//std::cout << "value : " << outerIt->second[0] << std::endl;
 		int i = 0;
-		while (i < 6 && valid_location_keys[i].compare(outerIt->first))
+		while (i < 7 && valid_location_keys[i].compare(outerIt->first))
 			i++ ;
-		if (i == 6){
+		if (i == 7){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for %s location.", (*outerIt).first.c_str(), locationKey.c_str());
 			return false;
 		}
-		keys.push_back(i);
 		if ( outerIt->first == "root" && outerIt->second.size() > 1 ){
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
@@ -689,9 +696,8 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		Logger::log(E_ERROR, COLOR_RED, "Ambiguity warning: %s location block dublication is not allowed in the server!", locationKey.c_str());
 		return false;
 	}
-	else{
+	else
 		servers[servers.size() - 1].setLocation(innerBlock, locationKey);
-	}
 	return true;
 }
 
@@ -767,6 +773,8 @@ bool Validator::checkMainBlockKeyValues(void){
 		}
 
 	}
+	mainRootPath = rootPath;
+	std::cout << "rootPath: " << rootPath << " mainPath: " << mainRootPath << std::endl;
 	return true;
 }
 
@@ -801,7 +809,6 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines){
 		Logger::log(E_ERROR, COLOR_RED, "Main block can not be empty!");
 		return false;
 	}
-	mainRootPath = rootPath;
 	return true;
 }
 
