@@ -323,6 +323,12 @@ bool Validator::errorPage( std::string value, std::string key ){
 	return true;
 }
 
+/*! \brief validates allowed methods for location blocks
+*  
+*  Checks against the list of valid methods and returns false
+*  if the value passed is not on the list, and true if it is. 
+*  
+*/
 bool Validator::allowedMethods( std::string value ){
 
 	if( value.empty() ){
@@ -336,10 +342,16 @@ bool Validator::allowedMethods( std::string value ){
 		return false;
 }
 
+/*! \brief validates autoindex for location blocks
+*  
+*  Autoindex can only have 2 valid values, on and off.
+*  Returns true if value is either one of these and false otherwise. 
+*  
+*/
 bool Validator::autoIndex( std::string value ){
 
 	if( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for allowed methods value can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for autoindex value can not be empty!");
 		return false;
 	}
 	if(value.compare("on") == 0 || value.compare("off") == 0)
@@ -348,6 +360,15 @@ bool Validator::autoIndex( std::string value ){
 		return false;
 }
 
+/*! \brief validates return key's value for location blocks
+*  
+*  Cofig file for this server has to be written in order meaning
+*  that if a location block returns another location block the
+*  returned block has to have been written above the block with 
+*  the return key. So this method searches for the block that is
+*  to be returned and if it is found returns true and false otherwise.
+*  
+*/
 bool Validator::returnKey( std::string value ){
 
 	if( value.empty() ){
@@ -360,6 +381,15 @@ bool Validator::returnKey( std::string value ){
 		return false;
 }
 
+/*! \brief validates allowed methods for location blocks
+*  
+*  Cofig file for this server has to be written in order meaning
+*  that if a location block aliases another location block the
+*  aliased block has to have been written above the block with 
+*  the alias key. So this method searches for the block that is
+*  to be aliased and if it is found returns true and false otherwise.
+*  
+*/
 bool Validator::alias( std::string value ){
 
 	if( value.empty() ){
@@ -372,10 +402,18 @@ bool Validator::alias( std::string value ){
 		return false;
 }
 
+/*! \brief validates autoindex for location blocks
+*  
+*  This server has implications to execute .py and .sh
+*  extentions so these are the only valid values for now
+*  if the value is either one of these this method returns
+*  true, and otherwise it returns false. 
+*  
+*/
 bool Validator::cgiExt( std::string value ){
 
 	if( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for allowed methods value can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for cgi extentions value can not be empty!");
 		return false;
 	}
 	if(value.compare(".sh") == 0 || value.compare(".py") == 0)
@@ -384,6 +422,14 @@ bool Validator::cgiExt( std::string value ){
 		return false;
 }
 
+/*! \brief validates autoindex for location blocks
+*  
+*  The path to .sh executor or python interpreter
+*  has to be accessable and executable so this methods
+*  checkes for accessability and returns true or false
+*  accordingly.
+*  
+*/
 bool Validator::cgiPath( std::string value ){
 
 	if ( value.empty() ){
@@ -398,6 +444,13 @@ bool Validator::cgiPath( std::string value ){
 	return true;
 }
 
+/*! \brief validates autoindex for location blocks
+*  
+*  If a location block overwrites the main root the
+*  replacement has to be a directory, so this method
+*  checks for that.
+*  
+*/
 bool Validator::locationRoot( std::string value ){
 
 	if ( value.empty() ){
@@ -411,6 +464,13 @@ bool Validator::locationRoot( std::string value ){
 	return true;
 }
 
+/*! \brief validates autoindex for location blocks
+*  
+*  This method first updates the index value, attaching
+*  the full path to it and then checks for existance of
+*  thr index file and opening access right.
+*  
+*/
 bool Validator::locationIndex( std::string value ){
 
 	if( value.empty() ){
@@ -554,6 +614,18 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
 	return true;
 }
 
+/*! \brief validates cgi location block key and values
+*  
+*  The first line of cgi block has to be an opening curly
+*  braces. If so storeInner will be called, and if it returns
+*  true it means that the closing curly braces is found and the
+*  format of key and value being seperated by a space is maintained.
+*  from there we check that storeInnerBlock actually created a non_empty
+*  block and call the coresponding function to validate each key's value.
+*  One last check is to see if that the mandatory keys are validated,
+*  and that this is the only cgi block in this server. If all checks
+*  are passed cgi block is added to the server.
+*/
 bool Validator::checkCgiBlockKeyValues(){
 	if (lines[1] == lines.back() || lines[1].compare("{") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block has to be enclosed in curly braces!");
@@ -605,11 +677,26 @@ bool Validator::checkCgiBlockKeyValues(){
 	else{
 		servers[servers.size() - 1].setLocation(innerBlock, "/cgi-bin");
 	}
-	//creat cgi exe path map
-
 	return true;
 }
 
+/*! \brief validates cgi location block key and values
+*  
+*  cgi block will be validated by its own validator.
+*  location specific key can not contain spaces or #
+*  -that is coment indicator.it has to begin with an opening curly
+*  braces. If so storeInner will be called, and if it returns
+*  true it means that the closing curly braces is found and the
+*  format of key and value being seperated by a space is maintained.
+*  from there we check that storeInnerBlock actually created a non_empty
+*  block. If this block doesn't have a return or and alias key
+*  the default value for its root and index have to be added, and verified
+*  default root is the location specific key, and default index is index.html.
+*  Now we call the coresponding function to validate each key's value.
+*  One last check is to see if that this is the only location block with this
+*  location specift key in this server. If all checks
+*  are passed cgi block is added to the server.
+*/
 bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 
 	if(locationKey.compare("/cgi-bin") == 0){
@@ -683,6 +770,14 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 	return true;
 }
 
+/*! \brief validates location blocks
+*  
+*  First line in a location block has to say location /
+*  plus the location specific key that will be validated
+*  by checkLocationBlockKeyValues. First location block
+*  has to be the root, after that as long as there are locations
+*  in this server they have to be validated by checkLocationBlockKeyValues.
+*/
 bool Validator::checkLocationBlock(std::vector<std::string>*	lines){	
 	if ((*lines)[0] == lines->back() || (*lines)[0].compare(0, 10,"location /") != 0){
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to at least have a location block for root!");
