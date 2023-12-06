@@ -896,13 +896,7 @@ bool Validator::validate_server(std::vector<std::string>*	lines){
 		return false;
 	if (!checkLocationBlock(lines))
 		return false;
-	else{
-		//push back one more server to the server vector
-		Server	server;
-		servers.push_back(server);
-		//push back main block to it
-		servers[servers.size() - 1].setLocation(innerBlock, "main");
-	}
+	lines->erase(lines->begin());
 	return true;
 }
 
@@ -924,8 +918,8 @@ bool Validator::validate_lines(std::vector<std::string>*	lines){
 	serverLines = countServerLines(lines);
 	if (!validate_server(lines))
 		return false;
-	// if (!(*lines).empty())
-	// 	return (validate_lines(lines));
+	if (!(*lines).empty())
+		return (validate_lines(lines));
 	return true;
 }
 

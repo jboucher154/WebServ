@@ -30,6 +30,9 @@ int  main( int argc, char *argv[]) {
     }
   }
   std::cout << " server 1 index: " << Validator::servers[0].getIndex() << std::endl; 
+  std::cout << " server 1 index: " << Validator::servers[1].getIndex() << std::endl;
+  std::cout << " servers size: " << Validator::servers.size() << std::endl;
+  std::cout << " server 1 index: " << (Validator::servers[0].isKeyInLocation("/cgi-bin", "root") ? "true" : "false") << std::endl;
   std::vector<Server> server_vector;
 
   Server  server1("Server-1", 8080, "127.0.0.1", "./resources", "index,html", "2147483647");
