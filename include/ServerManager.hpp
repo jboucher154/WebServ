@@ -27,14 +27,14 @@ class	ServerManager {
 	private:
 		std::vector<Server>			servers_;				// vector of all servers
 
-		std::map<int, int*>			client_cgi_map_;		// map of clients and their pipe fds (cgi)
+		std::map<int, std::vector<int> >	client_cgi_map_;		// map of client fds and their pipe fds (for cgi)
 
 		fd_set						read_fd_set_;			// set of file descriptors ready for read (SELECT)
 		fd_set						write_fd_set_;			// set of file descriptors ready for write (SELECT)
 		int							biggest_fd_;			// biggest fd value (SELECT)
 
-		std::vector<struct pollfd>	pollfds_;				// vector of all server and client pollfds (POLL)
-		int							pollfds_size_;			// this is needed so that if you delete a client you don't iterate over vector (POLL)
+		std::vector<struct pollfd>	pollfds_;				// vector of all server, client and cgi pipe pollfds (POLL)
+		int							pollfds_size_;			// this is needed so that you don't iterate over a vector after you erase0 a pollfd (POLL)
 
 		std::map<int, Server*>		server_map_;			// map of server socket descriptors and a pointers to servers objects
 		std::map<int, Client>		client_map_;			// map of client socket descriptors and Client objects

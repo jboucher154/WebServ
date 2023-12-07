@@ -75,7 +75,7 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 */
 int	ServerManager::getClientFdByItsCgiPipeFd( int pipe_fd ) {
 
-	for (std::map<int, int*>::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+	for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
 		if (it->second[0] == pipe_fd || it->second[1] == pipe_fd)
 			return it->first;
 	}
@@ -678,10 +678,15 @@ void	ServerManager::POLL_printData( void ) {
 
 void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out ) {
 
-	int	array[2] = {pipe_out, pipe_in};
+	// int	array[2] = {pipe_out, pipe_in};
 
 	if (!this->client_cgi_map_.count(client_fd)) {
-		this->client_cgi_map_[client_fd] = array;
+
+		std::vector<int> pipe_vector;
+		pipe_vector.push_back(pipe_out);
+		pipe_vector.push_back(pipe_in);
+		
+		this->client_cgi_map_[client_fd] = pipe_vector;
 	} else
 		Logger::log(E_ERROR, COLOR_RED, "addClientCgiToCgiMap_; client %d is already in the map (THIS SHOULDN'T HAPPEN)", client_fd);
 		// handle error somehow
@@ -701,7 +706,7 @@ void	ServerManager::POLL_addClientCgiFdsToPollfds_( int pipe_in, int pipe_out ) 
 
 void	ServerManager::POLL_removeClientCgiFdsFromPollfds_( int client_fd ) {
 
-	for (std::map<int, int*>::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+	for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
 		if (it->first == client_fd) {
 			this->POLL_removeFdFromPollfds(it->second[0]);
 			this->POLL_removeFdFromPollfds(it->second[1]);
@@ -736,7 +741,7 @@ void	ServerManager::SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out ) {
 
 void	ServerManager::SELECT_removeClientCgiFdsFromSets_( int client_fd ) {
 
-	for (std::map<int, int*>::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+	for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
 		if (it->first == client_fd) {
 			this->SELECT_removeFdFromSets(it->second[0]);
 			this->SELECT_removeFdFromSets(it->second[1]);
