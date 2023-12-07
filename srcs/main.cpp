@@ -43,7 +43,7 @@ int  main( int argc, char *argv[]) {
   server_vector.push_back(server2);
   //SELECT VERSION
   while (true) {
-    ServerManager server_manager(server_vector); // Validator::servers
+    ServerManager server_manager(Validator::servers); // Validator::servers
     if (!server_manager.SELECT_initializeServers()) {  
       server_manager.closeServerSockets();
       Logger::closeLogFiles();
