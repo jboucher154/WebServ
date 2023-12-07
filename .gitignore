@@ -37,6 +37,7 @@ en.subject.pdf
 *.i*86
 *.x86_64
 *.hex
+WebServ
 
 # Debug files
 *.dSYM/
@@ -57,8 +58,6 @@ dkms.conf
 .DS_Store
 .vscode/
 a.out
-test/
-test.*
 clientThreadFunction.cpp
 simpleClient.cpp
 client
