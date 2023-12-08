@@ -3,77 +3,20 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<style>
-			body {
-				margin: 0;
-				overflow: hidden;
-				display: flex;
-			}
-
-			.diagonal-line {
-				position: absolute;
-				width: 6px;
-				height: 200%;
-				background: #30633c;
-				top: 0;
-				left: 70%;
-				transform-origin: top right;
-				transform: rotate(45deg);
-			}
-
-			.container {
-				position: absolute;
-				width: 50%;
-				height: 100%;
-				overflow: hidden;
-			}
-
-			.left {
-				left: 0;
-			}
-
-			.right {
-				right: 0;
-			}
-
-			.button-container {
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-				text-align: center;
-			}
-
-			.button {
-				display: inline-block;
-				padding: 20px 40px;
-				font-size: 18px;
-				background-color: #ff9898;
-				color: white;
-				text-decoration: none;
-				border: none;
-				border-radius: 5px;
-				margin: 10px;
-				cursor: pointer;
-			}
-
-			.button.dog {
-				background-color: #ff750f;
-			}
-		</style>
+		<link href="style.css" rel="stylesheet">
 	</head>
 	<body>
 		<div class="diagonal-line"></div>
 
 		<div class="container left">
 			<div class="button-container">
-				<a href="#" class="button">Cat</a>
+				<a href="cat/cats.html" class="button">Cat</a>
 			</div>
 		</div>
 
 		<div class="container right">
 			<div class="button-container">
-				<a href="#" class="button dog">Dog</a>
+				<a href="dog/dogs.html" class="button dog">Dog</a>
 			</div>
 		</div>
 	</body>
