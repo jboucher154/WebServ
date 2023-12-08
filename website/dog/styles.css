@@ -1,0 +1,47 @@
+/* styles.css */
+  
+  .container {
+	width: 80%;
+	margin: 20px auto;
+	border: 1px solid black;
+	display: flex;
+  }
+  
+  .image {
+	flex: 1;
+  }
+  
+  .image img {
+	width: 100%;
+	height: auto;
+  }
+  
+  .description {
+	flex: 1;
+	padding: 20px;
+  }
+  
+  .name {
+	font-weight: bold;
+  }
+  
+  article {
+	margin-top: 20px;
+  }
+  
+  h4 {
+	color: #333;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+	.container {
+	  flex-direction: column;
+	}
+  
+	.image img {
+	  max-width: 100%;
+	  height: auto;
+	}
+  }
+  

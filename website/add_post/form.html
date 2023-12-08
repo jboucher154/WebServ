@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link href="styles.css" rel="stylesheet">
+		<link href="../styles.css" rel="stylesheet">
+	</head>
+	<body>
+		<header>
+			<nav>
+				<ul id="navBar">
+					<li><a href="../index.html">Home</a></li>
+					<li><a href="../cat/cats.html">Cat</a></li>
+					<li><a href="../dog/dogs.html">Dog</a></li>
+				</ul>
+			</nav>
+		</header>
+		<form action="my_scriot.py" method="POST">
+			<div><lable for="name">name</div>
+			<div><input type="text" name="Name"></div>
+				<div><label for="email">*Email</label></div>
+				<div><input type="email" required="required" name="email" id="email" /></div>
+				<div><label for="phone-number">Phone number</label></div>
+				<div class="phoneTypeDiv">
+					<ul>
+						<li><div><label><input type="radio" name="phoneType" value="cell">cell</label></div></li>
+						<li><div><label><input type="radio" name="phoneType" value="work">work</label></div></li>
+						<li> <div><label><input type="radio" name="phoneType" value="home">home</label></div></li>
+					</ul>
+				</div>
+				<div>
+					<input type="tel" name="phone-number" id="phone-number" /></div>
+				<div>
+					<lable for="comment">comment</div>
+					<div>
+						<input type="text"></div>
+					<div>
+						<lable for="file1">Upload File</div>
+						<input type="file" name="file1" />
+						<input type="reset" value="Reset" />
+						<input type="submit" value="request" />
+		</form>
+	</body>
+</html>
