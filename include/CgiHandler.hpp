@@ -76,10 +76,10 @@ class	CgiHandler {
 		std::vector<std::string, std::string>&	getMetavariablesVector( void ) const;
 		std::vector<std::string, std::string>&	getCgiVector( void ) const;
 	
-		std::string		getExtension( std::string uri );
+		std::string			getExtension( std::string uri );
 		const std::string&	getCgiOutput( void ) const;
 
-		char**		getMetaVariables( void ) const;
+		// char**		getMetaVariables( void ) const;
 		char**		getArgs( void ) const;
 		bool		getPipingSuccessful( void ) const;
 		bool		getForkingSuccessful( void ) const;

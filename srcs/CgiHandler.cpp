@@ -314,6 +314,11 @@ const std::string&	CgiHandler::getCgiOutput( void ) const {
 	return this->cgi_output_;
 }
 
+char**	CgiHandler::getArgs( void ) const {
+
+	return this->args_;
+}
+
 const int*	CgiHandler::getPipeIn( void ) const {
 
 	return this->pipe_in_;
@@ -323,6 +328,7 @@ const int*	CgiHandler::getPipeOut( void ) const {
 
 	return this->pipe_out_;
 }
+
 
 
 /* CLASS PRIVATE METHODS */
@@ -374,7 +380,7 @@ void	CgiHandler::cgiTimer_( int& status ) {
 	time_t	start = time(NULL);
 	int		result;
 
-	while (difftime(time(NULL), start) >= CGI_TIMEOUT) {
+	while (difftime(time(NULL), start) <= CGI_TIMEOUT) {
 		result = waitpid(this->pid_, &status, WNOHANG);
 		if (result > 0)
 			return;
@@ -418,6 +424,9 @@ int	CgiHandler::SELECT_executeCgi_( std::vector<std::string>::iterator it_start,
 
 	(void)it_start;
 	(void)it_end;
+
+	std::cout << "path: " << std::endl;
+
 	std::string	body_string = "test";	// get body into string
 
 	if (body_string.empty())
@@ -440,7 +449,7 @@ int	CgiHandler::SELECT_executeCgi_( std::vector<std::string>::iterator it_start,
 		dup2(this->pipe_in_[0], STDIN_FILENO);
 		this->closeCgiPipes();
 
-		execve(this->path_, this->args_, this->metavariables_);
+		execve(this->args_[0], this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
 		delete [] this->path_;
@@ -528,13 +537,13 @@ int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, 
 
 	(void)it_start;
 	(void)it_end;
-	std::string	body_string = "";	// get body into string
+	std::string	body_string = "";	// get body into string (or c-style char array; TALK WITH JENNY)
+
 
 	std::cout << "\tPOLL_executeCgi_" << std::endl;
-
-	
-	// server_manager.POLL_removeFdFromPollfds(this->pipe_in_[1]);
-	close(pipe_in_[1]);
+	std::cout << "\t\tPATH: " << this->path_ << std::endl;
+	std::cout << "\t\tARGS[0]: " << this->args_[0] << std::endl;
+	std::cout << "\t\tARGS[1]: " << this->args_[1] << std::endl;
 	
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
@@ -548,12 +557,16 @@ int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, 
 		dup2(this->pipe_in_[0], STDIN_FILENO);
 		this->closeCgiPipes();
 
-		if (body_string.empty())
-			send(this->pipe_in_[1], "\0", 1, 0);
-		else
-			send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
+		int bytes_sent;
 
-		// execve(this->path_, this->args_, this->metavariables_);
+		if (body_string.empty())
+			bytes_sent = write(STDIN_FILENO, "\0", 1);
+		else
+			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.length());	// keep track of the bytes sent and keep looping till everything is sent?
+
+		close(this->pipe_in_[1]); // close the pipe_in_[1] (write end) after use
+
+		execve(this->args_[0], this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
 		delete [] this->path_;
@@ -562,6 +575,9 @@ int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, 
 		std::exit(EXIT_FAILURE);
 	} else {	// parent process
 		this->forking_successful_ = true;
+
+		close(this->pipe_in_[0]);	// close all pipe ends except pipe_out_[0] (read end) as we'll use that in the storeCgiOutput_!
+		close(this->pipe_in_[1]);
 		close(this->pipe_out_[1]);
 
 		int status;
@@ -581,13 +597,14 @@ int		CgiHandler::POLL_storeCgiOutput_( void ) {
 
 	int	ret = 1;
 	int	bytesread = 0;
-	char	buffer[10000]; // change buffer size later; make a macro for it!
+	char	buffer[10000]; // change buffer size later; make a macro for it! (what should it even be?)
 
 	this->cgi_output_.clear();
 	memset(buffer, 0, 10000);
 
 	while (ret > 0) {
-		ret = recv(this->pipe_out_[0], buffer, 1024, 0); // set up a read_max
+		ret = read(this->pipe_out_[0], buffer, 1024); // set up a read_max (what should it even be?)
+
 		if (ret > 0) {
 			this->cgi_output_.append(buffer);
 			bytesread += ret;
@@ -597,8 +614,9 @@ int		CgiHandler::POLL_storeCgiOutput_( void ) {
 			return E_CGI_SERVERERROR;
 		}
 	}
+
 	if (ret < 0) {
-		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput: ", strerror(errno));
+		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1");
 		this->closeCgiPipes();
 		return E_CGI_SERVERERROR;
 	}

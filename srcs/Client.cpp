@@ -35,16 +35,12 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 
 	this->server_ = server;
 	this->server_fd_ = server_fd;
-
-	std::cout << "stage 1" << std::endl;
 	
 	while (!this->cgi_handler_) {
-		std::cout << "stage 2" << std::endl;
 		this->cgi_handler_ = new CgiHandler;
 		if (!this->cgi_handler_)
 			Logger::log(E_ERROR, COLOR_RED, "Client constructor new failure (CgiHandler), attempting again");
 	}
-	std::cout << "stage 3" << std::endl;
 }
 
 Client::Client( const Client& to_copy ) : response_(NULL), cgi_handler_(NULL) {

@@ -395,6 +395,13 @@ void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
 				CgiHandler* client_cgi = client.getCgiHandler();
 				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
 				this->SELECT_addClientCgiFdsToSets_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+				// remove the stuff under later
+				std::string	arg1 = client.getCgiHandler()->getArgs()[0];
+				std::string	arg2 = client.getCgiHandler()->getArgs()[1];
+				std::string	arg3 = client.getCgiHandler()->getArgs()[2];
+				// std::cout << client.getCgiHandler()->getArgs()[0] << std::endl;
+				// std::cout << client.getCgiHandler()->getArgs()[1] << std::endl;
+
 			}
 			return;
 		}
@@ -631,6 +638,15 @@ void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 				CgiHandler* client_cgi = client.getCgiHandler();
 				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
 				this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+				// remove the stuff under later
+				// char*	arg1 = client.getCgiHandler()->getArgs()[0];
+				// char*	arg2 = client.getCgiHandler()->getArgs()[1];
+				// char*	arg3 = client.getCgiHandler()->getArgs()[2];
+				// std::cout << client.getCgiHandler()->getArgs()[0] << std::endl;
+				// std::cout << client.getCgiHandler()->getArgs()[1] << std::endl;
+				// (void)arg1;
+				// (void)arg2;
+				// (void)arg3;
 			}
 
 			return;
@@ -685,7 +701,7 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 		std::vector<int> pipe_vector;
 		pipe_vector.push_back(pipe_out);
 		pipe_vector.push_back(pipe_in);
-		
+
 		this->client_cgi_map_[client_fd] = pipe_vector;
 	} else
 		Logger::log(E_ERROR, COLOR_RED, "addClientCgiToCgiMap_; client %d is already in the map (THIS SHOULDN'T HAPPEN)", client_fd);
