@@ -1,7 +1,6 @@
 body {
 	margin: 0;
 	overflow: hidden;
-	display: flex;
 }
 
 .diagonal-line {
@@ -9,8 +8,8 @@ body {
 	width: 6px;
 	height: 200%;
 	background: #30633c;
-	top: 0;
-	left: 70%;
+	top: 40;
+	left: 80%;
 	transform-origin: top right;
 	transform: rotate(45deg);
 }
@@ -53,4 +52,16 @@ body {
 
 .button.dog {
 	background-color: #ff750f;
+}
+
+@media (max-width: 1400px) {
+	.diagonal-line {
+		margin-left: 20%;
+	}
+}
+
+@media (max-width: 1000px) {
+	.diagonal-line {
+		margin-left: 40vw;
+	}
 }

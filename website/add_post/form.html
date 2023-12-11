@@ -17,29 +17,42 @@
 			</nav>
 		</header>
 		<form action="my_scriot.py" method="POST">
-			<div><lable for="name">name</div>
-			<div><input type="text" name="Name"></div>
-				<div><label for="email">*Email</label></div>
-				<div><input type="email" required="required" name="email" id="email" /></div>
-				<div><label for="phone-number">Phone number</label></div>
-				<div class="phoneTypeDiv">
-					<ul>
-						<li><div><label><input type="radio" name="phoneType" value="cell">cell</label></div></li>
-						<li><div><label><input type="radio" name="phoneType" value="work">work</label></div></li>
-						<li> <div><label><input type="radio" name="phoneType" value="home">home</label></div></li>
-					</ul>
-				</div>
-				<div>
-					<input type="tel" name="phone-number" id="phone-number" /></div>
-				<div>
-					<lable for="comment">comment</div>
-					<div>
-						<input type="text"></div>
-					<div>
-						<lable for="file1">Upload File</div>
-						<input type="file" name="file1" />
-						<input type="reset" value="Reset" />
-						<input type="submit" value="request" />
+			<div>
+				<lable for="name">pet's name</lable>
+			</div>
+			<div>
+				<input type="text" required="required" name="name" id="name">
+			</div>
+			<div>
+				<lable for="age">Pet's age</lable>
+			</div>
+			<div>
+				<input type="text" required="required" name="age" id="age" />
+			</div>
+			<div>
+				<lable for="parents">Pet's parent(s)</lable>
+			</div>
+			<div>
+				<input type="text" required="required" name="parents" id="parents" />
+			</div>
+			<div>
+				<lable for="about">about pet</lable>
+			</div>
+			<div>
+				<input type="text" required="required" name="about" id="about">
+			</div>
+			<div>
+				<lable for="photo">Upload photo</lable>
+			</div>
+			<div>
+				<input type="file" required="required" name="photo" id="photo">
+			</div>
+			<div>
+				<input type="reset" value="Reset">
+			</div>
+			<div>
+				<input type="submit" value="request">
+			</div>
 		</form>
 	</body>
 </html>
