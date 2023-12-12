@@ -59,6 +59,9 @@ dkms.conf
 a.out
 test/
 test.*
+test*
+TEST*
+outfile
 clientThreadFunction.cpp
 simpleClient.cpp
 client

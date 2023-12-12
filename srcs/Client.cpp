@@ -95,7 +95,7 @@ Client&	Client::operator=( const Client& rhs ) {
 */
 bool	Client::SELECT_startCgiResponse( void ) {
 
-	int	cgi_result = this->cgi_handler_->SELECT_initializeCgi(*this);
+	int	cgi_result = this->cgi_handler_->initializeCgi(*this);
 
 	switch (cgi_result)
 	{	
@@ -128,7 +128,7 @@ bool	Client::SELECT_startCgiResponse( void ) {
 
 void	Client::SELECT_finishCgiResponse( void ) {
 
-	int result = this->cgi_handler_->SELECT_cgiFinish(this->response_);
+	int result = this->cgi_handler_->cgiFinish(this->response_);
 
 	switch (result)
 	{
@@ -157,7 +157,7 @@ bool	Client::POLL_startCgiResponse( void ) {
 
 	if (this->response_.getStatusCode() >= 400)
 		return false;
-	int	cgi_result = this->cgi_handler_->POLL_initializeCgi(*this);
+	int	cgi_result = this->cgi_handler_->initializeCgi(*this);
 
 	switch (cgi_result)
 	{	
@@ -196,7 +196,7 @@ bool	Client::POLL_startCgiResponse( void ) {
 
 void	Client::POLL_finishCgiResponse( void ) {
 
-	int	result = this->cgi_handler_->POLL_cgiFinish(this->response_);
+	int	result = this->cgi_handler_->cgiFinish(this->response_);
 	std::string method = this->request_.getRequestLineValue("method");
 
 	switch (result) {
@@ -273,11 +273,30 @@ Response&	Client::getResponse( void ) {
 	return this->response_;
 }
 
+/*! \brief Get the response string
+*
+*	Added by ssalmi
+*
+*	if error set CGI flag to zero?
+*	TALK WITH JENNY about what to do in error cases!
+*
+*	CHECK LATER; at the current moment the ouput of the cgi output is stored into vector<char>,
+*	but this causes because getResponseString returns a string reference.
+*	I'm not sure what I should do, as fixing this issue goes on Jenny's turf that I'm unfamiliar with.
+*	
+*	Azzar's solution was to use new with the cgi_output, which solves the immediate issue,
+*	but the bigger original issue still has to be fixed,
+*	which is that this function returns a string, but won't this cause issues with non-string data?
+*	What I wonder is that should we return std::vector<char> reference so that the data will not be modified
+*	in conversion to a string?
+*
+*	As a band-aid solution I've created an
+*/
 const std::string&	Client::getResponseString( void ) {
 
 	//any CGI stuff
 	if (this->request_.getCgiFlag()) {
-		return this->cgi_handler_->getCgiOutput();
+		return this->getCgiHandler()->getCgiOutputAsString_();
 	}
 	else {
 		return this->response_.get();

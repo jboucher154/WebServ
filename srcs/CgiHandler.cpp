@@ -5,7 +5,7 @@
 
 
 CgiHandler::CgiHandler( void )
-	:	cgi_output_(""),
+	:	cgi_output_as_string_(""),
 		metavariables_(NULL),
 		args_(NULL),
 		path_(NULL),
@@ -20,7 +20,7 @@ CgiHandler::CgiHandler( void )
 }
 
 CgiHandler::CgiHandler( const CgiHandler& to_copy )
-	:	cgi_output_(""),
+	:	cgi_output_as_string_(""),
 		metavariables_(NULL),
 		args_(NULL),
 		path_(NULL),
@@ -115,10 +115,7 @@ void	CgiHandler::closeCgiPipes( void ) {
 			close (this->pipe_out_[1]);
 }
 
-
-/****************************** SELECT methods ******************************/
-
-int	CgiHandler::SELECT_initializeCgi( Client& client ) {
+int	CgiHandler::initializeCgi( Client& client ) {
 
 	std::string uri = client.getRequest().getRequestLineValue("uri");
 
@@ -143,75 +140,36 @@ int	CgiHandler::SELECT_initializeCgi( Client& client ) {
 		this->ClearCgiHandler();
 		return result;
 	}
-	if ((result = this->SELECT_setUpCgiPipes_()) != E_CGI_OK) {
+	if ((result = this->setUpCgiPipes_()) != E_CGI_OK) {
 		this->ClearCgiHandler();
 	}
 	return result;
 }
 
-
-int	CgiHandler::SELECT_cgiFinish( Response& response ) {
+int	CgiHandler::cgiFinish( Response& response ) {
 
 	int	result;
 
-	if ((result = this->SELECT_executeCgi_(response.getFileDataBegin(), response.getFileDataEnd())) != E_CGI_OK) {
+	if ((result = this->executeCgi_(response.getFileDataBegin(), response.getFileDataEnd())) != E_CGI_OK) {
 		this->ClearCgiHandler();
 		return result;
 	}
 
-	result = this->SELECT_storeCgiOutput_();
+	result = this->storeCgiOutput_();
 	this->ClearCgiHandler();
 	return result;
 }
 
-/****************************** POLL methods ******************************/
+/*! \brief This function handles clearing of the cgi outputs. 
+*
+*	BE AWARE: I've created cgi_output_as_string, but if we don't go with this solution just remove it and
+*	implement these changes to ServerManager::sendResponseToClient and Client::getResponseString.
+*/
+void	CgiHandler::clearCgiOutputs( void ) {
 
-int	CgiHandler::POLL_initializeCgi( Client& client ) {
-
-	std::string uri = client.getRequest().getRequestLineValue("uri");
-
-	this->path_ = const_cast<char*>(client.getResponse().getResourcePath().c_str());
-
-	int 	result;
-
-	/* Request has already checked that cgi-location is valid,
-	that the server has the permission,
-	that you can access the cgi script/program etc. */
-
-	if ((result = this->fillMetavariablesMap_(client)) != E_CGI_OK) {
-		this->ClearCgiHandler();
-		return result;
-	}
-	this->metavariables_ = this->convertMetavariablesMapToCStringArray_();
-	if (this->metavariables_ == NULL) {
-		this->ClearCgiHandler();
-		return E_CGI_SERVERERROR;
-	}
-	if ((result = this->createCgiArguments_(uri)) != E_CGI_OK) {
-		this->ClearCgiHandler();
-		return result;
-	}
-	if ((result = this->POLL_setUpCgiPipes_()) != E_CGI_OK) {
-		this->ClearCgiHandler();
-	}
-	return result;
+	this->cgi_output_.clear();
+	this->cgi_output_as_string_ = "";
 }
-
-int	CgiHandler::POLL_cgiFinish( Response& response ) {
-
-	int	result;
-
-	if ((result = this->POLL_executeCgi_(response.getFileDataBegin(), response.getFileDataEnd())) != E_CGI_OK) {
-		this->ClearCgiHandler();
-		return result;
-	}
-
-	result = this->POLL_storeCgiOutput_();
-	this->ClearCgiHandler();
-	return result;
-}
-
-
 
 /* CLASS PRIVATE METHODS */
 
@@ -309,9 +267,14 @@ std::string	CgiHandler::getExtension( std::string uri ) {
 	return extension;
 }
 
-const std::string&	CgiHandler::getCgiOutput( void ) const {
+const std::vector<char>&	CgiHandler::getCgiOutput( void ) const {
 	
 	return this->cgi_output_;
+}
+
+const std::string&	CgiHandler::getCgiOutputAsString_( void ) const {
+
+	return this->cgi_output_as_string_;
 }
 
 char**	CgiHandler::getArgs( void ) const {
@@ -362,7 +325,7 @@ int	CgiHandler::createCgiArguments_( std::string uri ) {
 		if (size == 1)
 			this->args_[0] = ft_strdup(this->path_);
 		else {
-			// args_[0] = extension executable, for example /bin/bash"
+			// args_[0] = extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
 			this->args_[0] = ft_strdup("/bin/bash"); 	// THIS IS HARDCODED, CHANGE LATER, MOFO!
 			this->args_[1] = ft_strdup(this->path_);
 		}
@@ -390,9 +353,7 @@ void	CgiHandler::cgiTimer_( int& status ) {
 	waitpid(this->pid_, &status, 0);
 }
 
-/****************************** SELECT methods ******************************/
-
-int	CgiHandler::SELECT_setUpCgiPipes_( void ) {
+int	CgiHandler::setUpCgiPipes_( void ) {
 
 	if (pipe(pipe_in_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
@@ -420,130 +381,11 @@ int	CgiHandler::SELECT_setUpCgiPipes_( void ) {
 *
 *	Talk with Jenny about how to get the bodyinfo into a string or an array of characters!
 */
-int	CgiHandler::SELECT_executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end ) {
+int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end ) {
 
 	(void)it_start;
 	(void)it_end;
-
-	std::cout << "path: " << std::endl;
-
-	std::string	body_string = "test";	// get body into string
-
-	if (body_string.empty())
-		send(this->pipe_in_[1], "\0", 1, 0);
-	else
-		send(this->pipe_in_[1], body_string.c_str(), body_string.length(), 0);
-	
-	// server_manager.SELECT_removeFdFromSets(this->pipe_in_[1]);
-	close(pipe_in_[1]);
-	
-	if ((this->pid_ = fork()) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
-		this->forking_successful_ = false;
-		this->closeCgiPipes();
-		return E_CGI_SERVERERROR;
-	}
-	if (this->pid_ == 0) { // child process
-		this->forking_successful_ = true;
-		dup2(this->pipe_out_[1], STDOUT_FILENO);
-		dup2(this->pipe_in_[0], STDIN_FILENO);
-		this->closeCgiPipes();
-
-		execve(this->args_[0], this->args_, this->metavariables_);
-
-		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
-		delete [] this->path_;
-		deleteAllocatedCStringArray(this->args_);
-		deleteAllocatedCStringArray(this->metavariables_);
-		std::exit(EXIT_FAILURE);
-	} else {	// parent process
-		this->forking_successful_ = true;
-		close(this->pipe_out_[1]);
-
-		int status;
-		this->cgiTimer_(status);
-		if (WIFSIGNALED(status) > 0 || WEXITSTATUS(status) != 0)
-			return E_CGI_SERVERERROR;
-	}
-
-	return E_CGI_OK;
-}
-
-/*! \brief Store cgi output into a string that will be sent to the client.
-*
-*	Most likely will need heavy refactoring. CREATE MACROS!
-*/
-int	CgiHandler::SELECT_storeCgiOutput_( void ) {
-	
-	int	ret = 1;
-	int	bytesread = 0;
-	char	buffer[10000]; // change buffer size later; make a macro for it!
-
-	this->cgi_output_.clear();
-	memset(buffer, 0, 10000);
-
-	while (ret > 0) {
-		ret = recv(this->pipe_out_[0], buffer, 1024, 0); // set up a read_max
-		if (ret > 0) {
-			this->cgi_output_.append(buffer);
-			bytesread += ret;
-		}
-		if (bytesread >= 10000) {
-			this->closeCgiPipes();
-			return E_CGI_SERVERERROR;
-		}
-	}
-	if (ret < 0) {
-		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput: ", strerror(errno));
-		this->closeCgiPipes();
-		return E_CGI_SERVERERROR;
-	}
-	this->closeCgiPipes();
-
-	return E_CGI_OK;
-}
-
-/****************************** POLL methods ******************************/
-
-int	CgiHandler::POLL_setUpCgiPipes_( void ) {
-
-	if (pipe(pipe_in_) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
-		this->piping_successful_ = false;
-		return E_CGI_SERVERERROR;
-	}
-	if (pipe(pipe_out_) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
-		this->closeCgiPipes();
-		this->piping_successful_ = false;
-		return E_CGI_SERVERERROR;
-	}
-	if (fcntl(this->pipe_in_[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1 || fcntl(this->pipe_out_[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes fcntl error: %s", strerror(errno));
-		this->closeCgiPipes();
-		this->piping_successful_ = false;
-		return E_CGI_SERVERERROR;
-	}
-
-	this->piping_successful_ = true;
-	return E_CGI_OK;
-}
-
-/*! \brief send body-info to pipe, fork a process and execute cgi script.
-*
-*	Talk with Jenny about how to get the bodyinfo into a string or an array of characters!
-*/
-int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end ) {
-
-	(void)it_start;
-	(void)it_end;
-	std::string	body_string = "";	// get body into string (or c-style char array; TALK WITH JENNY)
-
-
-	std::cout << "\tPOLL_executeCgi_" << std::endl;
-	std::cout << "\t\tPATH: " << this->path_ << std::endl;
-	std::cout << "\t\tARGS[0]: " << this->args_[0] << std::endl;
-	std::cout << "\t\tARGS[1]: " << this->args_[1] << std::endl;
+	std::string	body_string = "";	// get body into std::string (or c-style char array; TALK WITH JENNY)
 	
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
@@ -593,34 +435,36 @@ int		CgiHandler::POLL_executeCgi_( std::vector<std::string>::iterator it_start, 
 *
 *	Most likely will need heavy refactoring. CREATE MACROS!
 */
-int		CgiHandler::POLL_storeCgiOutput_( void ) {
+int		CgiHandler::storeCgiOutput_( void ) {
 
 	int	ret = 1;
 	int	bytesread = 0;
-	char	buffer[10000]; // change buffer size later; make a macro for it! (what should it even be?)
+	char	buffer[CGI_OUTPUT_BUFFER]; // I've put the CGI_OUTPUT_BUFFER as 102 400, change if need be (I've seen this go to almost half a mil in size)
 
 	this->cgi_output_.clear();
-	memset(buffer, 0, 10000);
+	this->cgi_output_as_string_.clear();
+	memset(buffer, 0, CGI_OUTPUT_BUFFER);
 
 	while (ret > 0) {
 		ret = read(this->pipe_out_[0], buffer, 1024); // set up a read_max (what should it even be?)
 
 		if (ret > 0) {
-			this->cgi_output_.append(buffer);
+			this->cgi_output_.insert(this->cgi_output_.end(), buffer, buffer + ret);
 			bytesread += ret;
 		}
-		if (bytesread >= 10000) {
+		if (bytesread >= CGI_OUTPUT_BUFFER) {
 			this->closeCgiPipes();
 			return E_CGI_SERVERERROR;
 		}
 	}
 
 	if (ret < 0) {
-		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1");
+		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1 (cannot use errno after read to find reason for failure)");
 		this->closeCgiPipes();
 		return E_CGI_SERVERERROR;
 	}
 	this->closeCgiPipes();
+	this->cgi_output_as_string_ = std::string(this->cgi_output_.begin(), this->cgi_output_.end());
 
 	return E_CGI_OK;
 }

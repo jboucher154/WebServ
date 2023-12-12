@@ -14,7 +14,6 @@
 // time the servers will run for without any client action (in seconds)
 # define	SERVER_SHUTDOWN_TIME_SEC 7 * 60
 
-// 
 
 /*! \brief Server Manager class.
 *         This class handles managing the server and client sockets.

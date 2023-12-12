@@ -160,7 +160,12 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	return true;
 }
 
-
+/*! \brief in this function we send a response to the Client.
+*       
+*
+*	BE AWARE: the function 
+*  
+*/
 bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 	Client*		client = &this->client_map_[client_fd];
@@ -520,13 +525,10 @@ bool	ServerManager::POLL_runServers( void ) {
 				if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
 					this->POLL_sendResponseToClient(it->fd);
 				else {
-					std::cout << "\tPOLL_handleClientCgi_" << std::endl;
+					Logger::log(E_DEBUG, COLOR_YELLOW)
 					this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
 				}
 			}
-
-			if (it->revents & (POLLIN | POLLOUT))
-				std::cout << "\tREVENT\tfd: " << it->fd << "\trevent: " << it->revents << std::endl;
 		}
 	
 		if (this->checkLastClientTime())	// if there hasn't been any client activity in the server shutdown time, end run
@@ -566,7 +568,7 @@ void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
 	this->client_map_[client_fd] = client;
 	this->client_map_[client_fd].setLatestTime();
 
-	pollfd new_pollfd = {client_fd, POLLIN, 0};
+	pollfd new_pollfd = {client_fd, POLLIN, 0};	
 	this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
 }
 
@@ -621,14 +623,6 @@ void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 
 	Client&	client = this->client_map_[client_fd];
 
-	if (client.getRequest().getCgiFlag()) {
-		client.POLL_finishCgiResponse();
-		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
-		this->client_cgi_map_.erase(client_fd);
-		this->POLL_switchClientToPollout(client_fd);
-		return;
-	}
-	
 	if (!this->receiveFromClient(client_fd))
 		this->POLL_removeClient(client_fd);
 	else {
@@ -638,15 +632,6 @@ void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 				CgiHandler* client_cgi = client.getCgiHandler();
 				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
 				this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-				// remove the stuff under later
-				// char*	arg1 = client.getCgiHandler()->getArgs()[0];
-				// char*	arg2 = client.getCgiHandler()->getArgs()[1];
-				// char*	arg3 = client.getCgiHandler()->getArgs()[2];
-				// std::cout << client.getCgiHandler()->getArgs()[0] << std::endl;
-				// std::cout << client.getCgiHandler()->getArgs()[1] << std::endl;
-				// (void)arg1;
-				// (void)arg2;
-				// (void)arg3;
 			}
 
 			return;
@@ -738,7 +723,7 @@ void	ServerManager::POLL_handleClientCgi_( int client_fd ) {
 	if (client.getRequest().getCgiFlag()) {
 		client.POLL_finishCgiResponse();
 		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
-		this->client_cgi_map_.erase(client_fd);
+		this->client_cgi_map_.erase(client_fd);					// the client_cgi_map_ is not used anywhere, remove later
 		this->POLL_switchClientToPollout(client_fd);
 		return;
 	} else {
