@@ -272,12 +272,10 @@ bool	ServerManager::SELECT_runServers( void ) {
 					this->SELECT_receiveFromClient(fd);				// client request or disconnection
 			}
 			if (FD_ISSET(fd, &write_fd_set_copy)) {
-				if (this->server_map_.count(fd)) {}
-					// server receiving stuff from client?		// I don't think anything happens here, remove
-				if (this->client_map_.count(fd))
-					this->SELECT_sendResponseToClient(fd);			// send a response to client
-				else {
-					std::cout << "\tSELECT_handleClientCgi_" << std::endl;
+				if (this->client_map_.count(fd))	// send a response to client
+					this->SELECT_sendResponseToClient(fd);
+				else {	//cgi pipe activity
+					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi for its client!", fd);
 					this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
 				}
 			}
@@ -384,29 +382,15 @@ void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
 
 	Client& client = this->client_map_[client_fd];
 
-	if (client.getRequest().getCgiFlag()) {
-		client.SELECT_finishCgiResponse();
-		this->SELECT_removeClientCgiFdsFromSets_(client_fd);
-		this->SELECT_switchClientToWriteSet(client_fd);
-		return;
-	}
-
 	if (this->receiveFromClient(client_fd))
 		this->SELECT_removeClient(client_fd);
 	else {
 		client.getResponse().generate(&client.getRequest());
 		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.SELECT_startCgiResponse()) == true) {
+			if ((client.startCgiResponse()) == true) {
 				CgiHandler* client_cgi = client.getCgiHandler();
 				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
 				this->SELECT_addClientCgiFdsToSets_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-				// remove the stuff under later
-				std::string	arg1 = client.getCgiHandler()->getArgs()[0];
-				std::string	arg2 = client.getCgiHandler()->getArgs()[1];
-				std::string	arg3 = client.getCgiHandler()->getArgs()[2];
-				// std::cout << client.getCgiHandler()->getArgs()[0] << std::endl;
-				// std::cout << client.getCgiHandler()->getArgs()[1] << std::endl;
-
 			}
 			return;
 		}
@@ -516,16 +500,14 @@ bool	ServerManager::POLL_runServers( void ) {
 					this->POLL_acceptNewClientConnection(it->fd);
 				if (this->client_map_.count(it->fd)) {
 					this->POLL_receiveFromClient(it->fd);
-					//generate
-					//cgi finish
 				}
 
 			}
 			if (it->revents & POLLOUT) {
 				if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
 					this->POLL_sendResponseToClient(it->fd);
-				else {
-					Logger::log(E_DEBUG, COLOR_YELLOW)
+				else {	//cgi pipe activity
+					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi for its client!", it->fd);
 					this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
 				}
 			}
@@ -628,7 +610,7 @@ void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 	else {
 		client.getResponse().generate(&client.getRequest());
 		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.POLL_startCgiResponse()) == true) {
+			if ((client.startCgiResponse()) == true) {
 				CgiHandler* client_cgi = client.getCgiHandler();
 				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
 				this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
@@ -721,14 +703,16 @@ void	ServerManager::POLL_handleClientCgi_( int client_fd ) {
 	Client&	client = this->client_map_[client_fd];
 
 	if (client.getRequest().getCgiFlag()) {
-		client.POLL_finishCgiResponse();
+		client.finishCgiResponse();
 		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
 		this->client_cgi_map_.erase(client_fd);					// the client_cgi_map_ is not used anywhere, remove later
 		this->POLL_switchClientToPollout(client_fd);
 		return;
 	} else {
 		Logger::log(E_ERROR, COLOR_RED, "POLL_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
-		// handle this error somehow
+		// handle this error somehow; you can also remove the first if-statement
+		// if (client.getRequest().getCgiFlag())
+		// because of course it is a cgi!
 	}
 }
 
@@ -756,12 +740,13 @@ void	ServerManager::SELECT_handleClientCgi_( int client_fd ) {
 	Client&	client = this->client_map_[client_fd];
 
 	if (client.getRequest().getCgiFlag()) {
-		client.SELECT_finishCgiResponse();
+		client.finishCgiResponse();
 		this->SELECT_removeClientCgiFdsFromSets_(client_fd);
 		this->SELECT_switchClientToWriteSet(client_fd);
-		return;
 	} else {
 		Logger::log(E_ERROR, COLOR_RED, "SELECT_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
-		// handle this error somehow
+		// handle this error somehow; you can also remove the first if-statement
+		// if (client.getRequest().getCgiFlag())
+		// because of course it is a cgi!
 	}
 }

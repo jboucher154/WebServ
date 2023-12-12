@@ -34,11 +34,8 @@ class	Client {
 
 		Client&	operator=( const Client& rhs );
 
-		bool					SELECT_startCgiResponse( void );
-		void					SELECT_finishCgiResponse( void );
-
-		bool					POLL_startCgiResponse( void );
-		void					POLL_finishCgiResponse( void );
+		bool					startCgiResponse( void );
+		void					finishCgiResponse( void );
 
 		// setters
 		void					setLatestTime( void );

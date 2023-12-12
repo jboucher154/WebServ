@@ -86,66 +86,6 @@ Client&	Client::operator=( const Client& rhs ) {
 
 /******************************** CGI methods (ssalmi) ********************************/
 
-/*! \brief start the handling of a request that involves cgi (POLL-version) 
-*
-*	Added by ssalmi
-*
-*	if error set CGI flag to zero?
-*	TALK WITH JENNY about what to do in error cases!
-*/
-bool	Client::SELECT_startCgiResponse( void ) {
-
-	int	cgi_result = this->cgi_handler_->initializeCgi(*this);
-
-	switch (cgi_result)
-	{	
-		case E_CGI_SERVERERROR:
-			this->response_.setStatusCode(500);
-			break;
-
-		case E_CGI_UNKNOWNMETHOD:
-			// won't happen here, prob can be removed
-			break;
-
-		case E_CGI_NOTFOUND:
-			// won't happen here, prob can be removed
-			break;
-
-		case E_CGI_NOPERMISSION:
-			// won't happen here, prob can be removed
-			break;
-
-		case E_CGI_OK:
-			return true;
-			break;
-
-		default:
-			break;
-	}
-	return false;
-}
-
-
-void	Client::SELECT_finishCgiResponse( void ) {
-
-	int result = this->cgi_handler_->cgiFinish(this->response_);
-
-	switch (result)
-	{
-	case E_CGI_SERVERERROR:
-		// set up status code? and send to client?
-		break;
-	
-	case E_CGI_OK:
-		break;
-
-	default:
-		// set up error teapot code? seems to be just a Carlos thing...
-		break;
-	}
-}
-
-
 /*! \brief start the handling of a request that involves cgi 
 *
 *	Added by ssalmi
@@ -153,7 +93,7 @@ void	Client::SELECT_finishCgiResponse( void ) {
 *	if error set CGI flag to zero?
 *	TALK WITH JENNY about what to do in error cases!
 */
-bool	Client::POLL_startCgiResponse( void ) {
+bool	Client::startCgiResponse( void ) {
 
 	if (this->response_.getStatusCode() >= 400)
 		return false;
@@ -194,7 +134,7 @@ bool	Client::POLL_startCgiResponse( void ) {
 	return false;
 }
 
-void	Client::POLL_finishCgiResponse( void ) {
+void	Client::finishCgiResponse( void ) {
 
 	int	result = this->cgi_handler_->cgiFinish(this->response_);
 	std::string method = this->request_.getRequestLineValue("method");
