@@ -3,24 +3,24 @@ body {
 	font-family: Arial, sans-serif;
   }
   
-  header {
+header {
 	background-color: #333;
 	color: white;
 	padding: 10px;
   }
   
-  #navBar {
+#navBar {
 	list-style-type: none;
 	margin: 0;
 	padding: 0;
 	display: flex;
   }
   
-  #navBar li {
+#navBar li {
 	margin-right: 20px;
   }
   
-  #navBar a {
+#navBar a {
 	text-decoration: none;
 	color: white;
   }
