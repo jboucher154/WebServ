@@ -194,7 +194,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 				server->getServerIdforLog().c_str(), client_fd);
 		else
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
-				server->getServerName().c_str(), client_fd, -42);										// ADD STAT CODE WHEN JENNY MAKES GETSTAT!
+				server->getServerName().c_str(), client_fd, response.getStatusCode());					// ADD STAT CODE WHEN JENNY MAKES GETSTAT!
 	}
 
 	client->resetResponse();
@@ -705,7 +705,7 @@ void	ServerManager::POLL_handleClientCgi_( int client_fd ) {
 	if (client.getRequest().getCgiFlag()) {
 		client.finishCgiResponse();
 		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
-		this->client_cgi_map_.erase(client_fd);					// the client_cgi_map_ is not used anywhere, remove later
+		this->client_cgi_map_.erase(client_fd);
 		this->POLL_switchClientToPollout(client_fd);
 		return;
 	} else {
@@ -742,7 +742,9 @@ void	ServerManager::SELECT_handleClientCgi_( int client_fd ) {
 	if (client.getRequest().getCgiFlag()) {
 		client.finishCgiResponse();
 		this->SELECT_removeClientCgiFdsFromSets_(client_fd);
+		this->client_cgi_map_.erase(client_fd);
 		this->SELECT_switchClientToWriteSet(client_fd);
+		return;
 	} else {
 		Logger::log(E_ERROR, COLOR_RED, "SELECT_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
 		// handle this error somehow; you can also remove the first if-statement
