@@ -275,7 +275,7 @@ bool	ServerManager::SELECT_runServers( void ) {
 				if (this->client_map_.count(fd))	// send a response to client
 					this->SELECT_sendResponseToClient(fd);
 				else {	//cgi pipe activity
-					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi for its client!", fd);
+					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
 					this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
 				}
 			}
@@ -382,7 +382,7 @@ void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
 
 	Client& client = this->client_map_[client_fd];
 
-	if (this->receiveFromClient(client_fd))
+	if (!this->receiveFromClient(client_fd))
 		this->SELECT_removeClient(client_fd);
 	else {
 		client.getResponse().generate(&client.getRequest());
@@ -507,7 +507,7 @@ bool	ServerManager::POLL_runServers( void ) {
 				if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
 					this->POLL_sendResponseToClient(it->fd);
 				else {	//cgi pipe activity
-					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi for its client!", it->fd);
+					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
 					this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
 				}
 			}

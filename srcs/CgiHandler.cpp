@@ -325,8 +325,8 @@ int	CgiHandler::createCgiArguments_( std::string uri ) {
 		if (size == 1)
 			this->args_[0] = ft_strdup(this->path_);
 		else {
-			// args_[0] = extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
 			this->args_[0] = ft_strdup("/bin/bash"); 	// THIS IS HARDCODED, CHANGE LATER, MOFO!
+			// this->args_[0] = extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
 			this->args_[1] = ft_strdup(this->path_);
 		}
 	} catch(std::exception& e) {
