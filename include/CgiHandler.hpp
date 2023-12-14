@@ -33,7 +33,7 @@ class	CgiHandler {
 		std::map<std::string, std::string>	metavariables_map_;
 		// std::map<std::string, std::string>	cgi_map_;
 
-		std::vector<char>	cgi_output_;
+		// std::vector<char>	cgi_output_;
 		std::string			cgi_output_as_string_;
 		char**				metavariables_;
 		char**				args_;
@@ -47,7 +47,7 @@ class	CgiHandler {
 
 		int		fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
-		int		createCgiArguments_( std::string uri );
+		int		createCgiArguments_( std::string uri, Client& client );
 		void	cgiTimer_( int& status );
 
 		int		setUpCgiPipes_( void );

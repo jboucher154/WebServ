@@ -269,9 +269,12 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); i < this->pollfds_size_ && it != this->pollfds_.end(); ++it, ++i) {
 				if (it->revents & POLLIN) {
-					if (this->server_map_.count(it->fd))
+					if (this->server_map_.count(it->fd)){
+						std::cout << "run 1" << std::endl;
 						this->POLL_acceptNewClientConnection(it->fd);
+					}
 					if (this->client_map_.count(it->fd)) {
+						std::cout << "run 2" << std::endl;
 						this->POLL_receiveFromClient(it->fd);
 					}
 
@@ -383,7 +386,9 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		else {
 			client.getResponse().generate(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				std::cout << "rec cgi 1" << std::endl;
 				if ((client.startCgiResponse()) == true) {
+					std::cout << "rec cgi 2" << std::endl;
 					CgiHandler* client_cgi = client.getCgiHandler();
 					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
 					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);

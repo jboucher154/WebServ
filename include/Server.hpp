@@ -63,7 +63,7 @@ public:
 	std::vector<std::string>		getLocationBlockKeys( void ) const;
 	const std::vector<std::string>	getLocationKeys( std::string locationBlockKey ) const;
 	const std::vector<std::string>*	getLocationValue( std::string locationBlockKey, std::string key ) const;
-	std::string						getCgiExecutor( std::string extention ) const;
+	std::string						getCgiExecutor( std::string extension ) const;
 	bool							isKeyInLocation( std::string locationBlockKey, std::string key ) const;
 	bool							isLocationInServer( std::string locationBlockKey ) const;
 	bool							isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const;

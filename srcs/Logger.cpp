@@ -51,7 +51,7 @@ void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
 	va_start(args, msg);
 
 	char	buffer[1024];
-	vsprintf(buffer, msg, args);
+	vsnprintf(buffer, 1024, msg, args); //change back for shcool computers
 
 	va_end(args);
 

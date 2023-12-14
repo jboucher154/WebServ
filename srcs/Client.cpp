@@ -92,6 +92,7 @@ Client&	Client::operator=( const Client& rhs ) {
 *
 *	if error set CGI flag to zero?
 *	TALK WITH JENNY about what to do in error cases!
+*	NOTE: remove unused cases
 */
 bool	Client::startCgiResponse( void ) {
 

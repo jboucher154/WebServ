@@ -35,18 +35,24 @@ Server::Server( std::string serverName, int port,  std::string host, std::string
 	std::string innerValues[] = {"HEAD", "GET", "POST", "DELETE"};//
 	size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
 	std::vector<std::string> values(innerValues, innerValues + numValues);
-	this->setLocation( "/blue", "allow_methods", values );
-	this->setLocation( "/", "allow_methods", values );
+	this->setKeyValueInLocation( "/blue", "allow_methods", values );
+	this->setKeyValueInLocation( "/", "allow_methods", values );
 	//for cgi testing
-	this->setLocation("/cgi-bin/", "allow_methods", values);
+	this->setKeyValueInLocation("/cgi-bin/", "allow_methods", values);
 	std::string innerValues2[] = {".sh"};
 	size_t numValues2 = sizeof(innerValues2) / sizeof(innerValues2[0]);
 	std::vector<std::string> values2(innerValues2, innerValues2 + numValues2);
-	this->setLocation("/cgi-bin/", "cgi_ext", values2); //
+	this->setKeyValueInLocation("/cgi-bin/", "cgi_ext", values2); //
 	std::string innerValues3[] = {"test.sh"};
 	size_t numValues3 = sizeof(innerValues3) / sizeof(innerValues3[0]);
 	std::vector<std::string> values3(innerValues3, innerValues3 + numValues3);
-	this->setLocation("/cgi-bin/", "index", values3);
+	this->setKeyValueInLocation("/cgi-bin/", "index", values3);
+	
+	std::string innerValues4[] = {"/bin/bash"};
+	size_t numValues4 = sizeof(innerValues4) / sizeof(innerValues4[0]);
+	std::vector<std::string> values4(innerValues4, innerValues4 + numValues4);
+	this->setKeyValueInLocation("/cgi-bin/", "cgi_path", values4);
+
 }
 
 /*! \brief Server class copy constructor
@@ -454,16 +460,23 @@ const std::vector<std::string>*	Server::getLocationValue( std::string locationBl
 *  this method loops through the extentions and at the same time increments
 *  the cgi path iterator, returning the matched path to the extention.
 */
-std::string	Server::getCgiExecutor( std::string extention ) const{
+std::string	Server::getCgiExecutor( std::string extension ) const{
 	
-	
-	std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin", "cgi_path"))->begin();
-	for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin", "cgi_ext"))->end(); extIt++){
-		if (*extIt == extention)
+	std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin/", "cgi_path"))->begin();
+	for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin/", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin/", "cgi_ext"))->end(); extIt++){
+		if (*extIt == extension)
 			break;
 		pathtIt++;
 	}
 	return (*pathtIt);
+	
+	// std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin", "cgi_path"))->begin();
+	// for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin", "cgi_ext"))->end(); extIt++){
+	// 	if (*extIt == extension)
+	// 		break;
+	// 	pathtIt++;
+	// }
+	// return (*pathtIt);
 }
 
 /*! \brief checks if a certain key exists in a certain location
