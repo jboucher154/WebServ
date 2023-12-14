@@ -1,0 +1,43 @@
+# this allows you to set the version of the webserver to use poll or select when invoking make
+# for example you can write "make debug POLL_TRUE_SELECT_FALSE=false"
+# (if you do not explicitly set the flag when invoking make, the flag will be set to what's written in ServerManager.hpp)
+ifeq ($(POLL_TRUE_SELECT_FALSE),)
+	grep "^\s*#\s*define\s\+POLL_TRUE_SELECT_FALSE" ./include/ServerManager.hpp | awk '{print $4}'
+	VERSION += -DPOLL_TRUE_SELECT_FALSE=$(POLL_TRUE_SELECT_FALSE)
+endif
+
+
+# what chatGPT gave me
+define extract_poll_true_select_false
+    result=$$(grep "^\s*#\s*define\s\+POLL_TRUE_SELECT_FALSE" ./include/ServerManager.hpp | awk '{print $$4}' && true); \
+    if [ -z "$$result" ]; then \
+        echo "Error: awk failed to get a value"; \
+        exit 1; \
+    fi; \
+    if [ "$$result" != "true" ] && [ "$$result" != "false" ]; then \
+        echo "Error: unexpected result - '$$result'"; \
+        exit 1; \
+    fi; \
+    echo "$$result"
+endef
+
+# If POLL_TRUE_SELECT_FALSE is not provided by the user, extract it from ServerManager.hpp
+POLL_TRUE_SELECT_FALSE := $(call extract_poll_true_select_false)
+
+# Convert the result to lowercase, if needed
+ifeq ($(POLL_TRUE_SELECT_FALSE),true)
+    POLL_TRUE_SELECT_FALSE := true
+else ifeq ($(POLL_TRUE_SELECT_FALSE),false)
+    POLL_TRUE_SELECT_FALSE := false
+endif
+
+# Add the extracted or user-provided value to the VERSION variable
+VERSION += -DPOLL_TRUE_SELECT_FALSE=$(POLL_TRUE_SELECT_FALSE)
+
+# what I kept getting
+make
+Compiling: srcs/main.cpp
+clang: error: no such file or directory: 'result=false'
+clang: error: no input files
+Error: awk failed to get a value
+make: *** [obj/main.o] Error 1

@@ -37,6 +37,10 @@ SRCS = \
 	is_valid_ip_address.cpp \
 	url_encoder.cpp \
 	is_all_digit.cpp \
+	CgiHandler.cpp			\
+	copyCStringArray.cpp	\
+	deleteAllocatedCStringArray.cpp	\
+	ft_strdup.cpp				\
 
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)

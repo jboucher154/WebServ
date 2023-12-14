@@ -41,31 +41,35 @@ int  main( int argc, char *argv[]) {
   std::cout << (server_vector.front().isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
   Server  server2("Server-2", 9090, "127.0.0.1", "./resources", "index,html", "2147483647");
   server_vector.push_back(server2);
-  //SELECT VERSION
-  while (true) {
-    ServerManager server_manager(Validator::servers); // Validator::servers
-    if (!server_manager.SELECT_initializeServers()) {  
-      server_manager.closeServerSockets();
-      Logger::closeLogFiles();
-      return 1;
+  
+  #if POLL_TRUE_SELECT_FALSE
+    // POLL VERSION
+    while (true) {
+      ServerManager server_manager(server_vector);
+      if (!server_manager.POLL_initializeServers()) {  
+        server_manager.closeServerSockets();
+        Logger::closeLogFiles();
+        return 1;
+      }
+      if (server_manager.POLL_runServers())
+        break;
+      Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an poll error, RESTARTING SERVERS!!!");
     }
-    if (server_manager.SELECT_runServers())
-      break;
-    Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an select error, RESTARTING SERVERS!!!");
-  }
+  #else
+  //SELECT VERSION
+    while (true) {
+      ServerManager server_manager(server_vector);
+      if (!server_manager.SELECT_initializeServers()) {  
+        server_manager.closeServerSockets();
+        Logger::closeLogFiles();
+        return 1;
+      }
+      if (server_manager.SELECT_runServers())
+        break;
+      Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an select error, RESTARTING SERVERS!!!");
+    }
+  #endif
 
-  // POLL VERSION
-  //  while (true) {
-  //   ServerManager server_manager(server_vector);
-  //   if (!server_manager.POLL_initializeServers()) {  
-  //     server_manager.closeServerSockets();
-  //     Logger::closeLogFiles();
-  //     return 1;
-  //   }
-  //   if (server_manager.POLL_runServers())
-  //     break;
-  //   Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an poll error, RESTARTING SERVERS!!!");
-  // }
 
   Logger::closeLogFiles();
 
