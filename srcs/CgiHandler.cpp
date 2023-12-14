@@ -3,7 +3,6 @@
 
 #include <signal.h>
 
-
 CgiHandler::CgiHandler( void )
 	:	cgi_output_as_string_(""),
 		metavariables_(NULL),

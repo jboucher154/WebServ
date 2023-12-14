@@ -14,6 +14,10 @@
 // time the servers will run for without any client action (in seconds)
 # define	SERVER_SHUTDOWN_TIME_SEC 7 * 60
 
+// this macro is used to switch the webserver version between one that uses poll and one that uses select
+# ifndef POLL_TRUE_SELECT_FALSE
+#  define POLL_TRUE_SELECT_FALSE true
+# endif
 
 /*! \brief Server Manager class.
 *         This class handles managing the server and client sockets.
@@ -24,20 +28,22 @@
 
 class	ServerManager {
 	private:
-		std::vector<Server>			servers_;				// vector of all servers
+		std::vector<Server>					servers_;				// vector of all servers
 
 		std::map<int, std::vector<int> >	client_cgi_map_;		// map of client fds and their pipe fds (for cgi)
 
-		fd_set						read_fd_set_;			// set of file descriptors ready for read (SELECT)
-		fd_set						write_fd_set_;			// set of file descriptors ready for write (SELECT)
-		int							biggest_fd_;			// biggest fd value (SELECT)
+		#if POLL_TRUE_SELECT_FALSE
+			std::vector<struct pollfd>		pollfds_;				// vector of all server, client and cgi pipe pollfds (POLL)
+			int								pollfds_size_;			// this is needed so that you don't iterate over a vector after you erase a pollfd (POLL)
+		#else
+			fd_set							read_fd_set_;			// set of file descriptors ready for read (SELECT)
+			fd_set							write_fd_set_;			// set of file descriptors ready for write (SELECT)
+			int								biggest_fd_;			// biggest fd value (SELECT)
+		#endif
 
-		std::vector<struct pollfd>	pollfds_;				// vector of all server, client and cgi pipe pollfds (POLL)
-		int							pollfds_size_;			// this is needed so that you don't iterate over a vector after you erase0 a pollfd (POLL)
-
-		std::map<int, Server*>		server_map_;			// map of server socket descriptors and a pointers to servers objects
-		std::map<int, Client>		client_map_;			// map of client socket descriptors and Client objects
-		time_t						last_client_time_;		// for automatic shutdown
+		std::map<int, Server*>			server_map_;			// map of server socket descriptors and a pointers to servers objects
+		std::map<int, Client>			client_map_;			// map of client socket descriptors and Client objects
+		time_t							last_client_time_;		// for automatic shutdown
 
 		void	addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out );
 

@@ -230,7 +230,8 @@ Response&	Client::getResponse( void ) {
 *	What I wonder is that should we return std::vector<char> reference so that the data will not be modified
 *	in conversion to a string?
 *
-*	As a band-aid solution I've created an
+*	As a temporary band-aid solution I've created is to simply create a member variable for the CgiHandler where
+*	the vector<char> is stored into, but we'll most likely want to change this later.
 */
 const std::string&	Client::getResponseString( void ) {
 

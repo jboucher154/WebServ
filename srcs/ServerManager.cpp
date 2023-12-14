@@ -14,12 +14,14 @@ ServerManager::ServerManager( void ) {
 	
 	this->servers_.clear();
 
-	FD_ZERO(&this->read_fd_set_);
-	FD_ZERO(&this->write_fd_set_);
-	this->biggest_fd_ = -1;
-
-	this->pollfds_.clear();
-	this->pollfds_size_ = -1;
+	#if POLL_TRUE_SELECT_FALSE
+		this->pollfds_.clear();
+		this->pollfds_size_ = -1;
+	#else
+		FD_ZERO(&this->read_fd_set_);
+		FD_ZERO(&this->write_fd_set_);
+		this->biggest_fd_ = -1;
+	#endif
 
 	this->server_map_.clear();
 	this->client_map_.clear();
@@ -29,12 +31,14 @@ ServerManager::ServerManager( std::vector<Server>& server_vector ) {
 
 	this->servers_.clear();
 
-	FD_ZERO(&this->read_fd_set_);
-	FD_ZERO(&this->write_fd_set_);
-	this->biggest_fd_ = -1;
-
-	this->pollfds_.clear();
-	this->pollfds_size_ = -1;
+	#if POLL_TRUE_SELECT_FALSE
+		this->pollfds_.clear();
+		this->pollfds_size_ = -1;
+	#else
+		FD_ZERO(&this->read_fd_set_);
+		FD_ZERO(&this->write_fd_set_);
+		this->biggest_fd_ = -1;
+	#endif
 
 	this->server_map_.clear();
 	this->client_map_.clear();
@@ -57,11 +61,16 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 
 	if (this != &rhs) {
 		this->servers_ = rhs.servers_;
-		this->read_fd_set_ = rhs.read_fd_set_;
-		this->write_fd_set_ = rhs.write_fd_set_;
-		this->biggest_fd_ = rhs.biggest_fd_;
-		this->pollfds_ = rhs.pollfds_;
-		this->pollfds_size_ = rhs.pollfds_size_;
+
+		#if POLL_TRUE_SELECT_FALSE
+			this->pollfds_ = rhs.pollfds_;
+			this->pollfds_size_ = rhs.pollfds_size_;
+		#else
+			this->read_fd_set_ = rhs.read_fd_set_;
+			this->write_fd_set_ = rhs.write_fd_set_;
+			this->biggest_fd_ = rhs.biggest_fd_;
+		#endif
+
 		this->server_map_ = rhs.server_map_;
 		this->client_map_ = rhs.client_map_;
 		this->last_client_time_ = rhs.last_client_time_;
@@ -203,458 +212,459 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	return keep_alive;
 }
 
-
-/********************************************** SELECT functions **********************************************************/
-
-bool	ServerManager::SELECT_initializeServers( void ) {
-
-	int	server_amount = this->servers_.size();
-	int server_socket;
-
-	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "Initializing servers...");
-
-	for (int i = 0; i < server_amount; i++) {
-		server_socket = this->servers_.at(i).setupServer();
-		if (server_socket == -1) {
-			this->closeServerSockets();
-			return false;
-		}
-
-		FD_SET(server_socket, &this->read_fd_set_);		// add server socket to read_fd_set_
-
-		this->server_map_[server_socket] = &this->servers_[i];	// add server socket to server_map_
-	}
-
-	this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);	// get the biggest fd of the read set
-
-	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete!");
-
-	return true;
-}
-
-int		ServerManager::SELECT_getBiggestFd( int max_fd_size ) {
-
-	for (int fd = max_fd_size; fd >= 0; --fd) {
-        if (FD_ISSET(fd, &this->read_fd_set_) || FD_ISSET(fd, &this->write_fd_set_))
-            return fd;
-    }
-    return -1;	
-}
-
-bool	ServerManager::SELECT_runServers( void ) {
-
-	struct timeval	select_timeout;
-	int				select_result;
-	fd_set			read_fd_set_copy;
-	fd_set			write_fd_set_copy;
-
-	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting...");
-
-	this->last_client_time_ = time(0);	// get the start time
-
-	while (true) {	//	MAIN LOOP
-
-		this->SELECT_runServersLoopStart(select_timeout, read_fd_set_copy, write_fd_set_copy);	//ready everything for select
-
-		this->SELECT_printSetData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
-	
-		if ((select_result = select(this->biggest_fd_ + 1, &read_fd_set_copy, &write_fd_set_copy, NULL, &select_timeout)) == -1) {
-			Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
-			this->closeAllSockets();
-			return false;
-		}
-	
-		for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
-			if (FD_ISSET(fd, &read_fd_set_copy)) {
-				if (this->server_map_.count(fd))
-					this->SELECT_acceptNewClientConnection(fd);	// new client connection
-				if (this->client_map_.count(fd))
-					this->SELECT_receiveFromClient(fd);				// client request or disconnection
-			}
-			if (FD_ISSET(fd, &write_fd_set_copy)) {
-				if (this->client_map_.count(fd))	// send a response to client
-					this->SELECT_sendResponseToClient(fd);
-				else {	//cgi pipe activity
-					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
-					this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
-				}
-			}
-		}
-	
-		if (this->checkLastClientTime())	// if the haven't been any client activity in the server shutdown time end run
-			break;
-	}
-
-	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
-	this->closeAllSockets();
-	return true;
-}
-
-// this function is called in the beginning of the runServer Loop.
-// 1. sets timeout values
-// 2. copy the Webserver's sets to the pointed to sets
-// 3.  get the biggest fd in the master_fd_set_
-// expand on this more later!
-void	ServerManager::SELECT_runServersLoopStart( timeval& select_timeout, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy ) {
-
-	select_timeout.tv_sec = SELECT_TIMEOUT_SEC;
-	select_timeout.tv_usec = SELECT_TIMEOUT_USEC;
-
-	read_fd_set_copy = this->read_fd_set_;
-	write_fd_set_copy = this->write_fd_set_;
-
-	this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
-}
-
-
-void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
-
-	int			client_fd;
-	sockaddr_in client_address;
-	socklen_t	client_address_size;
-	char		client_host[INET_ADDRSTRLEN];
-	Server*		server = this->server_map_.at(server_fd);
-	
-	client_address_size = sizeof(sockaddr_in);
-	if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &client_address_size)) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "accept error: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
-		return;
-	}
-
-	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
-		server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
-
-	if (fcntl(client_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
-		close(client_fd);
-		return;
-	}
-
-	Client client(server_fd, server);
-
-	this->client_map_[client_fd] = client; 
-	this->client_map_[client_fd].setLatestTime();
-
-	FD_SET(client_fd, &this->read_fd_set_);
-}
-
-void	ServerManager::SELECT_removeFdFromSets( int fd ) {
-	
-	if (FD_ISSET(fd, &this->read_fd_set_))
-		FD_CLR(fd, &this->read_fd_set_);
-	if (FD_ISSET(fd, &this->write_fd_set_))
-		FD_CLR(fd, &this->write_fd_set_);
-		if (fd == this->biggest_fd_)
-			this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
-}
-
-void	ServerManager::SELECT_removeClient( int client_fd ) {
-
-	this->SELECT_removeFdFromSets(client_fd);
-	this->removeClient(client_fd);
-}
-
-void	ServerManager::SELECT_switchClientToReadSet( int client_fd ) {
-
-	if (FD_ISSET(client_fd, &this->write_fd_set_))
-		FD_CLR(client_fd, &this->write_fd_set_);
-	if (!FD_ISSET(client_fd, &this->read_fd_set_))
-		FD_SET(client_fd, &this->read_fd_set_);
-}
-
-void	ServerManager::SELECT_switchClientToWriteSet( int client_fd ) {
-
-	if (FD_ISSET(client_fd, &this->read_fd_set_))
-		FD_CLR(client_fd, &this->read_fd_set_);
-	if (!FD_ISSET(client_fd, &this->write_fd_set_))
-		FD_SET(client_fd, &this->write_fd_set_);
-}
-
-/*	check the following lines, maybe scuffed
-
-if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.POLL_startCgiResponse()) == true)
-				this->POLL_addCgiFdsToPollfds_(client);
-			return;
-
-*/
-void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
-
-	Client& client = this->client_map_[client_fd];
-
-	if (!this->receiveFromClient(client_fd))
-		this->SELECT_removeClient(client_fd);
-	else {
-		client.getResponse().generate(&client.getRequest());
-		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.startCgiResponse()) == true) {
-				CgiHandler* client_cgi = client.getCgiHandler();
-				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-				this->SELECT_addClientCgiFdsToSets_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-			}
-			return;
-		}
-		this->SELECT_switchClientToWriteSet(client_fd);
-	}
-}
-
-/*	Use this function in the version that uses SELECT:
-	Will call the receiveFromClient function but handle it's
-	results in the correct SELECT way */
-void	ServerManager::SELECT_sendResponseToClient( int client_fd ) {
-
-	if (this->sendResponseToClient(client_fd))	// keep alive
-		this->SELECT_switchClientToReadSet(client_fd);
-	else	// don't keep alive
-		this->SELECT_removeClient(client_fd);
-}
-
-void	ServerManager::SELECT_printSetData( void ) {
-	
-	std::string	all_fds = "all fds currently handled: ";
-	std::string read_set = "read_fd_set: ";
-	std::string write_set = "write_fd_set: ";
-
-	std::string	fd_as_string;
-	int			fds_amount = 0;
-
-	for (int i = biggest_fd_; i >= 0; --i) {
-		if (FD_ISSET(i, &this->read_fd_set_)) {
-			fd_as_string = intToString(i);
-			all_fds += fd_as_string + " ";
-			read_set += fd_as_string + " ";
-			++fds_amount;
-		}
-		if (FD_ISSET(i, &this->write_fd_set_)) {
-			fd_as_string = intToString(i);
-			all_fds += fd_as_string + " ";
-			write_set += fd_as_string + " ";
-			++fds_amount;
-		}
-	}
-
-	Logger::log(E_DEBUG, COLOR_YELLOW, "fds amount: %d", fds_amount);
-	Logger::log(E_DEBUG, COLOR_YELLOW, "the biggest fd currently: %d", this->biggest_fd_);
-	Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
-	Logger::log(E_DEBUG, COLOR_YELLOW, read_set.c_str());
-	Logger::log(E_DEBUG, COLOR_YELLOW, write_set.c_str());
-}
-
+#if	POLL_TRUE_SELECT_FALSE
 /********************************************** POLL functions **********************************************************/
 
-bool	ServerManager::POLL_initializeServers( void ) {
-	
-	int		server_amount = this->servers_.size();
-	int 	server_socket;
+	bool	ServerManager::POLL_initializeServers( void ) {
+		
+		int		server_amount = this->servers_.size();
+		int 	server_socket;
 
-	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initializing servers...");
+		Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initializing servers...");
 
-	for (int i = 0; i < server_amount; i++) {
-		server_socket = this->servers_.at(i).setupServer();
-		if (server_socket == -1) {
-			this->closeServerSockets();
-			return false;
+		for (int i = 0; i < server_amount; i++) {
+			server_socket = this->servers_.at(i).setupServer();
+			if (server_socket == -1) {
+				this->closeServerSockets();
+				return false;
+			}
+
+			pollfd new_pollfd = {server_socket, POLLIN, 0};
+			this->pollfds_.push_back(new_pollfd);					// push server socket to pollfds_ vector with POLLIN as event
+
+			this->server_map_[server_socket] = &this->servers_[i];	// add server socket and the server itself to server_map_
 		}
 
-		pollfd new_pollfd = {server_socket, POLLIN, 0};
-		this->pollfds_.push_back(new_pollfd);					// push server socket to pollfds_ vector with POLLIN as event
-
-		this->server_map_[server_socket] = &this->servers_[i];	// add server socket and the server itself to server_map_
-	}
-
-	this->pollfds_size_ = this->pollfds_.size();
-
-	Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete!");
-
-	return true;
-}
-
-bool	ServerManager::POLL_runServers( void ) {
-
-	int				poll_result;
-
-	Logger::log(E_INFO, COLOR_GREEN, "runServers() starting...");
-
-	this->last_client_time_ = time(0);	// get the start time
-
-	while (true) {	//	MAIN LOOP
-
-		this->POLL_printData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
-	
-		if ((poll_result = poll(&this->pollfds_[0], this->pollfds_.size(), POLL_TIMEOUT_MILLISEC)) == -1) {
-			Logger::log(E_ERROR, COLOR_RED, "POLL ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
-			this->closeAllSockets();
-			return false;
-		}
-
-		/*	This i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
-			the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
-			make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
-			a problem because of the looping. */
 		this->pollfds_size_ = this->pollfds_.size();
-		int	i = 0;
 
-		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); i < this->pollfds_size_ && it != this->pollfds_.end(); ++it, ++i) {
-			if (it->revents & POLLIN) {
-				if (this->server_map_.count(it->fd))
-					this->POLL_acceptNewClientConnection(it->fd);
-				if (this->client_map_.count(it->fd)) {
-					this->POLL_receiveFromClient(it->fd);
+		Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete!");
+
+		return true;
+	}
+
+	bool	ServerManager::POLL_runServers( void ) {
+
+		int				poll_result;
+
+		Logger::log(E_INFO, COLOR_GREEN, "runServers() [POLL VERSION] starting...");
+
+		this->last_client_time_ = time(0);	// get the start time
+
+		while (true) {	//	MAIN LOOP
+
+			this->POLL_printData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
+		
+			if ((poll_result = poll(&this->pollfds_[0], this->pollfds_.size(), POLL_TIMEOUT_MILLISEC)) == -1) {
+				Logger::log(E_ERROR, COLOR_RED, "POLL ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
+				this->closeAllSockets();
+				return false;
+			}
+
+			/*	This i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
+				the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
+				make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
+				a problem because of the looping. */
+			this->pollfds_size_ = this->pollfds_.size();
+			int	i = 0;
+
+			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); i < this->pollfds_size_ && it != this->pollfds_.end(); ++it, ++i) {
+				if (it->revents & POLLIN) {
+					if (this->server_map_.count(it->fd))
+						this->POLL_acceptNewClientConnection(it->fd);
+					if (this->client_map_.count(it->fd)) {
+						this->POLL_receiveFromClient(it->fd);
+					}
+
 				}
-
-			}
-			if (it->revents & POLLOUT) {
-				if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
-					this->POLL_sendResponseToClient(it->fd);
-				else {	//cgi pipe activity
-					Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
-					this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
+				if (it->revents & POLLOUT) {
+					if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
+						this->POLL_sendResponseToClient(it->fd);
+					else {	//cgi pipe activity
+						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
+						this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
+					}
 				}
 			}
+		
+			if (this->checkLastClientTime())	// if there hasn't been any client activity in the server shutdown time, end run
+				break;
 		}
-	
-		if (this->checkLastClientTime())	// if there hasn't been any client activity in the server shutdown time, end run
-			break;
+
+		Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
+		this->closeAllSockets();
+		return true;
 	}
 
-	Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
-	this->closeAllSockets();
-	return true;
-}
+	void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
 
-void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
-
-	int			client_fd;
-	sockaddr_in client_address;
-	socklen_t	client_address_size;
-	char		client_host[INET_ADDRSTRLEN];
-	Server*		server = this->server_map_.at(server_fd);
-	
-	client_address_size = sizeof(sockaddr_in);
-	if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &client_address_size)) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "accept error: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
-		return;
-	}
-
-	Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
-		server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
-
-	if (fcntl(client_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
-		close(client_fd);
-		return;
-	}
-
-	Client client(server_fd, server);
-
-	this->client_map_[client_fd] = client;
-	this->client_map_[client_fd].setLatestTime();
-
-	pollfd new_pollfd = {client_fd, POLLIN, 0};	
-	this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
-}
-
-void	ServerManager::POLL_removeFdFromPollfds( int fd ) {
-
-	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
-		if (it->fd == fd) {
-			this->pollfds_.erase(it);
-			break;
-		}
-	}
-	this->pollfds_size_--;
-}
-
-void	ServerManager::POLL_removeClient( int client_fd ) {
-
-	this->POLL_removeFdFromPollfds(client_fd);
-	this->removeClient(client_fd);
-}
-
-
-void	ServerManager::POLL_switchClientToPollin ( int client_fd ) {
-
-	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
-		if (it->fd == client_fd) {
-			it->events = POLLIN;
-			break;
-		}
-	}
-}
-
-
-void	ServerManager::POLL_switchClientToPollout( int client_fd ) {
-
-	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
-		if (it->fd == client_fd) {
-			it->events = POLLOUT;
-			break;
-		}
-	}
-}
-
-/*	check the following lines, maybe scuffed
-
-if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.POLL_startCgiResponse()) == true)
-				this->POLL_addCgiFdsToPollfds_(client);
-			return;
-
-*/
-void	ServerManager::POLL_receiveFromClient( int client_fd ) {
-
-	Client&	client = this->client_map_[client_fd];
-
-	if (!this->receiveFromClient(client_fd))
-		this->POLL_removeClient(client_fd);
-	else {
-		client.getResponse().generate(&client.getRequest());
-		if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-			if ((client.startCgiResponse()) == true) {
-				CgiHandler* client_cgi = client.getCgiHandler();
-				this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-				this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-			}
-
+		int			client_fd;
+		sockaddr_in client_address;
+		socklen_t	client_address_size;
+		char		client_host[INET_ADDRSTRLEN];
+		Server*		server = this->server_map_.at(server_fd);
+		
+		client_address_size = sizeof(sockaddr_in);
+		if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &client_address_size)) == -1) {
+			Logger::log(E_ERROR, COLOR_RED, "accept error: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
 			return;
 		}
-		this->POLL_switchClientToPollout(client_fd);
-	}
-}
 
+		Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
+			server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
 
-void	ServerManager::POLL_sendResponseToClient( int client_fd ) {
+		if (fcntl(client_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
+			Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
+			close(client_fd);
+			return;
+		}
 
-	if (this->sendResponseToClient(client_fd))	// keep alive 
-		this->POLL_switchClientToPollin(client_fd);
-	else	// don't keep alive
-		this->POLL_removeClient(client_fd);
-}
+		Client client(server_fd, server);
 
+		this->client_map_[client_fd] = client;
+		this->client_map_[client_fd].setLatestTime();
 
-void	ServerManager::POLL_printData( void ) {
-
-	std::string	all_fds = "all pollfds currently handled: ";
-	std::string pollin_fds = "pollfds with POLLIN: ";
-	std::string pollout_fds = "pollfds with POLLOUT: ";
-
-	std::string	fd_as_string;
-
-	for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
-		fd_as_string = intToString(it->fd) + " ";
-		all_fds += fd_as_string;
-		if (it->events == POLLIN)
-			pollin_fds += fd_as_string;
-		if (it->events == POLLOUT)
-			pollout_fds += fd_as_string;
+		pollfd new_pollfd = {client_fd, POLLIN, 0};	
+		this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
 	}
 
-	Logger::log(E_DEBUG, COLOR_YELLOW, "the amount of pollfds: %d", this->pollfds_.size());
-	Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
-	Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
-	Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
-}
+	void	ServerManager::POLL_removeFdFromPollfds( int fd ) {
 
+		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+			if (it->fd == fd) {
+				this->pollfds_.erase(it);
+				break;
+			}
+		}
+		this->pollfds_size_--;
+	}
+
+	void	ServerManager::POLL_removeClient( int client_fd ) {
+
+		this->POLL_removeFdFromPollfds(client_fd);
+		this->removeClient(client_fd);
+	}
+
+
+	void	ServerManager::POLL_switchClientToPollin ( int client_fd ) {
+
+		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+			if (it->fd == client_fd) {
+				it->events = POLLIN;
+				break;
+			}
+		}
+	}
+
+
+	void	ServerManager::POLL_switchClientToPollout( int client_fd ) {
+
+		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+			if (it->fd == client_fd) {
+				it->events = POLLOUT;
+				break;
+			}
+		}
+	}
+
+	/*	check the following lines, maybe scuffed
+
+	if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				if ((client.POLL_startCgiResponse()) == true)
+					this->POLL_addCgiFdsToPollfds_(client);
+				return;
+
+	*/
+	void	ServerManager::POLL_receiveFromClient( int client_fd ) {
+
+		Client&	client = this->client_map_[client_fd];
+
+		if (!this->receiveFromClient(client_fd))
+			this->POLL_removeClient(client_fd);
+		else {
+			client.getResponse().generate(&client.getRequest());
+			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				if ((client.startCgiResponse()) == true) {
+					CgiHandler* client_cgi = client.getCgiHandler();
+					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+				}
+
+				return;
+			}
+			this->POLL_switchClientToPollout(client_fd);
+		}
+	}
+
+
+	void	ServerManager::POLL_sendResponseToClient( int client_fd ) {
+
+		if (this->sendResponseToClient(client_fd))	// keep alive 
+			this->POLL_switchClientToPollin(client_fd);
+		else	// don't keep alive
+			this->POLL_removeClient(client_fd);
+	}
+
+
+	void	ServerManager::POLL_printData( void ) {
+
+		std::string	all_fds = "all pollfds currently handled: ";
+		std::string pollin_fds = "pollfds with POLLIN: ";
+		std::string pollout_fds = "pollfds with POLLOUT: ";
+
+		std::string	fd_as_string;
+
+		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
+			fd_as_string = intToString(it->fd) + " ";
+			all_fds += fd_as_string;
+			if (it->events == POLLIN)
+				pollin_fds += fd_as_string;
+			if (it->events == POLLOUT)
+				pollout_fds += fd_as_string;
+		}
+
+		Logger::log(E_DEBUG, COLOR_YELLOW, "the amount of pollfds: %d", this->pollfds_.size());
+		Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
+		Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
+		Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
+	}
+
+#else
+/********************************************** SELECT functions **********************************************************/
+
+	bool	ServerManager::SELECT_initializeServers( void ) {
+
+		int	server_amount = this->servers_.size();
+		int server_socket;
+
+		Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "Initializing servers...");
+
+		for (int i = 0; i < server_amount; i++) {
+			server_socket = this->servers_.at(i).setupServer();
+			if (server_socket == -1) {
+				this->closeServerSockets();
+				return false;
+			}
+
+			FD_SET(server_socket, &this->read_fd_set_);		// add server socket to read_fd_set_
+
+			this->server_map_[server_socket] = &this->servers_[i];	// add server socket to server_map_
+		}
+
+		this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);	// get the biggest fd of the read set
+
+		Logger::log(E_INFO, COLOR_BRIGHT_GREEN, "initialization of servers is complete!");
+
+		return true;
+	}
+
+	int		ServerManager::SELECT_getBiggestFd( int max_fd_size ) {
+
+		for (int fd = max_fd_size; fd >= 0; --fd) {
+			if (FD_ISSET(fd, &this->read_fd_set_) || FD_ISSET(fd, &this->write_fd_set_))
+				return fd;
+		}
+		return -1;	
+	}
+
+	bool	ServerManager::SELECT_runServers( void ) {
+
+		struct timeval	select_timeout;
+		int				select_result;
+		fd_set			read_fd_set_copy;
+		fd_set			write_fd_set_copy;
+
+		Logger::log(E_INFO, COLOR_GREEN, "runServers() [SELECT VERSION] starting...");
+
+		this->last_client_time_ = time(0);	// get the start time
+
+		while (true) {	//	MAIN LOOP
+
+			this->SELECT_runServersLoopStart(select_timeout, read_fd_set_copy, write_fd_set_copy);	//ready everything for select
+
+			this->SELECT_printSetData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
+		
+			if ((select_result = select(this->biggest_fd_ + 1, &read_fd_set_copy, &write_fd_set_copy, NULL, &select_timeout)) == -1) {
+				Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
+				this->closeAllSockets();
+				return false;
+			}
+		
+			for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
+				if (FD_ISSET(fd, &read_fd_set_copy)) {
+					if (this->server_map_.count(fd))
+						this->SELECT_acceptNewClientConnection(fd);	// new client connection
+					if (this->client_map_.count(fd))
+						this->SELECT_receiveFromClient(fd);				// client request or disconnection
+				}
+				if (FD_ISSET(fd, &write_fd_set_copy)) {
+					if (this->client_map_.count(fd))	// send a response to client
+						this->SELECT_sendResponseToClient(fd);
+					else {	//cgi pipe activity
+						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
+						this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
+					}
+				}
+			}
+		
+			if (this->checkLastClientTime())	// if the haven't been any client activity in the server shutdown time end run
+				break;
+		}
+
+		Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
+		this->closeAllSockets();
+		return true;
+	}
+
+	// this function is called in the beginning of the runServer Loop.
+	// 1. sets timeout values
+	// 2. copy the Webserver's sets to the pointed to sets
+	// 3.  get the biggest fd in the master_fd_set_
+	// expand on this more later!
+	void	ServerManager::SELECT_runServersLoopStart( timeval& select_timeout, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy ) {
+
+		select_timeout.tv_sec = SELECT_TIMEOUT_SEC;
+		select_timeout.tv_usec = SELECT_TIMEOUT_USEC;
+
+		read_fd_set_copy = this->read_fd_set_;
+		write_fd_set_copy = this->write_fd_set_;
+
+		this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+	}
+
+
+	void	ServerManager::SELECT_acceptNewClientConnection( int server_fd ) {
+
+		int			client_fd;
+		sockaddr_in client_address;
+		socklen_t	client_address_size;
+		char		client_host[INET_ADDRSTRLEN];
+		Server*		server = this->server_map_.at(server_fd);
+		
+		client_address_size = sizeof(sockaddr_in);
+		if ((client_fd = accept(server_fd, (struct sockaddr*)&client_address, &client_address_size)) == -1) {
+			Logger::log(E_ERROR, COLOR_RED, "accept error: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
+			return;
+		}
+
+		Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
+			server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
+
+		if (fcntl(client_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
+			Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
+			close(client_fd);
+			return;
+		}
+
+		Client client(server_fd, server);
+
+		this->client_map_[client_fd] = client; 
+		this->client_map_[client_fd].setLatestTime();
+
+		FD_SET(client_fd, &this->read_fd_set_);
+	}
+
+	void	ServerManager::SELECT_removeFdFromSets( int fd ) {
+		
+		if (FD_ISSET(fd, &this->read_fd_set_))
+			FD_CLR(fd, &this->read_fd_set_);
+		if (FD_ISSET(fd, &this->write_fd_set_))
+			FD_CLR(fd, &this->write_fd_set_);
+			if (fd == this->biggest_fd_)
+				this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+	}
+
+	void	ServerManager::SELECT_removeClient( int client_fd ) {
+
+		this->SELECT_removeFdFromSets(client_fd);
+		this->removeClient(client_fd);
+	}
+
+	void	ServerManager::SELECT_switchClientToReadSet( int client_fd ) {
+
+		if (FD_ISSET(client_fd, &this->write_fd_set_))
+			FD_CLR(client_fd, &this->write_fd_set_);
+		if (!FD_ISSET(client_fd, &this->read_fd_set_))
+			FD_SET(client_fd, &this->read_fd_set_);
+	}
+
+	void	ServerManager::SELECT_switchClientToWriteSet( int client_fd ) {
+
+		if (FD_ISSET(client_fd, &this->read_fd_set_))
+			FD_CLR(client_fd, &this->read_fd_set_);
+		if (!FD_ISSET(client_fd, &this->write_fd_set_))
+			FD_SET(client_fd, &this->write_fd_set_);
+	}
+
+	/*	check the following lines, maybe scuffed
+
+	if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				if ((client.POLL_startCgiResponse()) == true)
+					this->POLL_addCgiFdsToPollfds_(client);
+				return;
+
+	*/
+	void	ServerManager::SELECT_receiveFromClient( int client_fd ) {
+
+		Client& client = this->client_map_[client_fd];
+
+		if (!this->receiveFromClient(client_fd))
+			this->SELECT_removeClient(client_fd);
+		else {
+			client.getResponse().generate(&client.getRequest());
+			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				if ((client.startCgiResponse()) == true) {
+					CgiHandler* client_cgi = client.getCgiHandler();
+					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+					this->SELECT_addClientCgiFdsToSets_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+				}
+				return;
+			}
+			this->SELECT_switchClientToWriteSet(client_fd);
+		}
+	}
+
+	/*	Use this function in the version that uses SELECT:
+		Will call the receiveFromClient function but handle it's
+		results in the correct SELECT way */
+	void	ServerManager::SELECT_sendResponseToClient( int client_fd ) {
+
+		if (this->sendResponseToClient(client_fd))	// keep alive
+			this->SELECT_switchClientToReadSet(client_fd);
+		else	// don't keep alive
+			this->SELECT_removeClient(client_fd);
+	}
+
+	void	ServerManager::SELECT_printSetData( void ) {
+		
+		std::string	all_fds = "all fds currently handled: ";
+		std::string read_set = "read_fd_set: ";
+		std::string write_set = "write_fd_set: ";
+
+		std::string	fd_as_string;
+		int			fds_amount = 0;
+
+		for (int i = biggest_fd_; i >= 0; --i) {
+			if (FD_ISSET(i, &this->read_fd_set_)) {
+				fd_as_string = intToString(i);
+				all_fds += fd_as_string + " ";
+				read_set += fd_as_string + " ";
+				++fds_amount;
+			}
+			if (FD_ISSET(i, &this->write_fd_set_)) {
+				fd_as_string = intToString(i);
+				all_fds += fd_as_string + " ";
+				write_set += fd_as_string + " ";
+				++fds_amount;
+			}
+		}
+
+		Logger::log(E_DEBUG, COLOR_YELLOW, "fds amount: %d", fds_amount);
+		Logger::log(E_DEBUG, COLOR_YELLOW, "the biggest fd currently: %d", this->biggest_fd_);
+		Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
+		Logger::log(E_DEBUG, COLOR_YELLOW, read_set.c_str());
+		Logger::log(E_DEBUG, COLOR_YELLOW, write_set.c_str());
+	}
+#endif
 
 /* CLASS PRIVATE METHODS */
 
@@ -675,80 +685,83 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 		// handle error somehow
 }
 
+#if POLL_TRUE_SELECT_FALSE
 /********************************************** POLL functions **********************************************************/
 
-void	ServerManager::POLL_addClientCgiFdsToPollfds_( int pipe_in, int pipe_out ) {
+	void	ServerManager::POLL_addClientCgiFdsToPollfds_( int pipe_in, int pipe_out ) {
 
-	pollfd pollfd_in = {pipe_in, POLLIN, 0};
-	pollfd pollfd_out = {pipe_out, POLLOUT, 0};
+		pollfd pollfd_in = {pipe_in, POLLIN, 0};
+		pollfd pollfd_out = {pipe_out, POLLOUT, 0};
 
-	this->pollfds_.push_back(pollfd_in);
-	this->pollfds_.push_back(pollfd_out);
-	this->pollfds_size_ += 2;
-}
+		this->pollfds_.push_back(pollfd_in);
+		this->pollfds_.push_back(pollfd_out);
+		this->pollfds_size_ += 2;
+	}
 
-void	ServerManager::POLL_removeClientCgiFdsFromPollfds_( int client_fd ) {
+	void	ServerManager::POLL_removeClientCgiFdsFromPollfds_( int client_fd ) {
 
-	for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
-		if (it->first == client_fd) {
-			this->POLL_removeFdFromPollfds(it->second[0]);
-			this->POLL_removeFdFromPollfds(it->second[1]);
-			break;
+		for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+			if (it->first == client_fd) {
+				this->POLL_removeFdFromPollfds(it->second[0]);
+				this->POLL_removeFdFromPollfds(it->second[1]);
+				break;
+			}
 		}
 	}
-}
 
-void	ServerManager::POLL_handleClientCgi_( int client_fd ) {
+	void	ServerManager::POLL_handleClientCgi_( int client_fd ) {
 
-	Client&	client = this->client_map_[client_fd];
+		Client&	client = this->client_map_[client_fd];
 
-	if (client.getRequest().getCgiFlag()) {
-		client.finishCgiResponse();
-		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
-		this->client_cgi_map_.erase(client_fd);
-		this->POLL_switchClientToPollout(client_fd);
-		return;
-	} else {
-		Logger::log(E_ERROR, COLOR_RED, "POLL_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
-		// handle this error somehow; you can also remove the first if-statement
-		// if (client.getRequest().getCgiFlag())
-		// because of course it is a cgi!
+		if (client.getRequest().getCgiFlag()) {
+			client.finishCgiResponse();
+			this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
+			this->client_cgi_map_.erase(client_fd);
+			this->POLL_switchClientToPollout(client_fd);
+			return;
+		} else {
+			Logger::log(E_ERROR, COLOR_RED, "POLL_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
+			// handle this error somehow; you can also remove the first if-statement
+			// if (client.getRequest().getCgiFlag())
+			// because of course it is a cgi!
+		}
 	}
-}
 
+#else
 /********************************************** SELECT functions **********************************************************/
 
-void	ServerManager::SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out ) {
+	void	ServerManager::SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out ) {
 
-	FD_SET(pipe_in, &this->write_fd_set_);
-	FD_SET(pipe_out, &this->read_fd_set_);
-}
+		FD_SET(pipe_in, &this->write_fd_set_);
+		FD_SET(pipe_out, &this->read_fd_set_);
+	}
 
-void	ServerManager::SELECT_removeClientCgiFdsFromSets_( int client_fd ) {
+	void	ServerManager::SELECT_removeClientCgiFdsFromSets_( int client_fd ) {
 
-	for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
-		if (it->first == client_fd) {
-			this->SELECT_removeFdFromSets(it->second[0]);
-			this->SELECT_removeFdFromSets(it->second[1]);
-			break;
+		for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
+			if (it->first == client_fd) {
+				this->SELECT_removeFdFromSets(it->second[0]);
+				this->SELECT_removeFdFromSets(it->second[1]);
+				break;
+			}
 		}
 	}
-}
 
-void	ServerManager::SELECT_handleClientCgi_( int client_fd ) {
-	
-	Client&	client = this->client_map_[client_fd];
+	void	ServerManager::SELECT_handleClientCgi_( int client_fd ) {
+		
+		Client&	client = this->client_map_[client_fd];
 
-	if (client.getRequest().getCgiFlag()) {
-		client.finishCgiResponse();
-		this->SELECT_removeClientCgiFdsFromSets_(client_fd);
-		this->client_cgi_map_.erase(client_fd);
-		this->SELECT_switchClientToWriteSet(client_fd);
-		return;
-	} else {
-		Logger::log(E_ERROR, COLOR_RED, "SELECT_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
-		// handle this error somehow; you can also remove the first if-statement
-		// if (client.getRequest().getCgiFlag())
-		// because of course it is a cgi!
+		if (client.getRequest().getCgiFlag()) {
+			client.finishCgiResponse();
+			this->SELECT_removeClientCgiFdsFromSets_(client_fd);
+			this->client_cgi_map_.erase(client_fd);
+			this->SELECT_switchClientToWriteSet(client_fd);
+			return;
+		} else {
+			Logger::log(E_ERROR, COLOR_RED, "SELECT_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
+			// handle this error somehow; you can also remove the first if-statement
+			// if (client.getRequest().getCgiFlag())
+			// because of course it is a cgi!
+		}
 	}
-}
+#endif
