@@ -4,13 +4,16 @@
 # include "Request.hpp"
 # include "Response.hpp"
 # include "Server.hpp"
+# include "CgiHandler.hpp"
+
+// forward declaration, because of this have to use pointer inside Client class
+class CgiHandler;
 
 /*! \brief Brief description.
 *         Brief description continued.
 *
 *  Detailed description starts here.
 */
-
 class	Client {
 	private:
 		int					fd_;					// client's file (socket) descriptor
@@ -21,6 +24,7 @@ class	Client {
 
 		Request				request_;
 		Response			response_;
+		CgiHandler*			cgi_handler_;
 
 	public:
 		Client( void );
@@ -30,22 +34,28 @@ class	Client {
 
 		Client&	operator=( const Client& rhs );
 
+		bool					startCgiResponse( void );
+		void					finishCgiResponse( void );
+
 		// setters
-		void				setLatestTime( void );
+		void					setLatestTime( void );
 
 		// getters
-		int					getFd( void ) const;
-		time_t				getLatestTime( void ) const;
-		Server*				getServer( void ) const;
-		int					getServerFd( void ) const;
-		std::string			getClientHost( void ) const;
+		int						getFd( void ) const;
+		time_t					getLatestTime( void ) const;
+		Server*					getServer( void ) const;
+		int						getServerFd( void ) const;
+		std::string				getClientHost( void ) const;
+		struct sockaddr_in&		getAddress( void );
+		CgiHandler*				getCgiHandler( void );
 
-		Request&			getRequest( void );
-		Response&			getResponse( void );
-		std::string			getResponseString( void );
-		void				addToRequest( std::string message );
-		void				resetResponse( void );
-		void				resetRequest( void );
+		Request&				getRequest( void );
+		Response&				getResponse( void );
+		const std::string&		getResponseString( void );
+		void					addToRequest( std::string message );
+		void					resetResponse( void );
+		void					resetRequest( void );
+
 };
 
 #endif

@@ -58,6 +58,9 @@ dkms.conf
 .DS_Store
 .vscode/
 a.out
+own_tests/
+outfile
 clientThreadFunction.cpp
 simpleClient.cpp
 client
+WebServ

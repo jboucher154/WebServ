@@ -10,7 +10,7 @@
 # include <unistd.h>
 # include <cstdio>
 
-// # include <vector>
+# include <vector>
 
 # include "utility.hpp"
 # include "Server.hpp"
@@ -75,7 +75,6 @@ class	Response {
 		std::vector<std::string> 	GetContentTypeValues_( void );
 		void						parseMultiPartFormData( std::string& boundary );
 
-
 		std::vector<std::string>	getAcceptedFormats( void );
 
 		/*TYPEDEF*/
@@ -94,6 +93,7 @@ class	Response {
 		void			generate( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
 		std::string&	get();
+		std::string&	get( const std::string& body );
 
 		/* GETTERS */
 		int									getStatusCode( void ) const;
@@ -101,7 +101,6 @@ class	Response {
 		const std::string&					getQueryString( void ) const;
 		std::vector<std::string>::iterator	getFileDataBegin( void );
 		std::vector<std::string>::iterator	getFileDataEnd( void );
-		
 
 		/* SETTERS */
 		void				setStatusCode( unsigned int	new_code );
