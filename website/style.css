@@ -1,0 +1,97 @@
+body {
+	margin: 0;
+	overflow: hidden;
+}
+
+.diagonal-line {
+	position: absolute;
+	width: 6px;
+	height: 200%;
+	background: #30633c;
+	top: 40;
+	left: 80%;
+	transform-origin: top right;
+	transform: rotate(45deg);
+}
+
+.container {
+	position: relative;
+	width: 50%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.left {
+	left: 0;
+}
+
+.right {
+	right: 0;
+}
+
+.left,
+.right {
+  position: absolute;
+}
+
+.cat img {
+	max-width: 350px;
+	max-height: 350px;
+	margin: 20px;
+}
+
+.dog img {
+	max-width: 350px;
+	max-height: 350px;
+	margin-right: 20px;
+	margin-bottom: 50px;
+}
+
+.left.cat {
+	top: 0;
+	left: 0;
+  }
+  
+  .right.dog {
+	bottom: 0;
+	right: 0;
+  }
+
+.button-container {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+}
+
+.button {
+	display: inline-block;
+	padding: 20px 40px;
+	font-size: 18px;
+	background-color: #ff9898;
+	color: white;
+	text-decoration: none;
+	border: none;
+	border-radius: 5px;
+	margin: 10px;
+	cursor: pointer;
+}
+
+.button.dog {
+	background-color: #ff750f;
+}
+
+@media (max-width: 1400px) {
+	.diagonal-line {
+		transform: rotate(50deg);
+		margin-left: 20%;
+	}
+}
+
+@media (max-width: 1000px) {
+	.diagonal-line {
+		transform: rotate(50deg);
+		margin-left: 40vw;
+	}
+}

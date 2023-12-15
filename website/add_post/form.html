@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link href="styles.css" rel="stylesheet">
+		<link href="../styles.css" rel="stylesheet">
+	</head>
+	<body>
+		<header>
+			<nav>
+				<ul id="navBar">
+					<li><a href="../index.html">Home</a></li>
+					<li><a href="../cat/cats.html">Cat</a></li>
+					<li><a href="../dog/dogs.html">Dog</a></li>
+				</ul>
+			</nav>
+		</header>
+		<form action="../../cgi-bin/add_posts.py" method="POST">
+			<div>
+				<label for="name">pet's name</label>
+			</div>
+			<div>
+				<input type="text" required="required" name="name" id="name">
+			</div>
+			<div>
+				<label for="age">Pet's age</label>
+			</div>
+			<div>
+				<input type="text" required="required" name="age" id="age">
+			</div>
+			<div>
+				<label for="parents">Pet's parent(s)</label>
+			</div>
+			<div>
+				<input type="text" required="required" name="parents" id="parents">
+			</div>
+			<div>
+				<label for="about">about pet</label>
+			</div>
+			<div>
+				<input type="text" required="required" name="about" id="about">
+			</div>
+			<div>
+				<label for="photo">Upload photo</label>
+			</div>
+			<div>
+				<input type="file" required="required" name="photo" id="photo">
+			</div>
+			<div>
+				<input type="reset" value="Reset">
+			</div>
+			<div>
+				<input type="submit" value="sumbit">
+			</div>
+		</form>
+	</body>
+</html>

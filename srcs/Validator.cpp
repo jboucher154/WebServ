@@ -81,8 +81,9 @@ bool Validator::validIpHostBuilder(){
 			if (line[0] == '#')
 				continue;
 			std::stringstream ss(line);
-			if (std::getline(ss, key, ' ') && (ss >> value))
+			if ((ss >> key) && (ss >> value))
 				validIpHostMap[key] = value;
+			
         }
         hostsFile.close();
     }
