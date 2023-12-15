@@ -403,7 +403,7 @@ bool Validator::alias( std::string value ){
 		return false;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates cgi exetensions for location blocks
 *  
 *  This server has implications to execute .py and .sh
 *  extentions so these are the only valid values for now
@@ -423,7 +423,7 @@ bool Validator::cgiExt( std::string value ){
 		return false;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates cgi path for location blocks
 *  
 *  The path to .sh executor or python interpreter
 *  has to be accessable and executable so this methods
@@ -445,7 +445,7 @@ bool Validator::cgiPath( std::string value ){
 	return true;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates location root for location blocks
 *  
 *  If a location block overwrites the main root the
 *  replacement has to be a directory, so this method
@@ -465,7 +465,7 @@ bool Validator::locationRoot( std::string value ){
 	return true;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates index for location blocks
 *  
 *  This method first updates the index value, attaching
 *  the full path to it and then checks for existance of
@@ -497,6 +497,13 @@ bool Validator::locationIndex( std::string value ){
 	return true;
 }
 
+/*! \brief validates cgi script for location blocks
+*  
+*  This method first updates the script value, attaching
+*  the full path to it and then checks for existance of
+*  thr script file and opening access right.
+*  
+*/
 bool Validator::cgiScript( std::string value ){
 
 	if( value.empty() ){
@@ -1004,6 +1011,16 @@ bool Validator::store_lines(std::string	input){
 	return true;
 }
 
+/*! \brief checks that the servername listening port combo is unique
+*       
+*
+*  This methood has a map of listening ports and servernames
+*  if a listening port is already part of the map atleast its
+*  servername has to be unique. The similar servers are added
+*  to a vector and if another similar one is found we check if 
+*  it is just similar and not identical. Identical servers are 
+*  rejected.
+*/
 bool Validator::checkListenServernameUniqueness(){
 
 	std::map<int, std::string> listenServerNameMap;
