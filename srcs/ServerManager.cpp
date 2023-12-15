@@ -260,7 +260,8 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 				return false;
 			}
 
-			/*	This i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
+			
+			/*	The i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
 				the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
 				make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
 				a problem because of the looping. */
@@ -390,7 +391,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 				if ((client.startCgiResponse()) == true) {
 					std::cout << "rec cgi 2" << std::endl;
 					CgiHandler* client_cgi = client.getCgiHandler();
-					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[E_PIPE_END_WRITE], client_cgi->getPipeOut()[E_PIPE_END_READ]);
 					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
 				}
 
@@ -670,6 +671,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		Logger::log(E_DEBUG, COLOR_YELLOW, write_set.c_str());
 	}
 #endif
+
 
 /* CLASS PRIVATE METHODS */
 

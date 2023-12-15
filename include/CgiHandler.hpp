@@ -27,6 +27,11 @@ enum	e_cgi_results {
 	E_CGI_UNKNOWNMETHOD
 };
 
+enum	e_pipe_ends {
+	E_PIPE_END_READ,
+	E_PIPE_END_WRITE
+};
+
 class	CgiHandler {
 
 	private:

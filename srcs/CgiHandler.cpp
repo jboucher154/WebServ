@@ -406,8 +406,8 @@ int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::
 	}
 	if (this->pid_ == 0) { // child process
 		this->forking_successful_ = true;
-		dup2(this->pipe_out_[1], STDOUT_FILENO);
-		dup2(this->pipe_in_[0], STDIN_FILENO);
+		dup2(this->pipe_in_[E_PIPE_END_READ], STDIN_FILENO);
+		dup2(this->pipe_out_[E_PIPE_END_WRITE], STDOUT_FILENO);
 		this->closeCgiPipes();
 
 		ssize_t 	bytes_sent;
@@ -419,15 +419,22 @@ int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::
 			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.length());	// keep track of the bytes sent and keep looping till everything is sent?
 		}
 
+		perror("write");
+
+		// close(this->pipe_in_[1]); // close the pipe_in_[1] (write end) after use; THIS ISN'T NEEDED BECAUSE WE CLOSE THEN ALREADY
+
+		std::cerr << "EXECUTECGI\nmsg_length: " << msg_length << "\tbytes_sent: " << bytes_sent << std::endl;
+
 		if (bytes_sent != msg_length) {
-			Logger::log(E_ERROR, COLOR_RED, "not all body_string bytes were sent; aborting cgi exection");	// if we get here there was an error in execve!
+			Logger::log(E_ERROR, COLOR_RED, "not all body_string bytes were sent; aborting cgi process");	// if we get here there was an error in execve!
+			std::cerr << "ex 1" << std::endl;
 			delete [] this->path_;
+			std::cerr << "ex 2" << std::endl;
 			deleteAllocatedCStringArray(this->args_);
+			std::cerr << "ex 3" << std::endl;
 			deleteAllocatedCStringArray(this->metavariables_);
 			std::exit(EXIT_FAILURE);
 		}
-
-		close(this->pipe_in_[1]); // close the pipe_in_[1] (write end) after use
 
 		execve(this->args_[0], this->args_, this->metavariables_);
 
@@ -439,9 +446,9 @@ int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::
 	} else {	// parent process
 		this->forking_successful_ = true;
 
-		close(this->pipe_in_[0]);	// close all pipe ends except pipe_out_[0] (read end) as we'll use that in the storeCgiOutput_!
-		close(this->pipe_in_[1]);
-		close(this->pipe_out_[1]);
+		close(this->pipe_in_[E_PIPE_END_READ]);	// close all pipe ends except pipe_out_[0] (read end) as we'll use that in the storeCgiOutput_!
+		close(this->pipe_in_[E_PIPE_END_WRITE]);
+		close(this->pipe_out_[E_PIPE_END_WRITE]);
 
 		int status;
 		this->cgiTimer_(status);
@@ -467,24 +474,25 @@ int		CgiHandler::storeCgiOutput_( void ) {
 	memset(buffer, 0, CGI_OUTPUT_BUFFER);
 
 	while (ret > 0) {
-		ret = read(this->pipe_out_[0], buffer, 1024); // set up a read_max (what should it even be?)
+		ret = read(this->pipe_out_[E_PIPE_END_READ], buffer, 1024); // set up a read_max (what should it even be?)
 
 		if (ret > 0) {
 			this->cgi_output_as_string_.append(buffer, ret); //make sure this isn't adding extra if buffer not full, also case for bin info in html
 			bytesread += ret;
 		}
 		if (bytesread >= CGI_OUTPUT_BUFFER) {
-			this->closeCgiPipes();
+			close(this->pipe_out_[E_PIPE_END_READ]);
 			return E_CGI_SERVERERROR;
 		}
 	}
 
+	close(this->pipe_out_[E_PIPE_END_READ]);
+
 	if (ret < 0) {
 		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1 (cannot use errno after read to find reason for failure)");
-		this->closeCgiPipes();
 		return E_CGI_SERVERERROR;
 	}
-	this->closeCgiPipes();
+
 	// this->cgi_output_as_string_ = std::string(this->cgi_output_.begin(), this->cgi_output_.end());
 
 	return E_CGI_OK;
