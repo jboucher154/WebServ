@@ -17,7 +17,7 @@ commentInput.addEventListener('keydown', function(event) {
       // Add the pressed character to the comment box
       commentInput.value += event.key;
     }
-  }, 50); // Adjust the interval duration as needed
+  }, 70); // Adjust the interval duration
   if (event.key === 'Enter') {
     // Clear any existing interval
     clearInterval(repeatInterval);

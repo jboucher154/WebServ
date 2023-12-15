@@ -84,12 +84,14 @@ body {
 
 @media (max-width: 1400px) {
 	.diagonal-line {
+		transform: rotate(50deg);
 		margin-left: 20%;
 	}
 }
 
 @media (max-width: 1000px) {
 	.diagonal-line {
+		transform: rotate(50deg);
 		margin-left: 40vw;
 	}
 }
