@@ -84,7 +84,6 @@ bool Validator::validIpHostBuilder(){
 			// if (std::getline(ss, key, ' ') && (ss >> value))
 			if ((ss >> key) && (ss >> value)) // whitespace was not being correctly split with getline, key included the value in some cases and value was empty
 				validIpHostMap[key] = value;
-			std::cout << "valid host KEY: " << key << " VALUE: " << value << std::endl;
         }
         hostsFile.close();
     }

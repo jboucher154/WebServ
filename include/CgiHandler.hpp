@@ -38,7 +38,7 @@ class	CgiHandler {
 		std::map<std::string, std::string>	metavariables_map_;
 		// std::map<std::string, std::string>	cgi_map_;
 
-		// std::vector<char>	cgi_output_;
+		std::vector<char>	cgi_output_;
 		std::string			cgi_output_as_string_;
 		char**				metavariables_;
 		char**				args_;
@@ -46,8 +46,8 @@ class	CgiHandler {
 		bool				piping_successful_;
 		bool				forking_successful_;
 		int					pid_;
-		int					pipe_in_[2];
-		int					pipe_out_[2];
+		int					pipe_into_cgi_[2];
+		int					pipe_from_cgi_[2];
 
 
 		int		fillMetavariablesMap_( Client& client );
