@@ -90,7 +90,7 @@ Response&	Response::operator=( const Response& rhs ) {
 *  
 *  
 */
-void	Response::generate( Request* request ) {
+void	Response::createResponsePhase1( Request* request ) {
 
 	std::string			possible_methods[] ={ "GET", "HEAD", "POST", "DELETE"};
 	response_methods_	methods = { &Response::getMethod_, &Response::headMethod_, &Response::postMethod_, &Response::deleteMethod_ };
@@ -139,7 +139,7 @@ void	Response::generate( Request* request ) {
 *  More details to be filled as project progresses.
 *  
 */
-std::string&	Response::get( void ) {
+std::string&	Response::buildAndGetResponsePhase2( void ) {
 
 	// std::string response;
 	
@@ -165,7 +165,7 @@ std::string&	Response::get( void ) {
 *  More details to be filled as project progresses.
 *  
 */
-std::string&	Response::get( const std::string& body ) {
+std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
 	this->body_ = body;
 

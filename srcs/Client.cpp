@@ -240,10 +240,10 @@ const std::string&	Client::getResponseString( void ) {
 		return this->getCgiHandler()->getCgiOutputAsString_();
 	}
 	else {
-		return this->response_.get();
+		return this->response_.buildAndGetResponsePhase2();
 	}
 	// if (this->request_.getComplete())
-	// 	return this->response_.get();
+	// 	return this->response_.buildAndGetResponsePhase2();
 	// else
 	// 	return ("");
 }

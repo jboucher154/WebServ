@@ -90,10 +90,10 @@ class	Response {
 
 		/* PUBLIC METHODS */
 
-		void			generate( Request* request ); // call in client ? 
+		void			createResponsePhase1( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
-		std::string&	get();
-		std::string&	get( const std::string& body );
+		std::string&	buildAndGetResponsePhase2();
+		std::string&	buildAndGetResponsePhase2( const std::string& body );
 
 		/* GETTERS */
 		int									getStatusCode( void ) const;
