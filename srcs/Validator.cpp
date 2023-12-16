@@ -12,7 +12,7 @@ std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
 std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_array
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
 std::string valid_location_keys_array[] = {"autoindex", "return",
-		 "alias", "client_body_size", "allow_methods", "root", "index", "cgi_ext", "cgi_path"};
+		 "alias", "index", "client_body_size", "allow_methods", "root", "cgi_ext", "cgi_path", "script"};
 std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_location_keys_array
 	+ sizeof(valid_location_keys_array) / sizeof(valid_location_keys_array[0]));
 
@@ -403,7 +403,7 @@ bool Validator::alias( std::string value ){
 		return false;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates cgi exetensions for location blocks
 *  
 *  This server has implications to execute .py and .sh
 *  extentions so these are the only valid values for now
@@ -423,7 +423,7 @@ bool Validator::cgiExt( std::string value ){
 		return false;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates cgi path for location blocks
 *  
 *  The path to .sh executor or python interpreter
 *  has to be accessable and executable so this methods
@@ -445,7 +445,7 @@ bool Validator::cgiPath( std::string value ){
 	return true;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates location root for location blocks
 *  
 *  If a location block overwrites the main root the
 *  replacement has to be a directory, so this method
@@ -465,7 +465,7 @@ bool Validator::locationRoot( std::string value ){
 	return true;
 }
 
-/*! \brief validates autoindex for location blocks
+/*! \brief validates index for location blocks
 *  
 *  This method first updates the index value, attaching
 *  the full path to it and then checks for existance of
@@ -492,6 +492,38 @@ bool Validator::locationIndex( std::string value ){
 	}
 	if (!canOpen(temp) ){
 		Logger::log(E_ERROR, COLOR_RED, "index has to be a file with opening permission!");
+		return false;
+	}
+	return true;
+}
+
+/*! \brief validates cgi script for location blocks
+*  
+*  This method first updates the script value, attaching
+*  the full path to it and then checks for existance of
+*  thr script file and opening access right.
+*  
+*/
+bool Validator::cgiScript( std::string value ){
+
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for location index value can not be empty!");
+		return false;
+	}
+	std::string	temp = rootPath;
+	temp.append("/");
+	temp.append(value);
+	std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.find("script");
+    // Find the member in the vector
+    std::vector<std::string>::iterator vecIt = std::find(outerIt->second.begin(), outerIt->second.end(), value);
+    *vecIt = temp;
+
+	if (!isFile(temp)){
+		Logger::log(E_ERROR, COLOR_RED, "Script has to be an existing file!");
+		return false;
+	}
+	if (!canOpen(temp) ){
+		Logger::log(E_ERROR, COLOR_RED, "script has to be a file with opening permission!");
 		return false;
 	}
 	return true;
@@ -639,12 +671,20 @@ bool Validator::checkCgiBlockKeyValues(){
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block can not be empty!");
 		return false;
 	}
-	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::locationRoot, &Validator::locationIndex, &Validator::cgiExt, &Validator::cgiPath};
+	if (innerBlock.find("root") == innerBlock.end()){
+			//add the location root to main root for compelete path
+			std::string	temp = "./cgi-bin";
+			rootPath = temp;
+			std::vector<std::string> rootValue;
+			rootValue.push_back(temp);
+			innerBlock["root"] = rootValue;
+	}
+	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::locationRoot, &Validator::cgiExt, &Validator::cgiPath, &Validator::cgiScript};
 	//validate key values till the closing }
 	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
 		int i = 0;
-		while (i < 5 && valid_location_keys[i + 4].compare(outerIt->first))
+		while (i < 5 && valid_location_keys[i + 5].compare(outerIt->first))
 			i++ ;
 		if (i == 5){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for Cgi location.", (*outerIt).first.c_str());
@@ -738,8 +778,8 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		}
 	}
 	t_location_block_functs  locationFunct[] = {&Validator::autoIndex, &Validator::returnKey,
-				&Validator::alias, &Validator::clientMaxBodySize, &Validator::allowedMethods,
-				&Validator::locationRoot, &Validator::locationIndex};
+				&Validator::alias, &Validator::locationIndex, &Validator::clientMaxBodySize, &Validator::allowedMethods,
+				&Validator::locationRoot};
 	//validate key values till the closing }
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
 		int i = 0;
@@ -971,6 +1011,42 @@ bool Validator::store_lines(std::string	input){
 	return true;
 }
 
+/*! \brief checks that the servername listening port combo is unique
+*       
+*
+*  This methood has a map of listening ports and servernames
+*  if a listening port is already part of the map atleast its
+*  servername has to be unique. The similar servers are added
+*  to a vector and if another similar one is found we check if 
+*  it is just similar and not identical. Identical servers are 
+*  rejected.
+*/
+bool Validator::checkListenServernameUniqueness(){
+
+	std::map<int, std::string> listenServerNameMap;
+	std::vector<std::string> similars;
+	std::string temp;
+	for (std::vector<Server>::iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt){
+		if (listenServerNameMap.find((*serverIt).getListeningPortInt()) == (listenServerNameMap).end()){
+			listenServerNameMap[(*serverIt).getListeningPortInt()] = (*serverIt).getServerName();
+		}
+		else{
+			if (listenServerNameMap.find((*serverIt).getListeningPortInt())->second == (*serverIt).getServerName()){
+				Logger::log(E_ERROR, COLOR_RED, "Same severnames can not be listening on same listening ports!");
+				return false;
+			}
+			temp.append(intToString((*serverIt).getListeningPortInt()));
+			temp.append(listenServerNameMap.find((*serverIt).getListeningPortInt())->second);
+			if (std::find(similars.begin(), similars.end(), temp) != similars.end()){
+				Logger::log(E_ERROR, COLOR_RED, "Same severnames can not be listening on same listening ports!");
+				return false;
+			}
+			similars[similars.size() - 1] = temp;
+		}
+	}
+	return true;
+}
+
 /*! \brief validates the config file the config file
 *       
 *
@@ -987,5 +1063,9 @@ bool Validator::validate(std::string	input){
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 		return false;
 	}
-	return (validate_lines(&lines));
+	if (!validate_lines(&lines))
+		return false;
+	if (!checkListenServernameUniqueness())
+		return false;
+	return true;
 }

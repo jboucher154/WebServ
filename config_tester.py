@@ -2,6 +2,12 @@ import os
 import subprocess
 
 def test_config_validator(bad_config_files, executable_path):
+    
+    noPermissionFilePath = './config/bad/noPermission.conf'
+    new_permissions = 0
+
+    os.chmod(noPermissionFilePath, new_permissions)
+    
     # Check if the directory exists
     if not os.path.exists(bad_config_files):
         print(f"Error: Directory '{bad_config_files}' does not exist.")
