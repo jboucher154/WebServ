@@ -132,7 +132,7 @@ void	Response::createResponsePhase1( Request* request ) {
 }
 
 
-/*! \brief get method returns the response as a c string.
+/*! \brief returns a reference to the response string built.
 *       
 *
 *  Currently returns response from ResponseCodes class based on current status_code_.
@@ -158,7 +158,8 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 	return (this->response_);
 }
 
-/*! \brief get method returns the response as a c string.
+/*! \brief takes a reference to the body returned from a cgi process and returns a 
+*			reference to the response string built.
 *       
 *
 *  Currently returns response from ResponseCodes class based on current status_code_.
@@ -431,6 +432,68 @@ std::string Response::contentLocationHeader_( void ) const {
 
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
 
+/*! \brief finds information for uri that includes a filename
+*	
+*    setResourceLocationAndNameForFile:
+*		-  check if location is valid
+*		-  checks if the request if for cgi, validates script requested
+*		-  for non-cgi requests, sets resource path as path as server root + URI
+*		-  for cgi requests, sets resource path as cgi root + / + filename (from uri)
+*	Error codes:
+*		404 - Not Found if location does not exist
+*		404 - Invalid cgi script - not on list //might choose different code
+*  
+*/
+void	Response::setResourceLocationAndNameForFile( std::string& uri, size_t last_slash_position ) {
+
+	this->resource_location_ = uri.substr(0, last_slash_position + 1); //path only, first part of uri
+	if (!this->server_->isLocationInServer(this->resource_location_)) {
+		this->status_code_ = 404;
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+		return ;
+	}
+	std::string	filename = uri.substr(last_slash_position + 1);
+	if (!this->request_->getCgiFlag()) {
+		this->resource_path_ =  this->server_->getRoot() + uri;
+	}
+	else if (this->request_->getCgiFlag()) {
+		this->resource_path_ = (this->server_->getLocationValue("/cgi-bin", "root"))->front() + "/" + filename;
+		// this->resource_path_ =  "." + uri; //need to check this for correct path
+	}
+	else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
+		this->status_code_ = 404;
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
+	}
+}
+
+/*! \brief finds information for uri that requests a directory, no file listed
+*	
+*    setResourceLocationAndNameForDirectory:
+*		-  checks if the request if for cgi, rejects as invalid for not specifying a specific script
+*		-  check if location is valid
+*		-  sets resource path as path to index of this page
+*	Error codes:
+*		404 - Not Found if location does not exist
+*		400 - Invalid Request if no cgi script is defined
+*  
+*/
+void	Response::setResourceLocationAndNameForDirectory( std::string& uri ) {
+
+	this->resource_location_ = uri; //won't have root applied
+	if (this->request_->getCgiFlag()) {
+		this->status_code_ = 400; //maybe invalid request if we don't allow this?
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script not given by request: `%s'", uri.c_str());
+	}
+	else if (!this->server_->isLocationInServer(this->resource_location_)) {
+		this->status_code_ = 404;
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+	}
+	else {
+		this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+	}
+	/* might still need the last else clause, however the existance of the file will be checked later so might be fine*/
+}
+
 /*! \brief Extracts information from the request URI and validates 
 *				the location requested
 *       
@@ -439,7 +502,7 @@ std::string Response::contentLocationHeader_( void ) const {
 *	the URI form the request. The existence of the files is not checked, only that 
 *	they have been entered into the server at this point.
 *	
-*	404 - Not Found is the only error code set in this function
+*	404 - Not Found will be set if location does not exist
 *  
 */
 int	Response::setResourceLocationAndName( std::string uri ) {
@@ -454,42 +517,27 @@ int	Response::setResourceLocationAndName( std::string uri ) {
 		else
 			path = this->server_->getRoot() + uri;
 		if (isDirectory(path)) {
-			this->resource_location_ = uri;
-			if (this->request_->getCgiFlag()) {
-				this->status_code_ = 404;
-				Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script not given by request: `%s'", uri.c_str());
-			}
-			else if (!this->server_->isLocationInServer(this->resource_location_)) {
-				this->status_code_ = 404;
-				Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
-			}
-			else if (this->server_->isKeyInLocation(this->resource_location_, "index")) {
-				this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front(); //could be empty
-			}
-			else if (this->resource_location_ == "/") {
-				this->resource_path_ = this->server_->getIndex();
-			}
-			else {
-				this->status_code_ = 404;
-				Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
-			}
+			setResourceLocationAndNameForDirectory(uri);
 		}
 		else {
-			this->resource_location_ = uri.substr(0, last_slash_pos + 1); //path only
-			std::string	filename = uri.substr(last_slash_pos + 1);
-			if (!this->request_->getCgiFlag())
-				this->resource_path_ =  this->server_->getRoot() + uri;
-			else if (this->request_->getCgiFlag()) {
-				this->resource_path_ =  "." + uri; //need to check this for correct path
-			}
-			else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
-				this->status_code_ = 404;
-				Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
-			}
+			setResourceLocationAndNameForFile(uri, last_slash_pos);
 		}
+	}
+	else {
+		this->status_code_ = 400; //invalid request
+		Logger::log(E_DEBUG, COLOR_CYAN, "URI seems to be invalid :/ : `%s'", uri.c_str());
 	}
 	return (this->status_code_);
 }
+
+/*
+- break apart uri to determine if it is a file or directory
+- find the location that corresponds to that uri
+	- save the location name for looking up location info
+	- save filepath to resource for access
+- if cgi is requested, verify the script is on the approved list
+*/
+
 
 /*! \brief returns true or false if requested method is allowd for the location
 *
