@@ -43,19 +43,20 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 	}
 }
 
+/* copy constructor */
 Client::Client( const Client& to_copy ) : response_(NULL), cgi_handler_(NULL) {
 
 	*this = to_copy;
-	/* copy constructor */
 } 
 
 /* DESTRUCTOR */
 
 Client::~Client( void ) {
-	if (this->cgi_handler_)
+	
+	if (this->cgi_handler_){
 		delete this->cgi_handler_;
-	this->cgi_handler_ = NULL;
-	/* destructor */
+		this->cgi_handler_ = NULL;
+	}
 } 
 
 /* OPERATOR OVERLOADS */
@@ -92,6 +93,7 @@ Client&	Client::operator=( const Client& rhs ) {
 *
 *	if error set CGI flag to zero?
 *	TALK WITH JENNY about what to do in error cases!
+*	NOTE: remove unused cases
 */
 bool	Client::startCgiResponse( void ) {
 
