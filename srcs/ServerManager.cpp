@@ -622,7 +622,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->SELECT_removeClient(client_fd);
 		else {
-			client.getResponse().generate(&client.getRequest());
+			client.getResponse().createResponsePhase1(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
