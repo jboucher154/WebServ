@@ -67,7 +67,7 @@ public:
 	bool							isKeyInLocation( std::string locationBlockKey, std::string key ) const;
 	bool							isLocationInServer( std::string locationBlockKey ) const;
 	bool							isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const;
-	bool							isExtentionOnCgiList( std::string extention ) const;
+	bool							isExtensionOnCgiList( std::string extension ) const; //extension
 	bool							isScriptOnCgiList( std::string script ) const;
 
 };

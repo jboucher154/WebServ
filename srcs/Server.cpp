@@ -52,7 +52,6 @@ Server::Server( std::string serverName, int port,  std::string host, std::string
 	size_t numValues4 = sizeof(innerValues4) / sizeof(innerValues4[0]);
 	std::vector<std::string> values4(innerValues4, innerValues4 + numValues4);
 	this->setKeyValueInLocation("/cgi-bin/", "cgi_path", values4);
-
 }
 
 /*! \brief Server class copy constructor
@@ -529,9 +528,9 @@ bool	Server::isValueListedForKey( std::string locationBlockKey, std::string key,
 *
 *  checks if a certain extention is listed under cgi extentions .
 */
-bool	Server::isExtentionOnCgiList( std::string extention ) const{
+bool	Server::isExtensionOnCgiList( std::string extension ) const{
 
-	return (isValueListedForKey("/cgi-bin", "cgi_ext", extention));
+	return (isValueListedForKey("/cgi-bin", "cgi_ext", extension));
 }
 
 /*! \brief checks if a certain script is listed under cgi scripts 

@@ -286,6 +286,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 				}
 				else if (it->revents & POLLOUT) {
+					Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "Pollfd with POLLOUT %d", it->fd);	// remove later, trying to debug heap use after free error!
 					if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
 						this->POLL_sendResponseToClient(it->fd);
 					else {	//cgi pipe activity
@@ -392,10 +393,12 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		else {
 			client.getResponse().generate(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "valid cgi request, going to startCgiResponse");	// remove later, trying to debug heap use after free error!
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
 					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[E_PIPE_END_WRITE], client_cgi->getPipeOut()[E_PIPE_END_READ]);
 					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[E_PIPE_END_WRITE], client_cgi->getPipeOut()[E_PIPE_END_READ]);
+					Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "cgi pipe added to servermanager pollfds");	// remove later, trying to debug heap use after free error!
 				}
 
 				return;

@@ -58,6 +58,8 @@ private:
 	static bool checkLocationBlockKeyValues(std::string	locationKey);
 	static bool checkCgiBlockKeyValues();
 	static bool validIpHostBuilder();
+	static bool checkListenServernameUniqueness();
+	static bool cgiScript( std::string value );
 
 	Validator();
 	Validator( const Validator& src );
