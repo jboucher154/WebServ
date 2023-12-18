@@ -41,6 +41,7 @@ SRCS = \
 	copyCStringArray.cpp	\
 	deleteAllocatedCStringArray.cpp	\
 	ft_strdup.cpp				\
+	directory_listing.cpp
 
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)
