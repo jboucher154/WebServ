@@ -306,6 +306,7 @@ void	Response::intializeMimeTypes( void ) {
 	Response::mime_types_["bmp"] = "image/bmp";
 	Response::mime_types_["gif"] = "image/gif";
 	Response::mime_types_["jpg"] = "image/jpeg";
+	Response::mime_types_["jpeg"] = "image/jpeg";
 	Response::mime_types_["png"] = "image/png";
 	Response::mime_types_["tiff"] = "image/tiff";
 	Response::mime_types_["ico"] = "image/x-icon";
@@ -446,7 +447,11 @@ std::string Response::contentLocationHeader_( void ) const {
 */
 void	Response::setResourceLocationAndNameForFile( std::string& uri, size_t last_slash_position ) {
 
-	this->resource_location_ = uri.substr(0, last_slash_position + 1); //path only, first part of uri
+	this->resource_location_ = uri.substr(0, last_slash_position); //path only, first part of uri
+	if (this->resource_location_.empty()) {
+		this->resource_location_ = "/";
+	}
+
 	if (!this->server_->isLocationInServer(this->resource_location_)) {
 		this->status_code_ = 404;
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
