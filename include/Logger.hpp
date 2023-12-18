@@ -8,6 +8,7 @@
 
 // keep here?
 #include <sys/stat.h>
+# include "WebServ.hpp"
 # include "Color.hpp"
 
 enum	e_log_msg_type {
@@ -28,12 +29,6 @@ enum	e_where_to_log {
 # define LOG_ERROR		"log_error.txt"
 # define LOG_INFO		"log_info.txt"
 # define LOG_DEBUG		"log_debug.txt"
-
-// SET THIS TO TRUE IF YOU WANT DEBUG LOGGING (extra info)
-# ifndef GET_DEBUG_LOG
-#  define GET_DEBUG_LOG	false
-# endif
-
 
 /*! \brief Brief description.
 *         Brief description continued.

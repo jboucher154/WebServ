@@ -848,7 +848,7 @@ void	Response::postMethod_( void ) {
 	std::vector<std::string>	content_type_values = this->GetContentTypeValues_();
 	bool						cgi_flag = this->request_->getCgiFlag();
 	
-	if (!cgi_flag) {
+	if (!cgi_flag || content_type_values.empty()) {
 		this->status_code_ = 406; //not acceptable???
 		return ;
 	}
