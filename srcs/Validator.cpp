@@ -103,12 +103,12 @@ bool Validator::validIpHostBuilder(){
     hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
     hints.ai_socktype = SOCK_STREAM; // Use a stream socket
     // Get address information
-    if (getaddrinfo(hostname, nullptr, &hints, &result) != 0) {
+    if (getaddrinfo(hostname, NULL, &hints, &result) != 0) {
         Logger::log(E_ERROR, COLOR_RED, "Error getting address information for %s", hostname);
         return false;
     }
 	// Iterate through the results and build the IP address
-    for (rp = result; rp != nullptr; rp = rp->ai_next) {
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
 		void* addr;
 		char ipstr[INET6_ADDRSTRLEN];
 
@@ -382,7 +382,7 @@ bool Validator::returnKey( std::string value ){
 		return false;
 }
 
-/*! \brief validates allowed methods for location blocks
+/*! \brief validates alias for location blocks
 *  
 *  Cofig file for this server has to be written in order meaning
 *  that if a location block aliases another location block the
@@ -709,6 +709,13 @@ bool Validator::checkCgiBlockKeyValues(){
 		}
 
 	}
+	//if inner block allowed method has post or delete and not get reject
+	if (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "GET") == innerBlock["allow_methods"].end()
+		&& (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "PUT") != innerBlock["allow_methods"].end()
+		|| std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "DELETE") != innerBlock["allow_methods"].end())){
+			Logger::log(E_ERROR, COLOR_RED, "post or delete can not be allowed without get being allowed on cgi block!");
+			return false;
+	}
 	//check for no deplication
 	//add to server vector
 	if ( servers[servers.size() - 1].isLocationInServer("/cgi-bin")){
@@ -800,6 +807,14 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 			}
 		}
 	}
+	//if inner block allowed method has post or delete and not get reject
+	if (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "GET") == innerBlock["allow_methods"].end()
+		&& (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "PUT") != innerBlock["allow_methods"].end()
+		|| std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "DELETE") != innerBlock["allow_methods"].end())){
+			Logger::log(E_ERROR, COLOR_RED, "post or delete can not be allowed without get being allowed on %s!", locationKey.c_str());
+			return false;
+	}
+	
 	//check for no deplication
 	//add to server vector
 	if ( servers[servers.size() - 1].isLocationInServer(locationKey)){
