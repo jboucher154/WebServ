@@ -102,22 +102,30 @@ void	ServerManager::closeServerSockets( void ) {
 	}
 }
 
-void	ServerManager::closeClientSockets( void ) {
+void	ServerManager::closeAllClientConnections( void ) {
 
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all remaining client sockets...");
 
-	for (std::map<int, Client>::iterator it = this->client_map_.begin(); it != this->client_map_.end(); ++it) {
-		Logger::log(E_INFO, COLOR_WHITE, "Closing client %i connection", it->first);
-		close(it->first);
+	while(!this->client_map_.empty()) {
+		#if POLL_TRUE_SELECT_FALSE
+			this->POLL_removeClient(this->client_map_.begin()->first);
+		#else
+			this->SELECT_removeClient(this->client_map_.begin()->first);
+		#endif
 	}
+
+	// for (std::map<int, Client>::iterator it = this->client_map_.begin(); it != this->client_map_.end(); ++it) {
+	// 	Logger::log(E_INFO, COLOR_WHITE, "Closing client %i connection", it->first);
+	// 	close(it->first);
+	// }
 }
 
 void	ServerManager::closeAllSockets( void ) {
 
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all sockets...");
 
+	this->closeAllClientConnections();
 	this->closeServerSockets();
-	this->closeClientSockets();
 }
 
 bool	ServerManager::checkLastClientTime( void ) {
@@ -182,12 +190,12 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	Response&	response = client->getResponse();	
 
 	bool	keep_alive = client->getRequest().getKeepAlive();
-
 	std::string	response_string = client->getResponseString();
+
+	client->setLatestTime();
+
 	if (response_string.empty())
 		return keep_alive;
-	(void)response;//?
-	client->setLatestTime();
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to socket %d",
@@ -210,6 +218,31 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	client->resetRequest();
 
 	return keep_alive;
+}
+
+/*! \brief Check if client has timed out, and if so, close connection.
+*       
+*  	
+*/
+void	ServerManager::checkIfClientTimeout( int client_fd ) {
+
+	time_t	current_time;
+	time(&current_time);
+	double	time_since_latest_action = difftime(current_time, client_map_[client_fd].getLatestTime());
+
+	//	I recommend keeping this log commented out, as it will flood the terminal/log-files otherwise...
+	// Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %d time since last action: %f", client_fd, time_since_latest_action);
+	std::cout << "last time: " << time_since_latest_action << std::endl;
+
+	if (time_since_latest_action >= CLIENT_TIMEOUT_SEC) {
+		// Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %f timed out!", client_fd);
+		std::cout << "client " << client_fd << " timed out (diff: " << time_since_latest_action << std::endl;
+		#if POLL_TRUE_SELECT_FALSE
+			this->POLL_removeClient(client_fd);
+		#else
+			this->SELECT_removeClient(client_fd);
+		#endif
+	}
 }
 
 #if	POLL_TRUE_SELECT_FALSE
@@ -267,22 +300,36 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 			this->pollfds_size_ = this->pollfds_.size();
 			int	i = 0;
 
+<<<<<<< Updated upstream
 			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); i < this->pollfds_size_ && it != this->pollfds_.end(); ++it, ++i) {
 				if (it->revents & POLLIN) {
 					if (this->server_map_.count(it->fd))
 						this->POLL_acceptNewClientConnection(it->fd);
 					if (this->client_map_.count(it->fd)) {
+=======
+			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end() && i < this->pollfds_size_; ++it, ++i) {
+				if (it->revents & POLLIN) {
+					if (this->server_map_.count(it->fd)) {
+						this->POLL_acceptNewClientConnection(it->fd);
+					} else if (this->client_map_.count(it->fd)) {
+>>>>>>> Stashed changes
 						this->POLL_receiveFromClient(it->fd);
 					}
-
 				}
 				if (it->revents & POLLOUT) {
+<<<<<<< Updated upstream
 					if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
+=======
+					if (this->client_map_.count(it->fd)) {
+>>>>>>> Stashed changes
 						this->POLL_sendResponseToClient(it->fd);
-					else {	//cgi pipe activity
+					} else {	//cgi pipe activity
 						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
 						this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
 					}
+				}
+				if (this->client_map_.count(it->fd)) {	//	if client, check if timeout
+					this->checkIfClientTimeout(it->fd);
 				}
 			}
 		
@@ -340,6 +387,9 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 	void	ServerManager::POLL_removeClient( int client_fd ) {
 
+		if (this->client_cgi_map_.count(client_fd)) {
+			this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
+		}
 		this->POLL_removeFdFromPollfds(client_fd);
 		this->removeClient(client_fd);
 	}
@@ -491,18 +541,21 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		
 			for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
 				if (FD_ISSET(fd, &read_fd_set_copy)) {
-					if (this->server_map_.count(fd))
+					if (this->server_map_.count(fd)) {
 						this->SELECT_acceptNewClientConnection(fd);	// new client connection
-					if (this->client_map_.count(fd))
-						this->SELECT_receiveFromClient(fd);				// client request or disconnection
+					} else if (this->client_map_.count(fd))
+						this->SELECT_receiveFromClient(fd);	// client request or disconnection
 				}
 				if (FD_ISSET(fd, &write_fd_set_copy)) {
-					if (this->client_map_.count(fd))	// send a response to client
+					if (this->client_map_.count(fd)) {	// send a response to client
 						this->SELECT_sendResponseToClient(fd);
-					else {	//cgi pipe activity
+					} else {	//cgi pipe activity
 						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
 						this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
 					}
+				}
+				if (this->client_map_.count(fd)) {	//	if client, check if timeout
+					this->checkIfClientTimeout(fd);
 				}
 			}
 		
@@ -575,6 +628,9 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 	void	ServerManager::SELECT_removeClient( int client_fd ) {
 
+		if (this->client_cgi_map_.count(client_fd)) {
+			this->SELECT_removeClientCgiFdsFromSets_(client_fd);
+		}
 		this->SELECT_removeFdFromSets(client_fd);
 		this->removeClient(client_fd);
 	}

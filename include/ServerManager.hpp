@@ -14,10 +14,15 @@
 // time the servers will run for without any client action (in seconds)
 # define	SERVER_SHUTDOWN_TIME_SEC 7 * 60
 
+<<<<<<< Updated upstream
 // this macro is used to switch the webserver version between one that uses poll and one that uses select
 # ifndef POLL_TRUE_SELECT_FALSE
 #  define POLL_TRUE_SELECT_FALSE true
 # endif
+=======
+// time a client connection is kept open from last client action (in seconds)
+# define	CLIENT_TIMEOUT_SEC 1 * 60
+>>>>>>> Stashed changes
 
 /*! \brief Server Manager class.
 *         This class handles managing the server and client sockets.
@@ -64,13 +69,14 @@ class	ServerManager {
 		ServerManager&	operator=( const ServerManager& rhs );
 
 		void	closeServerSockets( void );
-		void	closeClientSockets( void );
+		void	closeAllClientConnections( void );
 		void	closeAllSockets( void );
 		bool	checkLastClientTime( void );
 		void	removeClient( int client_fd );
 		bool	receiveFromClient( int client_fd );
 		bool	sendResponseToClient( int client_fd );
 		int		getClientFdByItsCgiPipeFd( int pipe_fd );
+		void	checkIfClientTimeout( int client_fd );
 
 
 		bool	SELECT_initializeServers( void );
