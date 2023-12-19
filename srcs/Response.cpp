@@ -499,6 +499,48 @@ void	Response::setResourceLocationAndNameForDirectory( std::string& uri ) {
 	/* might still need the last else clause, however the existance of the file will be checked later so might be fine*/
 }
 
+void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos ) {
+
+	if (is_dir) {
+		this->resource_location_ = uri; //won't have root applied
+		if (this->request_->getCgiFlag()) {
+			this->status_code_ = 400; // invalid request if we don't allow this?
+			Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script not given by request: `%s'", uri.c_str());
+		}
+	}
+	else {
+		this->resource_location_ = uri.substr(0, last_slash_pos); //path only, first part of uri
+		if (this->resource_location_.empty()) {
+			this->resource_location_ = "/";
+		}
+	}
+	if (!this->server_->isLocationInServer(this->resource_location_)) {
+		this->status_code_ = 404;
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+		return ;
+	}
+}
+
+void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos ) {
+
+	if (is_dir) {
+		this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+	}
+	else {
+		std::string	filename = uri.substr(last_slash_pos + 1);
+		if (!this->request_->getCgiFlag()) {
+			this->resource_path_ =  this->server_->getRoot() + uri;
+		}
+		else if (this->request_->getCgiFlag()) {
+			this->resource_path_ = (this->server_->getLocationValue("/cgi-bin", "root"))->front() + "/" + filename;
+		}
+		else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
+			this->status_code_ = 404;
+			Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
+		}
+	}
+}
+
 /*! \brief Extracts information from the request URI and validates 
 *				the location requested
 *       
@@ -517,16 +559,36 @@ int	Response::setResourceLocationAndName( std::string uri ) {
 
 	if (last_slash_pos != std::string::npos && (last_slash_pos != uri.length() || uri == "/")) {
 		std::string path;
-		if (uri == "/") // in future make different check for cgi paths
-			path = this->server_->getRoot();
-		else
-			path = this->server_->getRoot() + uri;
-		if (isDirectory(path)) {
-			setResourceLocationAndNameForDirectory(uri);
-		}
-		else {
-			setResourceLocationAndNameForFile(uri, last_slash_pos);
-		}
+		bool		is_dir;
+		uri == "/" ? path = this->server_->getRoot() : path = this->server_->getRoot() + uri; // do cgi paths need dif check?
+		is_dir = isDirectory(path);
+		// if (isDirectory(path)) {
+		// 	setResourceLocationAndNameForDirectory(uri);
+		// }
+		// else {
+		// 	setResourceLocationAndNameForFile(uri, last_slash_pos);
+		// }
+
+		//set resource location - pass is_dir and last slash location
+		setResourceLocation(uri, is_dir, last_slash_pos);
+            //handle checking for redirection here
+
+        //set resource path - pass is_dir and last slash
+		setResourcePath(uri, is_dir, last_slash_pos);
+
+        //check all cgi info - if path or location points to it, if it is valid on the list.
+
+        //check for redirection / alias for set location
+        // if (this->server_->isKeyInLocation(this->resource_location_, "return")) {
+        //     this->resource_location_ = this->server_->getLocationValue(this->resource_location_, "return")->front();
+        //     //change the filepath for the resource too???
+        //     if (is_dir) {
+        //         this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+        //     } else {
+        //         //get the same named resource in this location?
+        //     }
+        //     Logger::log(E_DEBUG, COLOR_CYAN, "Redirection found for location : `%s'", uri.c_str());
+        // }
 	}
 	else {
 		this->status_code_ = 400; //invalid request

@@ -54,7 +54,7 @@ int  main( int argc, char *argv[]) {
   #if POLL_TRUE_SELECT_FALSE
     // POLL VERSION
     while (true) {
-      ServerManager server_manager(server_vector);
+      ServerManager server_manager(Validator::servers);
       if (!server_manager.POLL_initializeServers()) {  
         server_manager.closeServerSockets();
         Logger::closeLogFiles();

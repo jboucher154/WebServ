@@ -67,9 +67,15 @@ class	Response {
 		void	postMethod_( void );
 		bool	methodAllowed_( std::string method );
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
+
 		int		setResourceLocationAndName( std::string uri );
+
 		void	setResourceLocationAndNameForDirectory( std::string& uri );
 		void	setResourceLocationAndNameForFile( std::string& uri, size_t last_slash_position );
+
+		void	setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos );// new version
+		void	setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos );//new version
+
 		void	setMimeType( void );
 		bool	validateResource_( void );
 
