@@ -391,7 +391,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->POLL_removeClient(client_fd);
 		else {
-			client.getResponse().generate(&client.getRequest());
+			client.getResponse().createResponsePhase1(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "valid cgi request, going to startCgiResponse");	// remove later, trying to debug heap use after free error!
 				if ((client.startCgiResponse()) == true) {
@@ -622,7 +622,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->SELECT_removeClient(client_fd);
 		else {
-			client.getResponse().generate(&client.getRequest());
+			client.getResponse().createResponsePhase1(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();

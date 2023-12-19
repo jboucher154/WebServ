@@ -239,13 +239,13 @@ const std::string&	Client::getResponseString( void ) {
 
 	//any CGI stuff
 	if (this->request_.getCgiFlag()) {
-		return this->getCgiHandler()->getCgiOutputAsString_();
+		return this->response_.buildAndGetResponsePhase2(this->getCgiHandler()->getCgiOutputAsString_());
 	}
 	else {
-		return this->response_.get();
+		return this->response_.buildAndGetResponsePhase2();
 	}
 	// if (this->request_.getComplete())
-	// 	return this->response_.get();
+	// 	return this->response_.buildAndGetResponsePhase2();
 	// else
 	// 	return ("");
 }
