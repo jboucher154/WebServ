@@ -272,15 +272,15 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end() && i < this->pollfds_size_; ++it, ++i) {
 				//std::cout << "pollfds_.size()" << pollfds_.size() << "i" << i << std::endl;
 				if (it->revents & POLLIN) {
-					Logger::log(E_DEBUG, COLOR_YELLOW, "1\tIterator address: %p", static_cast<void*>(&(*it)));
+					// Logger::log(E_DEBUG, COLOR_YELLOW, "1\tIterator address: %p", static_cast<void*>(&(*it)));
 					if (this->server_map_.count(it->fd)) {
-						Logger::log(E_DEBUG, COLOR_YELLOW, "2\tIterator address: %p", static_cast<void*>(&(*it)));
+						// Logger::log(E_DEBUG, COLOR_YELLOW, "2\tIterator address: %p", static_cast<void*>(&(*it)));
 						this->POLL_acceptNewClientConnection(it->fd);
-						Logger::log(E_DEBUG, COLOR_YELLOW, "3\tIterator address: %p", static_cast<void*>(&(*it)));
+						// Logger::log(E_DEBUG, COLOR_YELLOW, "3\tIterator address: %p", static_cast<void*>(&(*it)));
 					}
-					Logger::log(E_DEBUG, COLOR_YELLOW, "4\tIterator address: %p", static_cast<void*>(&(*it)));
+					// Logger::log(E_DEBUG, COLOR_YELLOW, "4\tIterator address: %p", static_cast<void*>(&(*it)));
 					if (this->client_map_.count(it->fd)) {
-						Logger::log(E_DEBUG, COLOR_YELLOW, "5\tIterator address: %p", static_cast<void*>(&(*it)));
+						// Logger::log(E_DEBUG, COLOR_YELLOW, "5\tIterator address: %p", static_cast<void*>(&(*it)));
 						this->POLL_receiveFromClient(it->fd);
 					}
 
@@ -435,9 +435,9 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		}
 
 		Logger::log(E_DEBUG, COLOR_YELLOW, "the amount of pollfds: %d", this->pollfds_.size());
-		Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
-		Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
-		Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
+		// Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
+		// Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
+		// Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
 	}
 
 #else

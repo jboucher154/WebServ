@@ -48,6 +48,7 @@ class	Response {
 		int					status_code_;
 		Server*				server_;
 		Request*			request_;
+		bool				redirect_;
 		std::string			query_string_;
 		std::vector<std::string> file_data_;
 		//maybe add map of headers, create them as I go?
@@ -75,6 +76,7 @@ class	Response {
 
 		void	setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos );// new version
 		void	setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos );//new version
+		void	handleRedirection( void );
 
 		void	setMimeType( void );
 		bool	validateResource_( void );
