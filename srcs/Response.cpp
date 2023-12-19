@@ -499,6 +499,16 @@ void	Response::setResourceLocationAndNameForDirectory( std::string& uri ) {
 	/* might still need the last else clause, however the existance of the file will be checked later so might be fine*/
 }
 
+/*! \brief sets the location name in the server that relates to the request uri
+*	
+*    setResourceLocation:
+*		-  checks if the request if for cgi, rejects as invalid for not specifying a specific script
+*		-  check if location is valid
+*	Error codes:
+*		404 - Not Found if location does not exist
+*		400 - Invalid Request if no cgi script is defined
+*  
+*/
 void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
 	if (is_dir) {
@@ -521,6 +531,16 @@ void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_s
 	}
 }
 
+/*! \brief sets resource path based on verified location from the uri
+*	
+*    setResourcePath:
+*		-  sets resource path as path to index of this page
+*		-  verifies that a cgi script is listed in the server config
+*	Error codes:
+*		404 - Not Found if location does not exist
+*		400 - Invalid Request if no cgi script is defined
+*  
+*/
 void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
 	if (is_dir) {
@@ -574,7 +594,8 @@ int	Response::setResourceLocationAndName( std::string uri ) {
             //handle checking for redirection here
 
         //set resource path - pass is_dir and last slash
-		setResourcePath(uri, is_dir, last_slash_pos);
+		if (this->status_code_ < 400)
+			setResourcePath(uri, is_dir, last_slash_pos);
 
         //check all cgi info - if path or location points to it, if it is valid on the list.
 
