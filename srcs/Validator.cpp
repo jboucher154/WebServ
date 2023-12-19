@@ -20,7 +20,7 @@ std::vector<std::string>							Validator::lines;
 std::map<std::string, std::vector<std::string> >	Validator::innerBlock;
 std::vector<Server>									Validator::servers;
 size_t 												Validator::serverLines = 0;
-std::map<std::string, std::string> 					Validator::validIpHostMap;
+std::multimap<std::string, std::string> 			Validator::validIpHostMap;
 std::string											Validator::rootPath = "";
 std::string											Validator::mainRootPath = "";
 
@@ -82,8 +82,7 @@ bool Validator::validIpHostBuilder(){
 				continue;
 			std::stringstream ss(line);
 			if ((ss >> key) && (ss >> value))
-				validIpHostMap[key] = value;
-			
+				validIpHostMap.insert(std::make_pair(key, value));
         }
         hostsFile.close();
     }
@@ -121,7 +120,7 @@ bool Validator::validIpHostBuilder(){
 		}
 		// Convert the IP address to a readable format
 		inet_ntop(rp->ai_family, addr, ipstr, sizeof(ipstr));
-		validIpHostMap[hostname] = std::string(ipstr);
+		validIpHostMap.insert(std::make_pair(hostname, std::string(ipstr)));
 	}
     // Free allocated memory
     freeaddrinfo(result);

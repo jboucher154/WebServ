@@ -20,7 +20,7 @@
 class Validator
 {
 private:
-	static std::map<std::string, std::string>				validIpHostMap;
+	static std::multimap<std::string, std::string>				validIpHostMap;
 	static std::vector<std::string>							lines;
 	static size_t 											serverLines;
 	static std::string 										mainRootPath;
