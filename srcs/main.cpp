@@ -23,11 +23,20 @@ int  main( int argc, char *argv[]) {
     return 1;
   }
   else if (argc == 1){
+    #ifdef HIVE_DESKTOP_OR_MACBOOK
     if (!Validator::validate("config/good/default.conf")){
-      Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
-      Logger::closeLogFiles();
-      return 1;
-    }
+        Logger::log(E_INFO, COLOR_RED, "Default config is not valid!");
+        Logger::closeLogFiles();
+        return 1;
+      }
+    #else
+      if (!Validator::validate("config/good/default_macbook.conf")){
+        Logger::log(E_INFO, COLOR_RED, "Default (Macbook) config is not valid!");
+        Logger::closeLogFiles();
+        return 1;
+      }
+    #endif
+
   }
   std::cout << " server 1 index: " << Validator::servers[0].getIndex() << std::endl; 
   std::cout << " server 1 index: " << Validator::servers[1].getIndex() << std::endl;

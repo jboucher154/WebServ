@@ -166,8 +166,10 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	if (bytes_received == -1)
 		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
 			client_fd, server->getServerIdforLog().c_str());
-	else if (bytes_received == 0)	// client has disconnected...
+	else if (bytes_received == 0){ // client has disconnected...
+		std::cout << "\treceiveFromClient\tclient " << client_fd << " read zero bytes!" << std::endl;
 		return false;
+	}
 	else {
 		client->addToRequest(client_msg);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
@@ -194,6 +196,8 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 	client->setLatestTime();
 
+	Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "SendResponseToClient\tclient %d\tkeep alive status: %d", client_fd, keep_alive);
+
 	if (response_string.empty())
 		return keep_alive;
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
@@ -211,7 +215,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 				server->getServerIdforLog().c_str(), client_fd);
 		else
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
-				server->getServerName().c_str(), client_fd, response.getStatusCode());					// ADD STAT CODE WHEN JENNY MAKES GETSTAT!
+				server->getServerName().c_str(), client_fd, response.getStatusCode());
 	}
 
 	client->resetResponse();
@@ -226,8 +230,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 */
 void	ServerManager::checkIfClientTimeout( int client_fd ) {
 
-	time_t	current_time;
-	time(&current_time);
+	time_t	current_time = time(NULL);
 	double	time_since_latest_action = difftime(current_time, client_map_[client_fd].getLatestTime());
 
 	//	I recommend keeping this log commented out, as it will flood the terminal/log-files otherwise...
@@ -293,46 +296,37 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 				return false;
 			}
 
-			/*	This i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
+			
+			/*	The i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
 				the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
 				make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
 				a problem because of the looping. */
 			this->pollfds_size_ = this->pollfds_.size();
+			//std::cout << "before for loop pollfds_.size()" << pollfds_.size() << std::endl;
 			int	i = 0;
 
-<<<<<<< Updated upstream
-			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); i < this->pollfds_size_ && it != this->pollfds_.end(); ++it, ++i) {
-				if (it->revents & POLLIN) {
-					if (this->server_map_.count(it->fd))
-						this->POLL_acceptNewClientConnection(it->fd);
-					if (this->client_map_.count(it->fd)) {
-=======
 			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end() && i < this->pollfds_size_; ++it, ++i) {
 				if (it->revents & POLLIN) {
 					if (this->server_map_.count(it->fd)) {
 						this->POLL_acceptNewClientConnection(it->fd);
 					} else if (this->client_map_.count(it->fd)) {
->>>>>>> Stashed changes
+						std::cout << "\tclient " << it->fd << " revents POLLIN (" << it->revents << ")" << std::endl;
 						this->POLL_receiveFromClient(it->fd);
 					}
 				}
 				if (it->revents & POLLOUT) {
-<<<<<<< Updated upstream
-					if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
-=======
 					if (this->client_map_.count(it->fd)) {
->>>>>>> Stashed changes
 						this->POLL_sendResponseToClient(it->fd);
 					} else {	//cgi pipe activity
 						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
 						this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
 					}
 				}
-				if (this->client_map_.count(it->fd)) {	//	if client, check if timeout
+
+				if (this->client_map_.count(it->fd))	//	if client, check if timeout
 					this->checkIfClientTimeout(it->fd);
-				}
 			}
-		
+
 			if (this->checkLastClientTime())	// if there hasn't been any client activity in the server shutdown time, end run
 				break;
 		}
@@ -431,12 +425,14 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->POLL_removeClient(client_fd);
 		else {
-			client.getResponse().generate(&client.getRequest());
+			client.getResponse().createResponsePhase1(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "valid cgi request, going to startCgiResponse");	// remove later, trying to debug heap use after free error!
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
-					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[E_PIPE_END_WRITE], client_cgi->getPipeOut()[E_PIPE_END_READ]);
+					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[E_PIPE_END_WRITE], client_cgi->getPipeOut()[E_PIPE_END_READ]);
+					Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "cgi pipe added to servermanager pollfds");	// remove later, trying to debug heap use after free error!
 				}
 
 				return;
@@ -448,10 +444,14 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 
 	void	ServerManager::POLL_sendResponseToClient( int client_fd ) {
 
-		if (this->sendResponseToClient(client_fd))	// keep alive 
+		if (this->sendResponseToClient(client_fd)) { // keep alive 
+			std::cout << "poll sendresponse switch to pollout client " << client_fd << std::endl;
 			this->POLL_switchClientToPollin(client_fd);
-		else	// don't keep alive
+		}	// keep alive 
+		else { // don't keep alive
+			std::cout << "poll sendresponse remove client" << client_fd << std::endl;
 			this->POLL_removeClient(client_fd);
+		}
 	}
 
 
@@ -666,7 +666,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->SELECT_removeClient(client_fd);
 		else {
-			client.getResponse().generate(&client.getRequest());
+			client.getResponse().createResponsePhase1(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
@@ -722,6 +722,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	}
 #endif
 
+
 /* CLASS PRIVATE METHODS */
 
 
@@ -751,7 +752,7 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 
 		this->pollfds_.push_back(pollfd_in);
 		this->pollfds_.push_back(pollfd_out);
-		this->pollfds_size_ += 2;
+		// this->pollfds_size_ += 2;
 	}
 
 	void	ServerManager::POLL_removeClientCgiFdsFromPollfds_( int client_fd ) {
@@ -769,18 +770,11 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 
 		Client&	client = this->client_map_[client_fd];
 
-		if (client.getRequest().getCgiFlag()) {
-			client.finishCgiResponse();
-			this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
-			this->client_cgi_map_.erase(client_fd);
-			this->POLL_switchClientToPollout(client_fd);
-			return;
-		} else {
-			Logger::log(E_ERROR, COLOR_RED, "POLL_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
-			// handle this error somehow; you can also remove the first if-statement
-			// if (client.getRequest().getCgiFlag())
-			// because of course it is a cgi!
-		}
+		client.finishCgiResponse();
+		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
+		this->client_cgi_map_.erase(client_fd);
+		this->POLL_switchClientToPollout(client_fd);
+		return;
 	}
 
 #else

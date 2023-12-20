@@ -12,10 +12,10 @@ CgiHandler::CgiHandler( void )
 		forking_successful_(false),
 		pid_(-1)
 {
-	this->pipe_in_[0] = -1;
-	this->pipe_in_[1] = -1;
-	this->pipe_out_[0] = -1;
-	this->pipe_out_[1] = -1;
+	this->pipe_into_cgi_[0] = -1;
+	this->pipe_into_cgi_[1] = -1;
+	this->pipe_from_cgi_[0] = -1;
+	this->pipe_from_cgi_[1] = -1;
 }
 
 CgiHandler::CgiHandler( const CgiHandler& to_copy )
@@ -62,8 +62,8 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 		this->piping_successful_ = rhs.piping_successful_;
 		this->forking_successful_ = rhs.forking_successful_;
 		for (int i = 0; i < 2; ++i) {
-			this->pipe_in_[i] = rhs.pipe_in_[i];
-			this->pipe_out_[i] = rhs.pipe_out_[i];
+			this->pipe_into_cgi_[i] = rhs.pipe_into_cgi_[i];
+			this->pipe_from_cgi_[i] = rhs.pipe_from_cgi_[i];
 		}
 		this->pid_ = rhs.pid_;
 	}
@@ -90,8 +90,8 @@ void	CgiHandler::ClearCgiHandler( void ) {
 	this->forking_successful_ = false;
 	this->closeCgiPipes();
 	for (int i = 0; i < 2; ++i) {
-		this->pipe_in_[i] = -1;
-		this->pipe_out_[i] = -1;
+		this->pipe_into_cgi_[i] = -1;
+		this->pipe_from_cgi_[i] = -1;
 	}
 	this->pid_ = -1;
 }
@@ -101,18 +101,18 @@ void	CgiHandler::ClearCgiHandler( void ) {
 */
 void	CgiHandler::closeCgiPipes( void ) {
 
-	if (fcntl(this->pipe_in_[0], F_GETFD) != -1)
-		if (fcntl(this->pipe_in_[0], F_GETFL) != -1 || errno != EBADF)
-			close (this->pipe_in_[0]);
-	if (fcntl(this->pipe_in_[1], F_GETFD) != -1)
-		if (fcntl(this->pipe_in_[1], F_GETFL) != -1 || errno != EBADF)
-			close (this->pipe_in_[1]);
-	if (fcntl(this->pipe_out_[0], F_GETFD) != -1)
-		if (fcntl(this->pipe_out_[0], F_GETFL) != -1 || errno != EBADF)
-			close (this->pipe_out_[0]);
-	if (fcntl(this->pipe_out_[1], F_GETFD) != -1)
-		if (fcntl(this->pipe_out_[1], F_GETFL) != -1 || errno != EBADF)
-			close (this->pipe_out_[1]);
+	if (fcntl(this->pipe_into_cgi_[0], F_GETFD) != -1)
+		if (fcntl(this->pipe_into_cgi_[0], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_into_cgi_[0]);
+	if (fcntl(this->pipe_into_cgi_[1], F_GETFD) != -1)
+		if (fcntl(this->pipe_into_cgi_[1], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_into_cgi_[1]);
+	if (fcntl(this->pipe_from_cgi_[0], F_GETFD) != -1)
+		if (fcntl(this->pipe_from_cgi_[0], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_from_cgi_[0]);
+	if (fcntl(this->pipe_from_cgi_[1], F_GETFD) != -1)
+		if (fcntl(this->pipe_from_cgi_[1], F_GETFL) != -1 || errno != EBADF)
+			close (this->pipe_from_cgi_[1]);
 }
 
 int	CgiHandler::initializeCgi( Client& client ) {
@@ -136,7 +136,7 @@ int	CgiHandler::initializeCgi( Client& client ) {
 		this->ClearCgiHandler();
 		return E_CGI_SERVERERROR;
 	}
-	if ((result = this->createCgiArguments_(uri)) != E_CGI_OK) {
+	if ((result = this->createCgiArguments_(uri, client)) != E_CGI_OK) {
 		this->ClearCgiHandler();
 		return result;
 	}
@@ -167,7 +167,7 @@ int	CgiHandler::cgiFinish( Response& response ) {
 */
 void	CgiHandler::clearCgiOutputs( void ) {
 
-	this->cgi_output_.clear();
+	// this->cgi_output_.clear();
 	this->cgi_output_as_string_ = "";
 }
 
@@ -181,11 +181,12 @@ void	CgiHandler::clearCgiOutputs( void ) {
 */
 int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
-	Request& request = client.getRequest();
+	Request&	request = client.getRequest();
+	Server&		server = *(client.getServer());
 
 	this->metavariables_map_["AUTH_TYPE"] = "Basic";	// check this later ("Digest" and "Form" are other common values)
 
-	this->metavariables_map_["DOCUMENT_ROOT"] = client.getServer()->getRoot();
+	this->metavariables_map_["DOCUMENT_ROOT"] = server.getRoot();
 	this->metavariables_map_["HTTP_USER_AGENT"] = request.getHeaderValueByKey("User-Agent");
 	this->metavariables_map_["HTTP_COOKIE"] = request.getHeaderValueByKey("Cookie");
 	this->metavariables_map_["HTTP_REFERER"] = request.getHeaderValueByKey("Referer");
@@ -194,8 +195,8 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 	this->metavariables_map_["QUERY_STRING"] = client.getResponse().getQueryString();
 	this->metavariables_map_["GATEWAY_INTERFACE"] = "CGI/1.1";
 
-	this->metavariables_map_["SERVER_NAME"] = client.getServer()->getServerName();
-	this->metavariables_map_["SERVER_PORT"] = client.getServer()->getListeningPortInt();
+	this->metavariables_map_["SERVER_NAME"] = server.getServerName();
+	this->metavariables_map_["SERVER_PORT"] = server.getListeningPortInt();
 	this->metavariables_map_["SERVER_PROTOCOL"] = "http/1.1";
 	this->metavariables_map_["SERVER_SOFTWARE"] = "JAS-webserver/0.75"; // come up with server name (JAS would be great!)
 
@@ -259,18 +260,18 @@ std::string	CgiHandler::getExtension( std::string uri ) {
 	std::string	extension;
 
 	if (extension_start == std::string::npos) {
-		extension = "cgi";
+		extension = ".cgi";
 	}
 	else {
-		extension = uri.substr(extension_start + 1);
+		extension = uri.substr(extension_start);
 	}
 	return extension;
 }
 
-const std::vector<char>&	CgiHandler::getCgiOutput( void ) const {
+// const std::vector<char>&	CgiHandler::getCgiOutput( void ) const {
 	
-	return this->cgi_output_;
-}
+// 	return this->cgi_output_;
+// }
 
 const std::string&	CgiHandler::getCgiOutputAsString_( void ) const {
 
@@ -284,12 +285,12 @@ char**	CgiHandler::getArgs( void ) const {
 
 const int*	CgiHandler::getPipeIn( void ) const {
 
-	return this->pipe_in_;
+	return this->pipe_into_cgi_;
 }
 
 const int*	CgiHandler::getPipeOut( void ) const {
 
-	return this->pipe_out_;
+	return this->pipe_from_cgi_;
 }
 
 
@@ -305,7 +306,7 @@ const int*	CgiHandler::getPipeOut( void ) const {
 *	(for example if bash, args_[0] should be "bin/bash"), and set the path to the
 *	actual script as the second argument. Last arg has to be NULL!
 */
-int	CgiHandler::createCgiArguments_( std::string uri ) {
+int	CgiHandler::createCgiArguments_( std::string uri, Client& client ) {
 	
 	int size;
 	std::string	extension = this->getExtension(uri);
@@ -322,11 +323,11 @@ int	CgiHandler::createCgiArguments_( std::string uri ) {
 		return E_CGI_SERVERERROR;
 	}
 	try {
-		if (size == 1)
+		if (size == 1){
 			this->args_[0] = ft_strdup(this->path_);
+		}
 		else {
-			this->args_[0] = ft_strdup("/bin/bash"); 	// THIS IS HARDCODED, CHANGE LATER, MOFO!
-			// this->args_[0] = extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
+			this->args_[0] = ft_strdup(client.getServer()->getCgiExecutor(extension).c_str());	//extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
 			this->args_[1] = ft_strdup(this->path_);
 		}
 	} catch(std::exception& e) {
@@ -355,18 +356,18 @@ void	CgiHandler::cgiTimer_( int& status ) {
 
 int	CgiHandler::setUpCgiPipes_( void ) {
 
-	if (pipe(pipe_in_) == -1) {
+	if (pipe(pipe_into_cgi_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
 		this->piping_successful_ = false;
 		return E_CGI_SERVERERROR;
 	}
-	if (pipe(pipe_out_) == -1) {
+	if (pipe(pipe_from_cgi_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
 		this->closeCgiPipes();
 		this->piping_successful_ = false;
 		return E_CGI_SERVERERROR;
 	}
-	if (fcntl(this->pipe_in_[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1 || fcntl(this->pipe_out_[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
+	if (fcntl(this->pipe_into_cgi_[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1 || fcntl(this->pipe_from_cgi_[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes fcntl error: %s", strerror(errno));
 		this->closeCgiPipes();
 		this->piping_successful_ = false;
@@ -383,10 +384,13 @@ int	CgiHandler::setUpCgiPipes_( void ) {
 */
 int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end ) {
 
-	(void)it_start;
-	(void)it_end;
 	std::string	body_string = "";	// get body into std::string (or c-style char array; TALK WITH JENNY)
-	
+									//may need to track body size separately
+
+	for (std::vector<std::string>::iterator it = it_start; it != it_end; ++it) {
+		body_string += *it;
+	}
+
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
 		this->forking_successful_ = false;
@@ -395,32 +399,39 @@ int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::
 	}
 	if (this->pid_ == 0) { // child process
 		this->forking_successful_ = true;
-		dup2(this->pipe_out_[1], STDOUT_FILENO);
-		dup2(this->pipe_in_[0], STDIN_FILENO);
-		this->closeCgiPipes();
 
-		int bytes_sent;
+		dup2(this->pipe_into_cgi_[E_PIPE_END_WRITE], STDIN_FILENO);
+		dup2(this->pipe_from_cgi_[E_PIPE_END_WRITE], STDOUT_FILENO);
+
+		ssize_t 	bytes_sent = 0;
+		ssize_t		msg_length = body_string.empty() ? 1 : body_string.length();
 
 		if (body_string.empty())
 			bytes_sent = write(STDIN_FILENO, "\0", 1);
 		else
-			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.length());	// keep track of the bytes sent and keep looping till everything is sent?
+			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.length());
+	
+		this->closeCgiPipes();
 
-		close(this->pipe_in_[1]); // close the pipe_in_[1] (write end) after use
+		if (bytes_sent != msg_length) {
+			Logger::log(E_ERROR, COLOR_RED, "not all body_string bytes were sent; aborting cgi process");	// if we get here there was an error in execve!
+			deleteAllocatedCStringArray(this->args_);
+			deleteAllocatedCStringArray(this->metavariables_);
+			std::exit(EXIT_FAILURE);
+		}
 
 		execve(this->args_[0], this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
-		delete [] this->path_;
 		deleteAllocatedCStringArray(this->args_);
 		deleteAllocatedCStringArray(this->metavariables_);
 		std::exit(EXIT_FAILURE);
 	} else {	// parent process
 		this->forking_successful_ = true;
 
-		close(this->pipe_in_[0]);	// close all pipe ends except pipe_out_[0] (read end) as we'll use that in the storeCgiOutput_!
-		close(this->pipe_in_[1]);
-		close(this->pipe_out_[1]);
+		close(this->pipe_into_cgi_[E_PIPE_END_READ]);	// close all pipe ends except pipe_out_[0] (read end) as we'll use that in the storeCgiOutput_!
+		close(this->pipe_into_cgi_[E_PIPE_END_WRITE]);
+		close(this->pipe_from_cgi_[E_PIPE_END_WRITE]);
 
 		int status;
 		this->cgiTimer_(status);
@@ -437,34 +448,35 @@ int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::
 */
 int		CgiHandler::storeCgiOutput_( void ) {
 
-	int	ret = 1;
-	int	bytesread = 0;
+	ssize_t	ret = 1;
+	ssize_t	bytesread = 0;
 	char	buffer[CGI_OUTPUT_BUFFER]; // I've put the CGI_OUTPUT_BUFFER as 102 400, change if need be (I've seen this go to almost half a mil in size)
 
-	this->cgi_output_.clear();
+	// this->cgi_output_.clear();
 	this->cgi_output_as_string_.clear();
 	memset(buffer, 0, CGI_OUTPUT_BUFFER);
 
 	while (ret > 0) {
-		ret = read(this->pipe_out_[0], buffer, 1024); // set up a read_max (what should it even be?)
+		ret = read(this->pipe_from_cgi_[E_PIPE_END_READ], buffer, 1024); // set up a read_max (what should it even be?)
 
 		if (ret > 0) {
-			this->cgi_output_.insert(this->cgi_output_.end(), buffer, buffer + ret);
+			this->cgi_output_as_string_.append(buffer, ret); //make sure this isn't adding extra if buffer not full, also case for bin info in html
 			bytesread += ret;
 		}
 		if (bytesread >= CGI_OUTPUT_BUFFER) {
-			this->closeCgiPipes();
+			close(this->pipe_from_cgi_[E_PIPE_END_READ]);
 			return E_CGI_SERVERERROR;
 		}
 	}
 
+	close(this->pipe_from_cgi_[E_PIPE_END_READ]);
+
 	if (ret < 0) {
 		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1 (cannot use errno after read to find reason for failure)");
-		this->closeCgiPipes();
 		return E_CGI_SERVERERROR;
 	}
-	this->closeCgiPipes();
-	this->cgi_output_as_string_ = std::string(this->cgi_output_.begin(), this->cgi_output_.end());
+
+	// this->cgi_output_as_string_ = std::string(this->cgi_output_.begin(), this->cgi_output_.end());
 
 	return E_CGI_OK;
 }

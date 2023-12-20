@@ -27,6 +27,11 @@ enum	e_cgi_results {
 	E_CGI_UNKNOWNMETHOD
 };
 
+enum	e_pipe_ends {
+	E_PIPE_END_READ,
+	E_PIPE_END_WRITE
+};
+
 class	CgiHandler {
 
 	private:
@@ -41,13 +46,13 @@ class	CgiHandler {
 		bool				piping_successful_;
 		bool				forking_successful_;
 		int					pid_;
-		int					pipe_in_[2];
-		int					pipe_out_[2];
+		int					pipe_into_cgi_[2];
+		int					pipe_from_cgi_[2];
 
 
 		int		fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
-		int		createCgiArguments_( std::string uri );
+		int		createCgiArguments_( std::string uri, Client& client );
 		void	cgiTimer_( int& status );
 
 		int		setUpCgiPipes_( void );
