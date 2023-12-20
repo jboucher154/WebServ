@@ -9,7 +9,8 @@ Client::Client( void ) : response_(NULL), cgi_handler_(NULL) {
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
-	this->latest_time_ = time(0);
+	// this->latest_time_ = time(0);
+	time(&this->latest_time_);
 
 	this->resetRequest();
 	this->resetResponse();
@@ -28,7 +29,8 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 
 	this->fd_ = -1;
 	memset(&this->address_, 0, sizeof(this->address_));
-	this->latest_time_ = time(0);
+	// this->latest_time_ = time(0);
+	time(&this->latest_time_);
 
 	this->resetRequest();
 	this->resetResponse();
@@ -138,6 +140,7 @@ bool	Client::startCgiResponse( void ) {
 
 void	Client::finishCgiResponse( void ) {
 
+	this->setLatestTime();
 	int	result = this->cgi_handler_->cgiFinish(this->response_);
 	std::string method = this->request_.getRequestLineValue("method");
 
@@ -163,7 +166,8 @@ void	Client::finishCgiResponse( void ) {
 // setters
 void	Client::setLatestTime( void ) {
 	
-	this->latest_time_ = time(0);
+	// this->latest_time_ = time(0);
+	time(&this->latest_time_);
 }
 
 // getters

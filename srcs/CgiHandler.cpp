@@ -33,6 +33,7 @@ CgiHandler::CgiHandler( const CgiHandler& to_copy )
 
 CgiHandler::~CgiHandler( void ) {
 
+	this->closeCgiPipes();
 	deleteAllocatedCStringArray(this->metavariables_);
 	deleteAllocatedCStringArray(this->args_);
 	if (this->path_ != NULL)
