@@ -145,7 +145,7 @@ bool	ServerManager::CheckServersTimeout( void ) {
 
 void	ServerManager::removeClient( int client_fd ) {
 
-	Logger::log(E_INFO, COLOR_MAGENTA, "Closing socket %d connection, clearing client data...", client_fd);
+	Logger::log(E_INFO, COLOR_MAGENTA, "Closing socket %d, clearing client data...", client_fd);
 	close(client_fd);
 	this->client_map_.erase(client_fd);
 }
@@ -169,7 +169,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
 			client_fd, server->getServerIdforLog().c_str());
 	else if (bytes_received == 0){ // client has disconnected...
-		Logger::log(E_INFO, COLOR_WHITE, "Client %d has disconnected", client_fd);
+		Logger::log(E_INFO, COLOR_MAGENTA, "Client %d has disconnected", client_fd);
 		return false;
 	} else {
 		client->addToRequest(client_msg);
