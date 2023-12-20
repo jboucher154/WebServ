@@ -469,9 +469,9 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		}
 
 		Logger::log(E_DEBUG, COLOR_YELLOW, "the amount of pollfds: %d", this->pollfds_.size());
-		// Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
-		// Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
-		// Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
+		Logger::log(E_DEBUG, COLOR_YELLOW, all_fds.c_str());
+		Logger::log(E_DEBUG, COLOR_YELLOW, pollin_fds.c_str());
+		Logger::log(E_DEBUG, COLOR_YELLOW, pollout_fds.c_str());
 	}
 
 #else
