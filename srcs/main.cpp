@@ -23,7 +23,7 @@ int  main( int argc, char *argv[]) {
     return 1;
   }
   else if (argc == 1){
-    #ifdef HIVE_DESKTOP_OR_MACBOOK
+    #if HIVE_DESKTOP_OR_MACBOOK
     if (!Validator::validate("config/good/default.conf")){
         Logger::log(E_INFO, COLOR_RED, "Default config is not valid!");
         Logger::closeLogFiles();

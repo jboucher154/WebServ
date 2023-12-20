@@ -128,7 +128,7 @@ void	ServerManager::closeAllSockets( void ) {
 	this->closeServerSockets();
 }
 
-bool	ServerManager::checkLastClientTime( void ) {
+bool	ServerManager::CheckServersTimeout( void ) {
 
 	time_t	now;
 
@@ -136,14 +136,16 @@ bool	ServerManager::checkLastClientTime( void ) {
 		if (it->second.getLatestTime() > this->last_client_time_)
 			this->last_client_time_ = it->second.getLatestTime();
 	}
-	if (time(&now) >= this->last_client_time_ + SERVER_SHUTDOWN_TIME_SEC)
+
+	time(&now);
+	if (difftime(now, this->last_client_time_) >= SERVER_SHUTDOWN_TIME_SEC)
 		return true;
 	return false;
 }
 
 void	ServerManager::removeClient( int client_fd ) {
 
-	Logger::log(E_INFO, COLOR_MAGENTA, "Socket %d connection lost, clearing client data...", client_fd);
+	Logger::log(E_INFO, COLOR_MAGENTA, "Closing socket %d connection, clearing client data...", client_fd);
 	close(client_fd);
 	this->client_map_.erase(client_fd);
 }
@@ -167,10 +169,9 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
 			client_fd, server->getServerIdforLog().c_str());
 	else if (bytes_received == 0){ // client has disconnected...
-		std::cout << "\treceiveFromClient\tclient " << client_fd << " read zero bytes!" << std::endl;
+		Logger::log(E_INFO, COLOR_WHITE, "Client %d has disconnected", client_fd);
 		return false;
-	}
-	else {
+	} else {
 		client->addToRequest(client_msg);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
@@ -195,8 +196,6 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	std::string	response_string = client->getResponseString();
 
 	client->setLatestTime();
-
-	Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "SendResponseToClient\tclient %d\tkeep alive status: %d", client_fd, keep_alive);
 
 	if (response_string.empty())
 		return keep_alive;
@@ -234,12 +233,10 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	double	time_since_latest_action = difftime(current_time, client_map_[client_fd].getLatestTime());
 
 	//	I recommend keeping this log commented out, as it will flood the terminal/log-files otherwise...
-	// Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %d time since last action: %f", client_fd, time_since_latest_action);
-	std::cout << "last time: " << time_since_latest_action << std::endl;
+	// Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %d time since last action: %lld", client_fd, time_since_latest_action);
 
 	if (time_since_latest_action >= CLIENT_TIMEOUT_SEC) {
-		// Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %f timed out!", client_fd);
-		std::cout << "client " << client_fd << " timed out (diff: " << time_since_latest_action << std::endl;
+		Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %d timed out!", client_fd);
 		#if POLL_TRUE_SELECT_FALSE
 			this->POLL_removeClient(client_fd);
 		#else
@@ -288,7 +285,10 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 
 		while (true) {	//	MAIN LOOP
 
-			this->POLL_printData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
+			#if GET_SELECT_POLL_LOOP_FD_INFO
+				this->POLL_printData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
+			#endif
+
 		
 			if ((poll_result = poll(&this->pollfds_[0], this->pollfds_.size(), POLL_TIMEOUT_MILLISEC)) == -1) {
 				Logger::log(E_ERROR, COLOR_RED, "POLL ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
@@ -302,7 +302,6 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 				make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
 				a problem because of the looping. */
 			this->pollfds_size_ = this->pollfds_.size();
-			//std::cout << "before for loop pollfds_.size()" << pollfds_.size() << std::endl;
 			int	i = 0;
 
 			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end() && i < this->pollfds_size_; ++it, ++i) {
@@ -310,7 +309,6 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 					if (this->server_map_.count(it->fd)) {
 						this->POLL_acceptNewClientConnection(it->fd);
 					} else if (this->client_map_.count(it->fd)) {
-						std::cout << "\tclient " << it->fd << " revents POLLIN (" << it->revents << ")" << std::endl;
 						this->POLL_receiveFromClient(it->fd);
 					}
 				}
@@ -327,7 +325,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 					this->checkIfClientTimeout(it->fd);
 			}
 
-			if (this->checkLastClientTime())	// if there hasn't been any client activity in the server shutdown time, end run
+			if (this->CheckServersTimeout())	// if there hasn't been any client activity in the server shutdown time, end run
 				break;
 		}
 
@@ -363,6 +361,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 
 		this->client_map_[client_fd] = client;
 		this->client_map_[client_fd].setLatestTime();
+		this->last_client_time_ = time(NULL);	// added in case client doesn't have keep_alive
 
 		pollfd new_pollfd = {client_fd, POLLIN, 0};	
 		this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
@@ -445,11 +444,8 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	void	ServerManager::POLL_sendResponseToClient( int client_fd ) {
 
 		if (this->sendResponseToClient(client_fd)) { // keep alive 
-			std::cout << "poll sendresponse switch to pollout client " << client_fd << std::endl;
 			this->POLL_switchClientToPollin(client_fd);
-		}	// keep alive 
-		else { // don't keep alive
-			std::cout << "poll sendresponse remove client" << client_fd << std::endl;
+		} else { // don't keep alive
 			this->POLL_removeClient(client_fd);
 		}
 	}
@@ -531,7 +527,9 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 
 			this->SELECT_runServersLoopStart(select_timeout, read_fd_set_copy, write_fd_set_copy);	//ready everything for select
 
-			this->SELECT_printSetData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
+			#if GET_SELECT_POLL_LOOP_FD_INFO
+				this->SELECT_printSetData();	// instead of commenting this out just set the GET_DEBUG_LOG macro to false
+			#endif
 		
 			if ((select_result = select(this->biggest_fd_ + 1, &read_fd_set_copy, &write_fd_set_copy, NULL, &select_timeout)) == -1) {
 				Logger::log(E_ERROR, COLOR_RED, "SELECT ERROR: %s, [WHAT ARE THE CHANCES?!]", strerror(errno));
@@ -559,7 +557,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 				}
 			}
 		
-			if (this->checkLastClientTime())	// if the haven't been any client activity in the server shutdown time end run
+			if (this->CheckServersTimeout())	// if the haven't been any client activity in the server shutdown time end run
 				break;
 		}
 
