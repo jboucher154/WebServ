@@ -11,14 +11,16 @@
 
 int	main( int argc, char *argv[]) {
 
-	std::vector<std::string>*	directoryVec = listFiles("/Users/asarikha/Desktop/cpp_playground");
-	std::cout << "*it" << std::endl;
-	if (directoryVec){
-		for (std::vector<std::string>::iterator it = directoryVec->begin(); it != directoryVec->end(); ++it){
+	std::string path = "/Users/asarikha/Desktop/cpp_playground";
+    std::vector<std::string> directoryVec;
+    listFiles(path, directoryVec);
+	if (!directoryVec.empty()){
+		for (std::vector<std::string>::iterator it = directoryVec.begin(); it != directoryVec.end(); ++it){
 			std::cout << *it << std::endl;
 		}
 	}
-	delete directoryVec;
+	std::string htmlContent = buildHtmlList(path, directoryVec);
+	std::cout << htmlContent << std::endl;
 	Logger::initLogger();
 	(void)argv;
 	if (argc > 2) {
