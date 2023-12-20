@@ -21,6 +21,15 @@
 #  define CRLF "\r\n"
 # endif
 
+/* auto index overideable? max client_body_size? */
+typedef struct	s_request_location_info {
+	std::string								resource_location;
+	std::string								resource_path;
+	bool									is_aliased;
+	bool									is_redirect;
+	std::string								unaliased_location;
+	std::vector<std::string, std::string>&	allowed_methods;
+}				t_request_location_info;
 
 /*! \brief Class for handling HTTP responses.
 *       
@@ -61,6 +70,7 @@ class	Response {
 		std::string		contentTypeHeader_( void ) const;
 		std::string 	contentLengthHeader_( void ) const;
 		std::string		contentLocationHeader_( void ) const;
+		std::string		locationHeader_( void ) const;
 
 		void	getMethod_( void );
 		void	headMethod_( void );
