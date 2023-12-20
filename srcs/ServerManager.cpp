@@ -260,23 +260,33 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 				return false;
 			}
 
-			/*	This i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
+			
+			/*	The i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
 				the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
 				make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
 				a problem because of the looping. */
 			this->pollfds_size_ = this->pollfds_.size();
+			//std::cout << "before for loop pollfds_.size()" << pollfds_.size() << std::endl;
 			int	i = 0;
 
-			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); i < this->pollfds_size_ && it != this->pollfds_.end(); ++it, ++i) {
+			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end() && i < this->pollfds_size_; ++it, ++i) {
+				//std::cout << "pollfds_.size()" << pollfds_.size() << "i" << i << std::endl;
 				if (it->revents & POLLIN) {
-					if (this->server_map_.count(it->fd))
+					Logger::log(E_DEBUG, COLOR_YELLOW, "1\tIterator address: %p", static_cast<void*>(&(*it)));
+					if (this->server_map_.count(it->fd)) {
+						Logger::log(E_DEBUG, COLOR_YELLOW, "2\tIterator address: %p", static_cast<void*>(&(*it)));
 						this->POLL_acceptNewClientConnection(it->fd);
+						Logger::log(E_DEBUG, COLOR_YELLOW, "3\tIterator address: %p", static_cast<void*>(&(*it)));
+					}
+					Logger::log(E_DEBUG, COLOR_YELLOW, "4\tIterator address: %p", static_cast<void*>(&(*it)));
 					if (this->client_map_.count(it->fd)) {
+						Logger::log(E_DEBUG, COLOR_YELLOW, "5\tIterator address: %p", static_cast<void*>(&(*it)));
 						this->POLL_receiveFromClient(it->fd);
 					}
 
 				}
-				if (it->revents & POLLOUT) {
+				else if (it->revents & POLLOUT) {
+					Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "Pollfd with POLLOUT %d", it->fd);	// remove later, trying to debug heap use after free error!
 					if (this->client_map_.count(it->fd))			// this is most likely not needed, server don't ever POLLOUT
 						this->POLL_sendResponseToClient(it->fd);
 					else {	//cgi pipe activity
@@ -381,12 +391,14 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->POLL_removeClient(client_fd);
 		else {
-			client.getResponse().generate(&client.getRequest());
+			client.getResponse().createResponsePhase1(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "valid cgi request, going to startCgiResponse");	// remove later, trying to debug heap use after free error!
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
-					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
-					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
+					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[E_PIPE_END_WRITE], client_cgi->getPipeOut()[E_PIPE_END_READ]);
+					this->POLL_addClientCgiFdsToPollfds_(client_cgi->getPipeIn()[E_PIPE_END_WRITE], client_cgi->getPipeOut()[E_PIPE_END_READ]);
+					Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "cgi pipe added to servermanager pollfds");	// remove later, trying to debug heap use after free error!
 				}
 
 				return;
@@ -610,7 +622,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->SELECT_removeClient(client_fd);
 		else {
-			client.getResponse().generate(&client.getRequest());
+			client.getResponse().createResponsePhase1(&client.getRequest());
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
@@ -666,6 +678,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	}
 #endif
 
+
 /* CLASS PRIVATE METHODS */
 
 
@@ -695,7 +708,7 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 
 		this->pollfds_.push_back(pollfd_in);
 		this->pollfds_.push_back(pollfd_out);
-		this->pollfds_size_ += 2;
+		// this->pollfds_size_ += 2;
 	}
 
 	void	ServerManager::POLL_removeClientCgiFdsFromPollfds_( int client_fd ) {
@@ -713,18 +726,11 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 
 		Client&	client = this->client_map_[client_fd];
 
-		if (client.getRequest().getCgiFlag()) {
-			client.finishCgiResponse();
-			this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
-			this->client_cgi_map_.erase(client_fd);
-			this->POLL_switchClientToPollout(client_fd);
-			return;
-		} else {
-			Logger::log(E_ERROR, COLOR_RED, "POLL_handleClientCgi_; client %d cgi flag was false (THIS SHOULDN'T HAPPEN)", client_fd);
-			// handle this error somehow; you can also remove the first if-statement
-			// if (client.getRequest().getCgiFlag())
-			// because of course it is a cgi!
-		}
+		client.finishCgiResponse();
+		this->POLL_removeClientCgiFdsFromPollfds_(client_fd);
+		this->client_cgi_map_.erase(client_fd);
+		this->POLL_switchClientToPollout(client_fd);
+		return;
 	}
 
 #else

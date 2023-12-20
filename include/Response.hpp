@@ -68,6 +68,8 @@ class	Response {
 		bool	methodAllowed_( std::string method );
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
 		int		setResourceLocationAndName( std::string uri );
+		void	setResourceLocationAndNameForDirectory( std::string& uri );
+		void	setResourceLocationAndNameForFile( std::string& uri, size_t last_slash_position );
 		void	setMimeType( void );
 		bool	validateResource_( void );
 
@@ -90,10 +92,10 @@ class	Response {
 
 		/* PUBLIC METHODS */
 
-		void			generate( Request* request ); // call in client ? 
+		void			createResponsePhase1( Request* request ); // call in client ? 
 		void			clear( void ); /*reset for next use*/
-		std::string&	get();
-		std::string&	get( const std::string& body );
+		std::string&	buildAndGetResponsePhase2( void );
+		std::string&	buildAndGetResponsePhase2( const std::string& body );
 
 		/* GETTERS */
 		int									getStatusCode( void ) const;

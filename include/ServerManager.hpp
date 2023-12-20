@@ -1,6 +1,7 @@
 #ifndef	SERVERMANAGER_HPP
 # define	SERVERMANAGER_HPP
 
+# include "WebServ.hpp"
 # include "Server.hpp"
 # include "Client.hpp"
 
@@ -13,11 +14,6 @@
 
 // time the servers will run for without any client action (in seconds)
 # define	SERVER_SHUTDOWN_TIME_SEC 7 * 60
-
-// this macro is used to switch the webserver version between one that uses poll and one that uses select
-# ifndef POLL_TRUE_SELECT_FALSE
-#  define POLL_TRUE_SELECT_FALSE true
-# endif
 
 /*! \brief Server Manager class.
 *         This class handles managing the server and client sockets.
