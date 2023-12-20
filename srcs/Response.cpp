@@ -21,7 +21,18 @@ Response::Response( void ) { /* default constructor */}
 *  More details to be filled as project progresses.
 */
 Response::Response( Server* server )
-: response_(""), body_(""), binary_data_(), response_mime_(""), resource_path_(""), resource_location_(""), status_code_(0), server_(server), request_(NULL) {
+: response_(""), 
+body_(""), 
+binary_data_(), 
+response_mime_(""), 
+resource_path_(""),
+alias_location_(""), 
+resource_location_(""), 
+status_code_(0), 
+server_(server), 
+request_(NULL),
+redirect_(false),
+alias_(false) {
 	
 	if (Response::mime_types_.empty()) {
 		intializeMimeTypes();
@@ -75,7 +86,10 @@ Response&	Response::operator=( const Response& rhs ) {
 		this->request_ = rhs.request_;
 		this->response_mime_ = rhs.response_mime_;
 		this->resource_location_ = rhs.resource_location_;
+		this->alias_location_ = rhs.alias_location_;
 		this->resource_path_ = rhs.resource_path_;
+		this->redirect_ = rhs.redirect_;
+		this->alias_ = rhs.alias_;
 	}
 	return (*this);
 }
@@ -111,7 +125,7 @@ void	Response::createResponsePhase1( Request* request ) {
 		}
 		return ;
 	}
-	if (setResourceLocationAndName(this->request_->getRequestLineValue("uri")) >= 400) {
+	if (setResourceLocationAndName(this->request_->getRequestLineValue("uri")) >= 400 || this->status_code_ / 100 == 3) {
 		return ;
 	}
 	if (!methodAllowed_(this->request_->getRequestLineValue("method"))) {
@@ -119,7 +133,6 @@ void	Response::createResponsePhase1( Request* request ) {
 		Logger::log(E_DEBUG, COLOR_CYAN, "405 Method not allowed, %s, on server %s for uri: `%s'", this->request_->getRequestLineValue("method").c_str(), this->server_->getServerName().c_str() , this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
-	//validate resource existance and access
 	validateResource_();
 	if (this->status_code_ < 400) {
 		for (unsigned long i = 0; i < (sizeof(possible_methods)/sizeof(std::string)); i++) {
@@ -200,6 +213,8 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->resource_location_ = "";
 	this->status_code_ = 0;
 	this->request_ = NULL;
+	this->redirect_ = false;
+	this->alias_ = false;
 }
 
 /*! \brief	returns http status code set for the response
@@ -325,7 +340,7 @@ void	Response::intializeMimeTypes( void ) {
 
 }
 
-/*! \brief
+/*! \brief checks for existance and file access rights
 *
 *
 *
@@ -335,7 +350,7 @@ bool	Response::validateResource_( void ) {
 
 	if (access(this->resource_path_.c_str(), F_OK) != 0) {
 		this->status_code_ = 404;
-		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->request_->getRequestLineValue("uri").c_str());
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->resource_path_.c_str());
 		return (false);
 	}
 	if (this->request_->getRequestLineValue("method") == "DELETE") {
@@ -365,19 +380,57 @@ bool	Response::validateResource_( void ) {
 */
 std::string&	Response::addHeaders_( std::string& response) const {
 
-	std::string method = this->request_->getRequestLineValue("method");
+	// std::string method = this->request_->getRequestLineValue("method");
 
 	//always
 	response += this->timeStampHeader_() + CRLF;
 	response += this->contentLengthHeader_() + CRLF;
-	response += this->contentTypeHeader_() + CRLF; //cgi test/html
 	response += this->contentLocationHeader_() + CRLF;
+	//conditional headers
+	if (this->body_.length() != 0)
+		response += this->contentTypeHeader_() + CRLF;
+	if (this->redirect_) {
+		response += this->locationHeader_() + CRLF;
+	}
 	//between headers and body
 	response += CRLF;
 	return ( response );
 }
 
-//check if logging time stamp can do the same thing
+/*! \brief creates the location header for a redirection, sets redirect the index page of 
+*				redirect location found.
+*	
+*	Creates `Location' header to instruct client that resources requested are at indicated
+*	location. If no index is found for the location, index is still returned as the location
+*	of the resource. 
+*
+*	NOTES:
+*	-  Index value is gaurenteed to be set by the validator.
+*
+*/
+std::string	Response::locationHeader_( void ) const {
+
+	std::string	redirect_path = this->resource_path_;
+	std::string	path_location;
+	size_t	location_pos;
+	
+	this->alias_ ? path_location = this->alias_location_ : path_location = this->resource_location_;
+	if (path_location == "/") {
+		path_location = this->server_->getRoot();
+	}
+	location_pos = redirect_path.find(path_location);
+	if (location_pos == std::string::npos) {
+		return "Location: " + this->resource_location_ + "/" + "index.html" + CRLF;
+	}
+	else {
+		redirect_path = redirect_path.substr(location_pos + path_location.length());
+		if (this->resource_location_ == "/")
+			return "Location: " + redirect_path + CRLF;
+		else
+			return "Location: " + this->resource_location_ + redirect_path + CRLF;
+	}
+}
+
 /*! \brief timeStampHeader private method returns header formated current time in GMT
 *       
 *
@@ -433,70 +486,115 @@ std::string Response::contentLocationHeader_( void ) const {
 
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
 
-/*! \brief finds information for uri that includes a filename
+/*! \brief changes location if redirection found
 *	
-*    setResourceLocationAndNameForFile:
-*		-  check if location is valid
-*		-  checks if the request if for cgi, validates script requested
-*		-  for non-cgi requests, sets resource path as path as server root + URI
-*		-  for cgi requests, sets resource path as cgi root + / + filename (from uri)
-*	Error codes:
-*		404 - Not Found if location does not exist
-*		404 - Invalid cgi script - not on list //might choose different code
+*	If `return' key is set in the origional location from the uri 
+*	- Handles a single redirection, if multiple are chained together the client
+*		must send a request for each.
 *  
 */
-void	Response::setResourceLocationAndNameForFile( std::string& uri, size_t last_slash_position ) {
+bool	Response::handleRedirection( void ) {
 
-	this->resource_location_ = uri.substr(0, last_slash_position); //path only, first part of uri
-	if (this->resource_location_.empty()) {
-		this->resource_location_ = "/";
+	if (this->server_->isKeyInLocation(this->resource_location_, "return")) {
+	    this->resource_location_ = this->server_->getLocationValue(this->resource_location_, "return")->front();
+		this->redirect_ = true;
+	    Logger::log(E_DEBUG, COLOR_CYAN, "Redirection found for location new location : %s", this->resource_location_.c_str());
+		return true;
 	}
+	return false;
+}
 
-	if (!this->server_->isLocationInServer(this->resource_location_)) {
-		this->status_code_ = 404;
-		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
-		return ;
-	}
-	std::string	filename = uri.substr(last_slash_position + 1);
-	if (!this->request_->getCgiFlag()) {
-		this->resource_path_ =  this->server_->getRoot() + uri;
-	}
-	else if (this->request_->getCgiFlag()) {
-		this->resource_path_ = (this->server_->getLocationValue("/cgi-bin", "root"))->front() + "/" + filename;
-		// this->resource_path_ =  "." + uri; //need to check this for correct path
-	}
-	else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
-		this->status_code_ = 404;
-		Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
+/*! \brief checks for location alias and sets relvant variables
+*	
+*	If `alias' key is set in the origional location from the uri and sets
+*	alias bool to true if so. Will also check to see if the alias points
+*	to the /cgi-bin location, if so then sets flag in request.
+*  
+*/
+void	Response::handelAlias( void ) {
+
+	if (this->server_->isKeyInLocation(this->resource_location_, "alias")) {
+	    this->alias_location_ = this->server_->getLocationValue(this->resource_location_, "alias")->front();
+		this->alias_ = true;
+	    Logger::log(E_DEBUG, COLOR_CYAN, "Alias found : location => %s, alias_location => %s", this->resource_location_.c_str(), this->alias_location_.c_str());
+		if (this->alias_location_ == "/cgi-bin")
+			this->request_->setCgiFlag(true);
 	}
 }
 
-/*! \brief finds information for uri that requests a directory, no file listed
+/*! \brief sets the location name in the server that relates to the request uri
 *	
-*    setResourceLocationAndNameForDirectory:
+*    setResourceLocation:
 *		-  checks if the request if for cgi, rejects as invalid for not specifying a specific script
 *		-  check if location is valid
-*		-  sets resource path as path to index of this page
+*		-  calls `handlRedirection' to change location as needed
 *	Error codes:
 *		404 - Not Found if location does not exist
 *		400 - Invalid Request if no cgi script is defined
 *  
 */
-void	Response::setResourceLocationAndNameForDirectory( std::string& uri ) {
+void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
-	this->resource_location_ = uri; //won't have root applied
-	if (this->request_->getCgiFlag()) {
-		this->status_code_ = 400; //maybe invalid request if we don't allow this?
-		Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script not given by request: `%s'", uri.c_str());
-	}
-	else if (!this->server_->isLocationInServer(this->resource_location_)) {
-		this->status_code_ = 404;
-		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+	if (is_dir) {
+		this->resource_location_ = uri; //won't have root applied
+		if (this->request_->getCgiFlag()) {
+			this->status_code_ = 400; // invalid request if we don't allow this?
+			Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script not given by request: `%s'", uri.c_str());
+		}
 	}
 	else {
-		this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+		this->resource_location_ = uri.substr(0, last_slash_pos); //path only, first part of uri
+		if (this->resource_location_.empty()) {
+			this->resource_location_ = "/";
+		}
 	}
-	/* might still need the last else clause, however the existance of the file will be checked later so might be fine*/
+	if (!this->server_->isLocationInServer(this->resource_location_)) {
+		this->status_code_ = 404;
+		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
+		return ;
+	}
+	if (!handleRedirection())
+		handelAlias();
+}
+
+//only incase of no index will we assume index.html -> //TODO !!!this should be set when searching for the index not here. 
+/*! \brief sets resource path based on verified location from the uri
+*	
+*    setResourcePath:
+*		-  sets resource path as path to index of this page
+*		-  verifies that a cgi script is listed in the server config
+*	Error codes:
+*		404 - Not Found if location does not exist
+*		400 - Invalid Request if no cgi script is defined
+*  
+*/
+void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos ) {
+
+	if (is_dir) {
+		//check for directory listing here
+		if (this->alias_ && !this->server_->isKeyInLocation(this->resource_location_, "index"))
+			this->resource_path_ = this->server_->getLocationValue(this->alias_location_, "index")->front();
+		else
+			this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+		this->redirect_ = true;
+		this->status_code_ = 301; //permanently moved (chrome should use this in the future)
+	}
+	else {
+		std::string	filename = uri.substr(last_slash_pos + 1);
+		std::string location;
+		
+		this->alias_ ? location = this->alias_location_ : location = this->resource_location_;
+		if (!this->request_->getCgiFlag()) {
+			this->resource_path_ =  this->server_->getRoot() + location + "/" + filename;
+		}
+		else if (this->request_->getCgiFlag()) {
+			this->resource_path_ = (this->server_->getLocationValue("/cgi-bin", "root"))->front() + "/" + filename;
+		}
+		else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
+			this->status_code_ = 404; //TODO: is this correct code for not allowed script?
+			Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
+		}
+	}
 }
 
 /*! \brief Extracts information from the request URI and validates 
@@ -512,21 +610,17 @@ void	Response::setResourceLocationAndNameForDirectory( std::string& uri ) {
 */
 int	Response::setResourceLocationAndName( std::string uri ) {
 	
-	/* NEED TO ADD HANDLING FOR ALIAS AND REDIRECTION HERE */
 	size_t	last_slash_pos = uri.find_last_of('/');
 
 	if (last_slash_pos != std::string::npos && (last_slash_pos != uri.length() || uri == "/")) {
 		std::string path;
-		if (uri == "/") // in future make different check for cgi paths
-			path = this->server_->getRoot();
-		else
-			path = this->server_->getRoot() + uri;
-		if (isDirectory(path)) {
-			setResourceLocationAndNameForDirectory(uri);
-		}
-		else {
-			setResourceLocationAndNameForFile(uri, last_slash_pos);
-		}
+		bool		is_dir;
+
+		uri == "/" ? path = this->server_->getRoot() : path = this->server_->getRoot() + uri; // do cgi paths need dif check?
+		is_dir = isDirectory(path) || this->server_->isLocationInServer(uri);
+		setResourceLocation(uri, is_dir, last_slash_pos);
+		if (this->status_code_ < 400)
+			setResourcePath(uri, is_dir, last_slash_pos);
 	}
 	else {
 		this->status_code_ = 400; //invalid request
@@ -554,7 +648,11 @@ int	Response::setResourceLocationAndName( std::string uri ) {
 */
 bool	Response::methodAllowed_( std::string method ) {
 
-	const std::vector<std::string>*	methods = this->server_->getLocationValue(this->resource_location_, "allow_methods");
+	const std::vector<std::string>*	methods;
+	
+	this->alias_ ? 
+	methods = this->server_->getLocationValue(this->alias_location_, "allow_methods") 
+	: methods = this->server_->getLocationValue(this->resource_location_, "allow_methods");
 	
 	if (!methods || methods->empty()) {
 		return (false);
@@ -739,6 +837,7 @@ void	Response::headMethod_( void ) {
 void	Response::deleteMethod_( void ) {
 
 	if (this->request_->getCgiFlag()) {
+		//maybe set the query string here?
 		return ;
 	}
 	

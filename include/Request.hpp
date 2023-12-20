@@ -49,6 +49,7 @@ class	Request {
 		/* PUBLIC METHODS */
 		void	add( std::string to_add );
 		void	clear( void );
+		void	printRequest( void ) const;
 
 		/* GETTERS */
 		size_t		getBodySize( void ) const;
@@ -61,7 +62,8 @@ class	Request {
 		std::vector<char>::iterator	getBinaryBodyBegin( void );
 		std::vector<char>::iterator	getBinaryBodyEnd( void );
 
-		void		printRequest( void ) const;
+		/* SETTERS */
+		void	setCgiFlag( bool flag);
 
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
