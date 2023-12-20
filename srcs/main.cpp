@@ -37,22 +37,10 @@ int	main( int argc, char *argv[]) {
 	    	return 1;
 		}
 	}
-	std::cout << " server 1 index: " << Validator::servers[0].getIndex() << std::endl; 
-	std::cout << " server 1 index: " << Validator::servers[1].getIndex() << std::endl;
-	std::cout << " servers size: " << Validator::servers.size() << std::endl;
-	std::cout << " server 1 index: " << (Validator::servers[0].isKeyInLocation("/cgi-bin", "root") ? "true" : "false") << std::endl;
-	std::vector<Server> server_vector;
-	Server  server1("Server-1", 8080, "127.0.0.1", "./resources", "index,html", "2147483647");
-	server_vector.push_back(server1);
-	std::cout << (server1.isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
-	std::cout << (server_vector.front().isKeyInLocation("/blue", "allow_methods") ? "true" : "false") << std::endl;
-	Server  server2("Server-2", 9090, "127.0.0.1", "./resources", "index,html", "2147483647");
-	server_vector.push_back(server2);
-
 	#if POLL_TRUE_SELECT_FALSE
 		// POLL VERSION
 		while (true) {
-			ServerManager server_manager(server_vector);
+			ServerManager server_manager(Validator::servers);
 			if (!server_manager.POLL_initializeServers()) {  
 				server_manager.closeServerSockets();
 				Logger::closeLogFiles();
@@ -65,7 +53,7 @@ int	main( int argc, char *argv[]) {
 	#else
 	//SELECT VERSION
 		while (true) {
-			ServerManager server_manager(server_vector);
+			ServerManager server_manager(Validator::servers);
 			if (!server_manager.SELECT_initializeServers()) {  
 				server_manager.closeServerSockets();
 				Logger::closeLogFiles();
