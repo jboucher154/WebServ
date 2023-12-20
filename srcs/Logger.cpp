@@ -53,7 +53,7 @@ void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
 	char	buffer[1024];
 
 	// hive desktops allow deprecated vsprintf (which is also needed because vsnprintf is c++11)
-	#ifdef HIVE_DESKTOP_OR_MACBOOK
+	#if HIVE_DESKTOP_OR_MACBOOK
 		vsprintf(buffer, msg, args); //change back for shcool computers
 	#else
 		vsnprintf(buffer, 1024, msg, args); //change back for shcool computers

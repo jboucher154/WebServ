@@ -5,16 +5,6 @@
 # include "Server.hpp"
 # include "Client.hpp"
 
-// for timing out select()
-# define SELECT_TIMEOUT_SEC 2
-# define SELECT_TIMEOUT_USEC 0
-
-// for timing out poll()
-# define POLL_TIMEOUT_MILLISEC 2 * 1000
-
-// time the servers will run for without any client action (in seconds)
-# define	SERVER_SHUTDOWN_TIME_SEC 7 * 60
-
 /*! \brief Server Manager class.
 *         This class handles managing the server and client sockets.
 *
@@ -60,13 +50,14 @@ class	ServerManager {
 		ServerManager&	operator=( const ServerManager& rhs );
 
 		void	closeServerSockets( void );
-		void	closeClientSockets( void );
+		void	closeAllClientConnections( void );
 		void	closeAllSockets( void );
-		bool	checkLastClientTime( void );
+		bool	CheckServersTimeout( void );
 		void	removeClient( int client_fd );
 		bool	receiveFromClient( int client_fd );
 		bool	sendResponseToClient( int client_fd );
 		int		getClientFdByItsCgiPipeFd( int pipe_fd );
+		void	checkIfClientTimeout( int client_fd );
 
 
 		bool	SELECT_initializeServers( void );
