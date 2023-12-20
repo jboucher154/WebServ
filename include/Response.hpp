@@ -27,8 +27,8 @@ typedef struct	s_request_location_info {
 	std::string								resource_path;
 	bool									is_aliased;
 	bool									is_redirect;
-	std::string								unaliased_location;
-	std::vector<std::string, std::string>&	allowed_methods;
+	std::string								aliased_location;
+	// std::vector<std::string, std::string>&	allowed_methods;
 }				t_request_location_info;
 
 /*! \brief Class for handling HTTP responses.
@@ -53,18 +53,20 @@ class	Response {
 		std::vector<char>	binary_data_;
 		std::string			response_mime_;
 		std::string			resource_path_; //path for opening/ manipulating etc
+		std::string			alias_location_;
 		std::string			resource_location_; // location for looking up in server
 		int					status_code_;
 		Server*				server_;
 		Request*			request_;
 		bool				redirect_;
+		bool				alias_;
 		std::string			query_string_;
 		std::vector<std::string> file_data_;
 		//maybe add map of headers, create them as I go?
 		
 		void	intializeMimeTypes( void );
 
-		/*HEADER GENERATORS*/
+		/* HEADER GENERATORS */
 		std::string&	addHeaders_( std::string& response) const;
 		std::string		timeStampHeader_( void ) const;
 		std::string		contentTypeHeader_( void ) const;
@@ -72,30 +74,30 @@ class	Response {
 		std::string		contentLocationHeader_( void ) const;
 		std::string		locationHeader_( void ) const;
 
+		/* METHODS */
 		void	getMethod_( void );
 		void	headMethod_( void );
 		void	deleteMethod_( void );
 		void	postMethod_( void );
+
 		bool	methodAllowed_( std::string method );
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
 
+		/* UTILITIES FOR POST */
+		std::vector<std::string> 	GetContentTypeValues_( void );
+		void						parseMultiPartFormData( std::string& boundary );
+		std::vector<std::string>	getAcceptedFormats( void );
+		
+		/* RESOURCE AND LOCATION IDENTIFICATION */
 		int		setResourceLocationAndName( std::string uri );
-
-		void	setResourceLocationAndNameForDirectory( std::string& uri );
-		void	setResourceLocationAndNameForFile( std::string& uri, size_t last_slash_position );
-
-		void	setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos );// new version
-		void	setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos );//new version
-		void	handleRedirection( void );
+		void	setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos );
+		void	setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos );
+		bool	handleRedirection( void );
+		void	handelAlias( void );
 
 		void	setMimeType( void );
 		bool	validateResource_( void );
 
-		/*POST*/
-		std::vector<std::string> 	GetContentTypeValues_( void );
-		void						parseMultiPartFormData( std::string& boundary );
-
-		std::vector<std::string>	getAcceptedFormats( void );
 
 		/*TYPEDEF*/
 		typedef	void	(Response::*response_methods_[]) ( void );

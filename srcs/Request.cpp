@@ -228,6 +228,13 @@ std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
 	return (this->binary_body_.end());
 }
 
+/************** PRIVATE SETTERS **************/
+
+void	Request::setCgiFlag( bool flag) {
+	
+	this->cgi_flag_ = flag;
+}
+
 /************** CLASS PRIVATE METHODS **************/
 
 /************** PRIVATE SETTERS **************/
