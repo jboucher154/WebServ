@@ -478,7 +478,8 @@ bool Validator::locationIndex( std::string value ){
 		return false;
 	}
 	std::string	temp = rootPath;
-	temp.append("/");
+	if (rootPath != (mainRootPath + "/"))
+		temp.append("/");
 	temp.append(value);
 	std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.find("index");
     // Find the member in the vector
