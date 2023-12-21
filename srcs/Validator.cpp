@@ -387,7 +387,8 @@ bool Validator::returnKey( std::string value ){
 *  that if a location block aliases another location block the
 *  aliased block has to have been written above the block with 
 *  the alias key. So this method searches for the block that is
-*  to be aliased and if it is found returns true and false otherwise.
+*  to be aliased and if it is found the method checks for nested
+*  aliasing and returns false if it finds nested aliases and true otherwise.
 *  
 */
 bool Validator::alias( std::string value ){
@@ -396,8 +397,13 @@ bool Validator::alias( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for alias value can not be empty!");
 		return false;
 	}
-	if(servers[servers.size() - 1].isLocationInServer(value))
+	if(servers[servers.size() - 1].isLocationInServer(value)){
+		if(servers[servers.size() - 1].isKeyInLocation(value, "alias")){
+			Logger::log(E_ERROR, COLOR_RED, "Nested Alias is not allowed %s location is aliasing %s itself!!", value.c_str(), (*(servers[servers.size() - 1].getLocationValue(value, "alias")))[0].c_str());
+			return false;
+		}
 		return true;
+	}
 	else
 		return false;
 }
@@ -814,7 +820,6 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 			Logger::log(E_ERROR, COLOR_RED, "post or delete can not be allowed without get being allowed on %s!", locationKey.c_str());
 			return false;
 	}
-	
 	//check for no deplication
 	//add to server vector
 	if ( servers[servers.size() - 1].isLocationInServer(locationKey)){

@@ -18,9 +18,9 @@ int	main( int argc, char *argv[]) {
 		for (std::vector<std::string>::iterator it = directoryVec.begin(); it != directoryVec.end(); ++it){
 			std::cout << *it << std::endl;
 		}
+		std::string htmlContent = buildHtmlList(path, directoryVec);
+		std::cout << htmlContent << std::endl;
 	}
-	std::string htmlContent = buildHtmlList(path, directoryVec);
-	std::cout << htmlContent << std::endl;
 	Logger::initLogger();
 	(void)argv;
 	if (argc > 2) {
