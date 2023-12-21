@@ -8,11 +8,13 @@ std::map<std::string, std::string>	Response::mime_types_;
 
 /*! \brief Default constructor is private.
 *       
-*
 *  Default constructor is private.
 *  
 */
-Response::Response( void ) { /* default constructor */}
+Response::Response( void ) { 
+	
+	/* default constructor */
+}
 
 /*! \brief Constructor intializes empty response and body; sets status code to 0.
 *       
@@ -32,7 +34,8 @@ status_code_(0),
 server_(server), 
 request_(NULL),
 redirect_(false),
-alias_(false) {
+alias_(false),
+directory_listing_(false) {
 	
 	if (Response::mime_types_.empty()) {
 		intializeMimeTypes();
@@ -90,6 +93,7 @@ Response&	Response::operator=( const Response& rhs ) {
 		this->resource_path_ = rhs.resource_path_;
 		this->redirect_ = rhs.redirect_;
 		this->alias_ = rhs.alias_;
+		this->directory_listing_ = rhs.directory_listing_;
 	}
 	return (*this);
 }
@@ -97,7 +101,7 @@ Response&	Response::operator=( const Response& rhs ) {
 /* CLASS PUBLIC METHODS */
 
 
-/*! \brief generate method check if request is possible and calls the function for 
+/*! \brief phase 1 of response checks if request is possible and calls the function for 
 *				the method requestsed given a Request object.
 *       
 *
@@ -148,26 +152,22 @@ void	Response::createResponsePhase1( Request* request ) {
 /*! \brief returns a reference to the response string built.
 *       
 *
-*  Currently returns response from ResponseCodes class based on current status_code_.
-*  More details to be filled as project progresses.
-*  
+*	Builds and returns response, checking if there has been an error, adding headers as 
+*	required, and appending the body. All are separated by the CRLF or "/r/n" per HTTP 
+*	guidelines.
+*
 */
 std::string&	Response::buildAndGetResponsePhase2( void ) {
 
-	// std::string response;
-	
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
-	if (this->status_code_ >= 400 || this->status_code_ == 0) { // any code that should trigger the mnimal response
-		//check it there is fancy error page in server (remember to check access rights to it)
-		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
-		this->response_mime_ = Response::mime_types_["html"];
+	if (this->status_code_ >= 400 || this->status_code_ == 0) {
+		createErrorBody_();
 	}
 	this->response_ = addHeaders_(this->response_);
 	if (!this->body_.empty()) {
 		this->response_ += this->body_ + CRLF;
 	}
 	this->response_ += CRLF;
-	// this->response_ = response;
 	return (this->response_);
 }
 
@@ -175,8 +175,9 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 *			reference to the response string built.
 *       
 *
-*  Currently returns response from ResponseCodes class based on current status_code_.
-*  More details to be filled as project progresses.
+*	Builds and returns response, checking if there has been an error, adding headers as 
+*	required, and appending the body passed to the function. All are separated by the 
+*	CRLF or "/r/n" per HTTP guidelines.
 *  
 */
 std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
@@ -184,10 +185,8 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	this->body_ = body;
 
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
-	if (this->status_code_ >= 400 || this->status_code_ == 0) { // any code that should trigger the minmal response
-		//check it there is fancy error page in server
-		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
-		this->response_mime_ = Response::mime_types_["html"];
+	if (this->status_code_ >= 400 || this->status_code_ == 0) {
+		createErrorBody_();
 	}
 	this->response_ = addHeaders_(this->response_);
 	if (!this->body_.empty()) {
@@ -215,12 +214,13 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->request_ = NULL;
 	this->redirect_ = false;
 	this->alias_ = false;
+	this->directory_listing_ = false;
 }
 
 /*! \brief	returns http status code set for the response
 *
 *
-*
+*	returns http status code set for the response
 *
 */
 int	Response::getStatusCode( void ) const {
@@ -231,7 +231,7 @@ int	Response::getStatusCode( void ) const {
 /*! \brief	setter for the response status code
 *
 *
-*
+*	Allows for client and cgi handler to set the response status code.
 *
 */
 void	Response::setStatusCode( unsigned int	new_code ) {
@@ -242,6 +242,7 @@ void	Response::setStatusCode( unsigned int	new_code ) {
 /*! \brief returns the filepath to the requested resource
 *
 *
+*	returns the filepath to the requested resource
 *
 *
 */
@@ -253,7 +254,7 @@ const std::string&	Response::getResourcePath( void ) const {
 /*! \brief returns const reference to the query string for a CGI script
 *
 *
-*
+*	returns const reference to the query string for a CGI script
 *
 */
 const std::string&	Response::getQueryString( void ) const {
@@ -264,7 +265,7 @@ const std::string&	Response::getQueryString( void ) const {
 /*! \brief returns begin iterator for the stored filedata for upload
 *
 *
-*
+*	returns begin iterator for the stored filedata for upload
 *
 */
 std::vector<std::string>::iterator	Response::getFileDataBegin( void ) {
@@ -275,7 +276,7 @@ std::vector<std::string>::iterator	Response::getFileDataBegin( void ) {
 /*! \brief returns end iterator for the stored filedata for upload
 *
 *
-*
+*	returns end iterator for the stored filedata for upload
 *
 */
 std::vector<std::string>::iterator	Response::getFileDataEnd( void ) {
@@ -286,12 +287,14 @@ std::vector<std::string>::iterator	Response::getFileDataEnd( void ) {
 
 /* CLASS PRIVATE METHODS */
 
-/*! \brief
+/*! \brief	used to intialize Mime type values
 *
 *
-*	
+*	Sets values in the mime_types_ map to use for recognizing and setting mime types.
+*	All values are used based on the IANA standards linked below.
 *
-* 	Reference : https://www.iana.org/assignments/media-types/media-types.xhtml
+* 	REFERENCE: https://www.iana.org/assignments/media-types/media-types.xhtml
+*
 */
 void	Response::intializeMimeTypes( void ) {
 
@@ -340,10 +343,11 @@ void	Response::intializeMimeTypes( void ) {
 
 }
 
-/*! \brief checks for existance and file access rights
+/*! \brief checks for existance and file access rights for requested resource
 *
-*
-*
+*	
+*	Checks for existance and access rights for requested resource.
+*	Error codes may be set, 404 - not found, 403 - access not allowed
 *
 */
 bool	Response::validateResource_( void ) {
@@ -372,10 +376,12 @@ bool	Response::validateResource_( void ) {
 /****************************************** HEADER GENERATORS ******************************************/
 
 //could make this an array of methods and call them, appending CRLF to each in a loop
-/*! \brief
+
+/*! \brief	calls methods to add headers to the response
 *
-*
-*
+*	Appends each header to the response as needed. No errors are set here. 
+*	Returns a reference to the response string. All are separated by the CRLF or "/r/n" 
+*	per HTTP guidelines.
 *
 */
 std::string&	Response::addHeaders_( std::string& response) const {
@@ -452,7 +458,7 @@ std::string		Response::timeStampHeader_( void ) const {
 
 /*! \brief returns formated response header for Content-Type header
 *
-*
+*	returns Content-Type header based on mime type set for the response
 *
 *
 */
@@ -463,7 +469,7 @@ std::string	Response::contentTypeHeader_( void ) const {
 
 /*! \brief returns formated response header for Content-Length
 *
-*
+*	Returns formated response header for Content-Length
 *
 *
 */
@@ -475,13 +481,55 @@ std::string Response::contentLengthHeader_( void ) const {
 /*! \brief returns formated response header for Content-Location
 *
 *
-*
+*	Returns formated response header for Content-Location.
+*	Resource_location is used always as it is overwritten in case of redirection 
+*	and in case of alias the aliased location should not be sent.
 *
 */
 std::string Response::contentLocationHeader_( void ) const {
 
 	return ("Content-Location: " + this->resource_location_);
 	// return ("Content-Location: " + this->server_->getRoot() + this->resource_location_ + this->resource_path_);
+}
+
+/****************************************** GET ERROR PAGE ******************************************/
+
+/*! \brief sets body of response to error content
+*	
+*	Creates the body of the error response either from a file given in the config or
+*	generates a default error page from the ResponseCodes class.
+*  
+*/
+void	Response::createErrorBody_( void ) {
+	
+	std::string	str_error = "error_page_" + intToString(this->status_code_);
+	bool		complete = false;
+
+	this->body_.clear();
+	if (this->server_->isErrorPage(str_error)) {
+		std::string error_filename = this->server_->getErrorPage(str_error);
+		Logger::log(E_DEBUG, COLOR_CYAN, "Error file found in config for : %d, filename: %s", this->status_code_, error_filename.c_str());
+		if (access(error_filename.c_str(), F_OK) == 0 && access(error_filename.c_str(), R_OK) == 0) {
+			std::ifstream file(error_filename);
+			if (!file.is_open() || file.fail() || file.bad()) {
+				Logger::log(E_DEBUG, COLOR_CYAN, "Error opening error page file : %d", this->status_code_);
+			}
+			else {
+				std::string line;
+				while (std::getline(file, line, '\n')) {
+				if (!file.eof())
+					line += "\n";
+				this->body_ += line;
+				}
+				file.close();
+				complete = true;
+			}
+		}
+	}
+	if (!complete) {
+		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
+	}
+	this->response_mime_ = Response::mime_types_["html"];
 }
 
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
@@ -557,12 +605,15 @@ void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_s
 		handelAlias();
 }
 
+
+
 //only incase of no index will we assume index.html -> //TODO !!!this should be set when searching for the index not here. 
 /*! \brief sets resource path based on verified location from the uri
 *	
 *    setResourcePath:
 *		-  sets resource path as path to index of this page
 *		-  verifies that a cgi script is listed in the server config
+*       -  checks for autoindex and sets directory-listing `true` if found
 *	Error codes:
 *		404 - Not Found if location does not exist
 *		400 - Invalid Request if no cgi script is defined
@@ -572,12 +623,22 @@ void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash
 
 	if (is_dir) {
 		//check for directory listing here
-		if (this->alias_ && !this->server_->isKeyInLocation(this->resource_location_, "index"))
-			this->resource_path_ = this->server_->getLocationValue(this->alias_location_, "index")->front();
-		else
-			this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
-		this->redirect_ = true;
-		this->status_code_ = 301; //permanently moved (chrome should use this in the future)
+		if ((this->server_->isKeyInLocation(this->resource_location_, "autoindex")
+		&& this->server_->getLocationValue(this->resource_location_, "autoindex")->front() == "on")
+		|| (this->alias_ && this->server_->isKeyInLocation(this->alias_location_, "autoindex")
+		&& this->server_->getLocationValue(this->alias_location_, "autoindex")->front() == "on")){
+			this->directory_listing_ = true;
+			this->alias_ ? this->resource_path_ = this->server_->getLocationValue(this->alias_location_, "root")->front() 
+			: this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "root")->front();
+		}
+		else {
+			if (this->alias_ && !this->server_->isKeyInLocation(this->resource_location_, "index"))
+				this->resource_path_ = this->server_->getLocationValue(this->alias_location_, "index")->front();
+			else
+				this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+			this->redirect_ = true;
+			this->status_code_ = 301; //permanently moved (chrome should use this in the future)
+		}
 	}
 	else {
 		std::string	filename = uri.substr(last_slash_pos + 1);
@@ -585,6 +646,7 @@ void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash
 		
 		this->alias_ ? location = this->alias_location_ : location = this->resource_location_;
 		if (!this->request_->getCgiFlag()) {
+			//make case for root here so no extra / is added if location == /
 			this->resource_path_ =  this->server_->getRoot() + location + "/" + filename;
 		}
 		else if (this->request_->getCgiFlag()) {
@@ -695,15 +757,18 @@ std::vector<std::string>	Response::getAcceptedFormats( void ) {
 
 /*! \brief sets the content type MIME for the response header
 *
-*
-*
+*	Sets the content type MIME for the response header.
+*	- cgi responses have `html` set as their mime type
+*	- files without extensions are sent as `unknown` which is sent as octet stream
+*	- otherwise if extension was not in the mime_types_ map the response is set 
+*		set to error code of 415 - no supported media type
 *
 */
 void	Response::setMimeType( void ) {
 
 	size_t	extension_start = this->resource_path_.find_last_of('.');
 
-	if (this->request_->getCgiFlag()) {
+	if (this->request_->getCgiFlag() || this->directory_listing_) {
 		this->response_mime_ = Response::mime_types_["html"];
 		return ;
 	}
@@ -720,9 +785,8 @@ void	Response::setMimeType( void ) {
 	}
 }
 
-//what to do if no accepted format specified? can take anything...
 //will uri have the resource in int -> YES ex: /blue/image.jpg; I only want to check for the blue right?
-/*! \brief
+/*! \brief	implements the GET method
 *
 *
 *
@@ -742,6 +806,9 @@ void	Response::getMethod_( void ) {
 			Logger::log(E_DEBUG, COLOR_CYAN, "getMethod_ cgiFlag true");
 			return ;
 		}
+		else if (this->directory_listing_ == true){
+			this->body_ = buildHtmlList(this->resource_path_);
+		}
 		else if (this->response_mime_.compare(0, 4, "text") == 0) {
 			buildBody_(this->resource_path_, std::ifstream::in);
 		}
@@ -758,7 +825,7 @@ void	Response::getMethod_( void ) {
 	}
 }
 
-/*! \brief
+/*! \brief saves body content to send in the body_ attribute
 *
 *
 *
@@ -936,7 +1003,7 @@ std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
 	return (values);
 }
 
-/*! \brief
+/*! \brief	Post method currenly only works with cgi
 *
 *
 *

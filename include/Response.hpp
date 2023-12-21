@@ -60,6 +60,7 @@ class	Response {
 		Request*			request_;
 		bool				redirect_;
 		bool				alias_;
+		bool				directory_listing_;
 		std::string			query_string_;
 		std::vector<std::string> file_data_;
 		//maybe add map of headers, create them as I go?
@@ -81,6 +82,8 @@ class	Response {
 		void	postMethod_( void );
 
 		bool	methodAllowed_( std::string method );
+
+		/* UTILITIES FOR GET */
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
 
 		/* UTILITIES FOR POST */
@@ -98,9 +101,15 @@ class	Response {
 		void	setMimeType( void );
 		bool	validateResource_( void );
 
+		void	createErrorBody_( void );
+
 
 		/*TYPEDEF*/
 		typedef	void	(Response::*response_methods_[]) ( void );
+
+		/* DIRECTORY LISTING*/
+		void 		listFiles(const std::string& path, std::vector<std::string>& directoryVec);
+		std::string buildHtmlList(const std::string& path);
 
 	public:
 		static	std::map<std::string, std::string> mime_types_;

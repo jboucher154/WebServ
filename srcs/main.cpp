@@ -11,14 +11,6 @@
 
 int	main( int argc, char *argv[]) {
 
-	std::vector<std::string>*	directoryVec = listFiles("/Users/asarikha/Desktop/cpp_playground");
-	std::cout << "*it" << std::endl;
-	if (directoryVec){
-		for (std::vector<std::string>::iterator it = directoryVec->begin(); it != directoryVec->end(); ++it){
-			std::cout << *it << std::endl;
-		}
-	}
-	delete directoryVec;
 	Logger::initLogger();
 	(void)argv;
 	if (argc > 2) {
