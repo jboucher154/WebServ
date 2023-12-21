@@ -11,16 +11,6 @@
 
 int	main( int argc, char *argv[]) {
 
-	std::string path = "./website/my_folder";
-    std::vector<std::string> directoryVec;
-    listFiles(path, directoryVec);
-	if (!directoryVec.empty()){
-		for (std::vector<std::string>::iterator it = directoryVec.begin(); it != directoryVec.end(); ++it){
-			std::cout << *it << std::endl;
-		}
-		std::string htmlContent = buildHtmlList(path, directoryVec);
-		std::cout << htmlContent << std::endl;
-	}
 	Logger::initLogger();
 	(void)argv;
 	if (argc > 2) {
