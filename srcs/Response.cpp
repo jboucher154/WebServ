@@ -34,7 +34,8 @@ status_code_(0),
 server_(server), 
 request_(NULL),
 redirect_(false),
-alias_(false) {
+alias_(false),
+directory_listing_(false) {
 	
 	if (Response::mime_types_.empty()) {
 		intializeMimeTypes();
@@ -92,6 +93,7 @@ Response&	Response::operator=( const Response& rhs ) {
 		this->resource_path_ = rhs.resource_path_;
 		this->redirect_ = rhs.redirect_;
 		this->alias_ = rhs.alias_;
+		this->directory_listing_ = rhs.directory_listing_;
 	}
 	return (*this);
 }
@@ -212,6 +214,7 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->request_ = NULL;
 	this->redirect_ = false;
 	this->alias_ = false;
+	this->directory_listing_ = false;
 }
 
 /*! \brief	returns http status code set for the response
@@ -602,12 +605,15 @@ void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_s
 		handelAlias();
 }
 
+
+
 //only incase of no index will we assume index.html -> //TODO !!!this should be set when searching for the index not here. 
 /*! \brief sets resource path based on verified location from the uri
 *	
 *    setResourcePath:
 *		-  sets resource path as path to index of this page
 *		-  verifies that a cgi script is listed in the server config
+*       -  checks for autoindex and sets directory-listing `true` if found
 *	Error codes:
 *		404 - Not Found if location does not exist
 *		400 - Invalid Request if no cgi script is defined
@@ -617,12 +623,22 @@ void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash
 
 	if (is_dir) {
 		//check for directory listing here
-		if (this->alias_ && !this->server_->isKeyInLocation(this->resource_location_, "index"))
-			this->resource_path_ = this->server_->getLocationValue(this->alias_location_, "index")->front();
-		else
-			this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
-		this->redirect_ = true;
-		this->status_code_ = 301; //permanently moved (chrome should use this in the future)
+		if ((this->server_->isKeyInLocation(this->resource_location_, "autoindex")
+		&& this->server_->getLocationValue(this->resource_location_, "autoindex")->front() == "on")
+		|| (this->alias_ && this->server_->isKeyInLocation(this->alias_location_, "autoindex")
+		&& this->server_->getLocationValue(this->alias_location_, "autoindex")->front() == "on")){
+			this->directory_listing_ = true;
+			this->alias_ ? this->resource_path_ = this->server_->getLocationValue(this->alias_location_, "root")->front() 
+			: this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "root")->front();
+		}
+		else {
+			if (this->alias_ && !this->server_->isKeyInLocation(this->resource_location_, "index"))
+				this->resource_path_ = this->server_->getLocationValue(this->alias_location_, "index")->front();
+			else
+				this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
+			this->redirect_ = true;
+			this->status_code_ = 301; //permanently moved (chrome should use this in the future)
+		}
 	}
 	else {
 		std::string	filename = uri.substr(last_slash_pos + 1);
@@ -752,7 +768,7 @@ void	Response::setMimeType( void ) {
 
 	size_t	extension_start = this->resource_path_.find_last_of('.');
 
-	if (this->request_->getCgiFlag()) {
+	if (this->request_->getCgiFlag() || this->directory_listing_) {
 		this->response_mime_ = Response::mime_types_["html"];
 		return ;
 	}
@@ -789,6 +805,9 @@ void	Response::getMethod_( void ) {
 		if (this->request_->getCgiFlag()) {
 			Logger::log(E_DEBUG, COLOR_CYAN, "getMethod_ cgiFlag true");
 			return ;
+		}
+		else if (this->directory_listing_ == true){
+			this->body_ = buildHtmlList(this->resource_path_);
 		}
 		else if (this->response_mime_.compare(0, 4, "text") == 0) {
 			buildBody_(this->resource_path_, std::ifstream::in);

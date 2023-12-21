@@ -60,6 +60,7 @@ class	Response {
 		Request*			request_;
 		bool				redirect_;
 		bool				alias_;
+		bool				directory_listing_;
 		std::string			query_string_;
 		std::vector<std::string> file_data_;
 		//maybe add map of headers, create them as I go?
@@ -105,6 +106,10 @@ class	Response {
 
 		/*TYPEDEF*/
 		typedef	void	(Response::*response_methods_[]) ( void );
+
+		/* DIRECTORY LISTING*/
+		void 		listFiles(const std::string& path, std::vector<std::string>& directoryVec);
+		std::string buildHtmlList(const std::string& path);
 
 	public:
 		static	std::map<std::string, std::string> mime_types_;

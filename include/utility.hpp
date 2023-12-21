@@ -21,6 +21,5 @@ void		deleteAllocatedCStringArray( char** array );
 std::string	urlEncode( std::string to_encode );
 bool 		isAllDigit(const std::string& s);
 bool 		canOpen( std::string& path );
-std::vector<std::string>* listFiles(const std::string& path);
 
 #endif
