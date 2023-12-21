@@ -63,7 +63,7 @@ class	Request {
 		std::vector<char>::iterator	getBinaryBodyEnd( void );
 
 		/* SETTERS */
-		void	setCgiFlag( bool flag);
+		void	setCgiFlag( bool flag);//public overload
 
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
