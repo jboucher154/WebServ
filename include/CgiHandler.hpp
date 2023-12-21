@@ -2,6 +2,7 @@
 # define CGIHANDLER_HPP
 
 # include "Client.hpp"
+# include "WebServ.hpp"
 
 # include <unistd.h>
 # include <fcntl.h>
@@ -12,12 +13,6 @@
 
 // forward declaration
 class Client;
-
-// macro for cgi timeout
-# define CGI_TIMEOUT 5
-
-// macro for buffer for cgi output reading
-# define CGI_OUTPUT_BUFFER 102400
 
 enum	e_cgi_results {
 	E_CGI_OK,
