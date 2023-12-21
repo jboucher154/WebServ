@@ -353,7 +353,7 @@ bool	Response::validateResource_( void ) {
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->resource_path_.c_str());
 		return (false);
 	}
-	if (this->request_->getRequestLineValue("method") == "DELETE") {
+	if (!this->request_->getCgiFlag() && this->request_->getRequestLineValue("method") == "DELETE") {
 		return (true);
 	}
 	else if (this->request_->getCgiFlag() && access(this->resource_path_.c_str(), X_OK) != 0) {
