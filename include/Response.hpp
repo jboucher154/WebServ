@@ -82,6 +82,10 @@ class	Response {
 		/*TYPEDEF*/
 		typedef	void	(Response::*response_methods_[]) ( void );
 
+		/* DIRECTORY LISTING*/
+		void 		listFiles(const std::string& path, std::vector<std::string>& directoryVec);
+		std::string buildHtmlList(const std::string& path, const std::vector<std::string>& directoryVec);
+
 	public:
 		static	std::map<std::string, std::string> mime_types_;
 		Response( const Response& to_copy );

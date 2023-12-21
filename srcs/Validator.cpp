@@ -686,7 +686,7 @@ bool Validator::checkCgiBlockKeyValues(){
 			innerBlock["root"] = rootValue;
 	}
 	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::locationRoot, &Validator::cgiExt, &Validator::cgiPath, &Validator::cgiScript};
-	//validate key values till the closing }
+	//validate key values till the closing
 	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
 		int i = 0;
@@ -713,7 +713,6 @@ bool Validator::checkCgiBlockKeyValues(){
 			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_main_keys[i].c_str());
 			return false;
 		}
-
 	}
 	//if inner block allowed method has post or delete and not get reject
 	if (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "GET") == innerBlock["allow_methods"].end()

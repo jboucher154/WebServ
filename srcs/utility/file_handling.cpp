@@ -1,6 +1,6 @@
-# include <sys/stat.h>
-# include "utility.hpp"
-# include <cstdio>
+#include <sys/stat.h>
+#include "utility.hpp"
+#include <cstdio>
 
 bool	isDirectory( std::string& path ) {
 

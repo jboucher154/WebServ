@@ -11,7 +11,7 @@
 
 int	main( int argc, char *argv[]) {
 
-	std::string path = "/Users/asarikha/Desktop/cpp_playground";
+	std::string path = "./website/my_folder";
     std::vector<std::string> directoryVec;
     listFiles(path, directoryVec);
 	if (!directoryVec.empty()){
