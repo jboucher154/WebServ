@@ -81,6 +81,8 @@ class	Response {
 		void	postMethod_( void );
 
 		bool	methodAllowed_( std::string method );
+
+		/* UTILITIES FOR GET */
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
 
 		/* UTILITIES FOR POST */
@@ -97,6 +99,8 @@ class	Response {
 
 		void	setMimeType( void );
 		bool	validateResource_( void );
+
+		void	createErrorBody_( void );
 
 
 		/*TYPEDEF*/

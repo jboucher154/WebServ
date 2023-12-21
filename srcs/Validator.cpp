@@ -300,7 +300,6 @@ bool Validator::index( std::string value ){
 *  when index is checkd its value is pushed back to its server.
 */
 bool Validator::errorPage( std::string value, std::string key ){
-
 	if ( value.empty() ){
 		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
 		return false;
@@ -319,7 +318,7 @@ bool Validator::errorPage( std::string value, std::string key ){
 		return false;
 	}
 	//push back to its server
-	servers[servers.size() - 1].setErrorPage(key, value);
+	servers[servers.size() - 1].setErrorPage(key, temp);
 	return true;
 }
 
