@@ -461,8 +461,8 @@ const std::vector<std::string>*	Server::getLocationValue( std::string locationBl
 */
 std::string	Server::getCgiExecutor( std::string extension ) const{
 	
-	std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin/", "cgi_path"))->begin();
-	for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin/", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin/", "cgi_ext"))->end(); extIt++){
+	std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin", "cgi_path"))->begin();
+	for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin", "cgi_ext"))->end(); extIt++){
 		if (*extIt == extension)
 			break;
 		pathtIt++;
