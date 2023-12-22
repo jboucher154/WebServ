@@ -993,6 +993,10 @@ bool Validator::store_lines(std::string	input){
 	std::string					line;
 	std::istringstream 			ss;
 
+	if ( input.substr(input.length() - 5) != ".conf"){
+		Logger::log(E_ERROR, COLOR_RED, "Config file has to have .conf extension!");
+		return false;
+	}
 	infile.open(input);
 	if(infile.fail() == true || infile.bad() == true){
 		Logger::log(E_ERROR, COLOR_RED, "Failed to open config file!");

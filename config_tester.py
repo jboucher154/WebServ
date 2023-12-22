@@ -36,6 +36,7 @@ def test_config_validator(bad_config_files, executable_path):
                     print(f"Executable exited with status code 1 on {filename}")
                 else:
                     print(f"Error running executable on {filename}. Status code: {e.returncode}")
+    os.chmod(noPermissionFilePath, 777)
 
 # Example usage
 bad_config_files = './config/bad/'
