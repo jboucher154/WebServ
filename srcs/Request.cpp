@@ -69,7 +69,8 @@ void	Request::add( std::string to_add ) {
 				}
 			}
 			else {
-				this->parseBody_(line, ss.eof());
+				// this->parseBody_(line, ss.eof());
+				this->storeBinaryBody_(line, ss.eof());
 			}
 		}
 		this->setRequestAttributes();
@@ -81,7 +82,7 @@ void	Request::add( std::string to_add ) {
 		Logger::log(E_ERROR, COLOR_RED, e.what());
 		this->sever_error_ = true;
 	}
-	std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
+	std::cout << "***** BODY PROMISED: " << this->body_size_ << " BODY RECIEVED: " << this->body_len_received_ << std::endl;
 	printRequest();//debugging
 }
 
@@ -228,7 +229,7 @@ std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
 	return (this->binary_body_.end());
 }
 
-/************** PRIVATE SETTERS **************/
+/************** PUBLIC SETTERS **************/
 
 void	Request::setCgiFlag( bool flag) {
 	
@@ -352,8 +353,15 @@ void	Request::parseBody_( std::string& to_parse, bool eof_marker ) {
 }
 
 //may not be needed
-void	Request::storeBinaryBody_( std::string& to_parse) {
+void	Request::storeBinaryBody_( std::string& to_parse, bool eof_marker) {
 
+	int	removed_chars = eof_marker ? 0:1;
+
+	if (to_parse.back() == '\r') {
+		to_parse.pop_back();
+		this->body_len_received_ += removed_chars;
+	}
+	this->body_len_received_++;
 	for (std::string::const_iterator it = to_parse.begin(); it != to_parse.end(); it++) {
 		this->binary_body_.push_back(*it);
 		this->body_len_received_++;

@@ -31,7 +31,7 @@ class	Request {
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
 		void	parseBody_( std::string& to_parse, bool eof_marker );
-		void 	storeBinaryBody_( std::string& to_parse);
+		void 	storeBinaryBody_( std::string& to_parse, bool eof_marker);
 		void	setBodySize( void );
 		void	setChunked( void );
 		void	setKeepAlive( void );

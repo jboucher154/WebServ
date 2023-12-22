@@ -119,7 +119,7 @@ void	Response::createResponsePhase1( Request* request ) {
 		return ;
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
-		if (this->request_ != NULL && !this->request_->getComplete() && this->request_->getChunked()) {
+		if (this->request_ != NULL && !this->request_->getComplete()) { //&& this->request_->getChunked()
 			this->status_code_ = 100;
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
 		}

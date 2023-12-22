@@ -153,14 +153,14 @@ void	ServerManager::removeClient( int client_fd ) {
 
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
-	char*		client_msg = (char*)calloc(1, 100000);
+	char*		client_msg = (char*)calloc(1, 500000);
 	Client*		client = &this->client_map_[client_fd];
 	Server*		server = client->getServer();
 	Request&	request = client->getRequest();
 
 	client->setLatestTime();
 	// memset(client_msg, 0, 100000);
-	int bytes_received = recv(client_fd, client_msg, 100000 - 1, 0);
+	int bytes_received = recv(client_fd, client_msg, 500000 - 1, 0);
 
 	std::cout << "bytes received: " << bytes_received << std::endl;
 	std::cout << "messge:  " << client_msg << std::endl;
@@ -176,7 +176,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
 	}
-
+	
 	return true;
 }
 
@@ -216,9 +216,10 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
 				server->getServerName().c_str(), client_fd, response.getStatusCode());
 	}
-
-	client->resetResponse();
-	client->resetRequest();
+	if (client->getRequest().getComplete()) {
+		client->resetRequest();
+		client->resetResponse();
+	}
 
 	return keep_alive;
 }
@@ -425,6 +426,8 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			this->POLL_removeClient(client_fd);
 		else {
 			client.getResponse().createResponsePhase1(&client.getRequest());
+			if (client.getResponse().getStatusCode() == 100) //jenny added
+					return ;
 			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "valid cgi request, going to startCgiResponse");	// remove later, trying to debug heap use after free error!
 				if ((client.startCgiResponse()) == true) {
