@@ -925,56 +925,106 @@ void	Response::deleteMethod_( void ) {
 *
 *
 */
-void	Response::parseMultiPartFormData( std::string& boundary ) {
+std::string	Response::parseMultiPartFormData( std::string& boundary ) {
 
 	if (boundary.empty()) {
 		this->query_string_ = "invalid boundary found";
 		this->status_code_ = 400; //invalid request
-		return ;
+		return "";
 	}
 	boundary = boundary.erase(0, 9);
-	boundary = "--" + boundary;
-	std::string	file_datum;
-	bool		file_present = false;
+	boundary = "-" + boundary; //removed one - as it did not match the boundary...
+	// std::string	file_datum;
+	// bool		file_present = false;
 
-	for (std::vector<std::string>::iterator it = this->request_->getBodyBegin(); it != this->request_->getBodyEnd(); it++) {
-		while (it != this->request_->getBodyEnd() && *it != boundary ) {
-			std::stringstream	ss(*it);
-			std::string	segment;
+	// for (std::vector<std::string>::iterator it = this->request_->getBodyBegin(); it != this->request_->getBodyEnd(); it++) {
+	// 	while (it != this->request_->getBodyEnd() && *it != boundary ) {
+	// 		std::stringstream	ss(*it);
+	// 		std::string	segment;
 
-			ss >> segment;
-			if (strncmp(it->c_str(), "Content-Disposition", 19) == 0) {
-				while (!ss.eof()) {
-					ss >> segment;
-					if (segment == "form-data;")
-						query_string_ += "type=form_data ";
-					else {
-						if (strncmp(segment.c_str(), "filename=", 9) == 0)
-							file_present = true;
-						query_string_ += segment + " ";
-					}
-				}
-			}
-			else if (strncmp(it->c_str(), "Content-Type", 12) == 0) {
-				ss >> segment;
-				query_string_ += "content-type=" + segment + " ";
+	// 		ss >> segment;
+	// 		if (strncmp(it->c_str(), "Content-Disposition", 19) == 0) {
+	// 			while (!ss.eof()) {
+	// 				ss >> segment;
+	// 				if (segment == "form-data;")
+	// 					query_string_ += "type=form_data ";
+	// 				else {
+	// 					if (strncmp(segment.c_str(), "filename=", 9) == 0)
+	// 						file_present = true;
+	// 					query_string_ += segment + " ";
+	// 				}
+	// 			}
+	// 		}
+	// 		else if (strncmp(it->c_str(), "Content-Type", 12) == 0) {
+	// 			ss >> segment;
+	// 			query_string_ += "content-type=" + segment + " ";
+	// 		}
+	// 		else {
+	// 			if (file_present)
+	// 				file_datum += *it;
+	// 			else if (!segment.empty())
+	// 				query_string_ += "value=" + *it + " ";
+	// 		}
+	// 		it++;
+	// 	}
+	// 	if (!file_datum.empty()) {
+	// 		this->file_data_.push_back(file_datum);
+	// 		file_datum.clear();
+	// 		file_present = false;
+	// 	}
+	// 	if (it == this->request_->getBodyEnd())
+	// 		break ;
+	// }
+	
+	const std::string&	body = this->request_->getBody();
+	size_t				boundary_position = body.find(boundary);
+	size_t				next_boundary_position = body.find(boundary, boundary_position + 1);
+	std::stringstream	ss(body);
+	std::string			line = "";
+	bool				file_present;
+	std::string			filename;
+
+	while (next_boundary_position != std::string::npos && !ss.eof()) {
+		//process entire section of form for each loop
+		std::cout << "PROCESSING A FORM SECTION..." << std::endl;
+		while (getline(ss, line, '\n') && line != "\r") { //get all info before a line break that indicates value given for form data
+			if (line.back() == '\r')
+				line.pop_back();
+			if (line == boundary) {
+				line = "";
 			}
 			else {
-				if (file_present)
-					file_datum += *it;
-				else if (!segment.empty())
-					query_string_ += "value=" + *it + " ";
+				if (line.find("filename") != std::string::npos) {
+					file_present = true;
+					size_t name_location = line.find("filename=");
+					if (name_location != std::string::npos) {
+						std::stringstream name_stream(line);
+						name_stream.seekg(name_location);
+						getline(name_stream, filename, '\r');
+					}
+				}
+				this->query_string_.append(line);
 			}
-			it++;
 		}
-		if (!file_datum.empty()) {
-			this->file_data_.push_back(file_datum);
-			file_datum.clear();
-			file_present = false;
+		if ((size_t)ss.tellg() < next_boundary_position) {
+			if (file_present) {
+				size_t file_start = ss.tellg();
+				this->file_data_.push_back(body.substr(file_start, next_boundary_position));
+			}
+			else {
+				while ((size_t)ss.tellg() < next_boundary_position){
+					getline(ss, line);
+					this->query_string_.append(line);
+				}
+			}
 		}
-		if (it == this->request_->getBodyEnd())
-			break ;
+		ss.seekg(next_boundary_position + boundary.length()); //move after the boundary
+		//reset boundaries
+		boundary_position = body.find(boundary, next_boundary_position + 1);
+		next_boundary_position = body.find(boundary, boundary_position + 1);
 	}
+	// getline until "filename found" then save file data untill next boundary
+	return filename;
 }
 
 
@@ -1003,21 +1053,28 @@ std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
 	return (values);
 }
 
-// void	Response::saveBodyToFile( std::vector<std::string> content_type_values ) {
+void	Response::saveBodyToFile( std::vector<std::string> content_type_values ) {
 
-// 	std::string	content_type = content_type_values[0];
-// 	std::string	boundary = content_type_values.size() > 1 ? content_type_values[1] : "";
+	std::string	content_type = content_type_values[0];
+	std::string	boundary = content_type_values.size() > 1 ? content_type_values[1] : "";
 
-// 	if (content_type == "multipart/form-data") {
-// 		parseMultiPartFormData(boundary);
-		
-// 	}
-// 	else {
-// 		//how to determine name
-// 	}
+	if (content_type == "multipart/form-data") {
+		std::string filename = parseMultiPartFormData(boundary);
+		std::cout << COLOR_BRIGHT_MAGENTA << "SAVE BODY QUERY STRING : " << this->query_string_ << std::endl;
+		std::cout << "FIFLENAME : " << filename << std::endl;
+		std::cout << "SAVE BODY FILE DATA : " << std::endl;
+		for (std::vector<std::string>::iterator it = this->file_data_.begin(); it != this->file_data_.end(); ++it) {
+			std::cout << *it <<std::endl;
+			std::cout << "------" << std::endl;
+		}
+		std::cout << COLOR_RESET;
+	}
+	else {
+		//how to determine name
+	}
 
 
-// }
+}
 /*
  -process for file
  	- validate that it is multipart/form-data
@@ -1043,22 +1100,29 @@ void	Response::postMethod_( void ) {
 	std::vector<std::string>	content_type_values = this->GetContentTypeValues_();
 	bool						cgi_flag = this->request_->getCgiFlag();
 	
-	if (!cgi_flag || content_type_values.empty()) {
+	// if (!cgi_flag || content_type_values.empty()) {
+	// 	this->status_code_ = 406; //not acceptable???
+	// 	return ;
+	// }
+	if (content_type_values.empty()) {
 		this->status_code_ = 406; //not acceptable???
 		return ;
 	}
+	if (!cgi_flag) {
+		this->saveBodyToFile(content_type_values);
+	}
+	else if (content_type_values.front() == "multipart/form-data") {
 	//prepare CGI data ..
-	if (content_type_values.front() == "multipart/form-data") {
 		//handle form data
 		parseMultiPartFormData(content_type_values[1]);
 		this->query_string_ = urlEncode(this->query_string_);
 	}
 	else if (content_type_values.front() == "application/x-www-form-urlencoded") { //assume no data for now
 		// send url encoded string to cgi
-		if ((*(this->request_->getBodyBegin())).find("filename=") != std::string::npos) {
-			// check it includes data for a file. can set flag for the cgi if needed
-			Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "File included in URL encoded string of POST request");
-		}
+		// if ((*(this->request_->getBodyBegin())).find("filename=") != std::string::npos) {
+		// 	// check it includes data for a file. can set flag for the cgi if needed
+		// 	Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "File included in URL encoded string of POST request");
+		// }
 		query_string_ = *(this->request_->getBodyBegin());
 	}
 	else {

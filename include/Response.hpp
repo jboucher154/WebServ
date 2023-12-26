@@ -88,9 +88,9 @@ class	Response {
 
 		/* UTILITIES FOR POST */
 		std::vector<std::string> 	GetContentTypeValues_( void );
-		void						parseMultiPartFormData( std::string& boundary );
+		std::string					parseMultiPartFormData( std::string& boundary );
 		std::vector<std::string>	getAcceptedFormats( void );
-		// void						saveBodyToFile( std::vector<std::string> content_type_values );
+		void						saveBodyToFile( std::vector<std::string> content_type_values );
 		
 		/* RESOURCE AND LOCATION IDENTIFICATION */
 		int		setResourceLocationAndName( std::string uri );

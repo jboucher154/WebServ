@@ -5,7 +5,7 @@
 
 Request::Request( void ) 
 : body_size_(0), body_len_received_(0), chunked_(false), keep_alive_(false), cgi_flag_(false), headers_complete(false), 
-	complete_(false), sever_error_(false), text_body_(), binary_body_() {
+	complete_(false), sever_error_(false), body_(""), binary_body_() {
 
 	/* default constructor */
 }
@@ -33,7 +33,7 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->keep_alive_ = rhs.keep_alive_;
 		this->request_line_ = rhs.request_line_;
 		this->headers_ = rhs.headers_;
-		this->text_body_ = rhs.text_body_;
+		this->body_ = rhs.body_;
 		this->binary_body_ = rhs.binary_body_;
 		this->complete_ = rhs.complete_;
 		this->cgi_flag_ = rhs.cgi_flag_;
@@ -113,7 +113,7 @@ void	Request::clear( void ) {
 	this->headers_complete = false;
 	this->request_line_.clear();
 	this->headers_.clear();
-	this->text_body_.clear();
+	this->body_.clear();
 	this->binary_body_.clear();
 	this->complete_ = false;
 	this->sever_error_ = false;
@@ -136,10 +136,11 @@ void	Request::printRequest( void ) const {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	std::cout << "\nBody:" << std::endl;
-	if (!this->text_body_.empty()) {
-		for (std::vector<std::string>::const_iterator it = this->text_body_.begin(); it != this->text_body_.end(); it++) {
-			std::cout << *it;;
-		}
+	if (!this->body_.empty()) {
+		// for (std::vector<std::string>::const_iterator it = this->body_.begin(); it != this->body_.end(); it++) {
+		// 	std::cout << *it;
+		// }
+		std::cout << this->body_;
 		std::cout << std::endl;
 	}
 	if (!this->binary_body_.empty()) {
@@ -219,14 +220,14 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 	}
 }
 
-std::vector<std::string>::iterator	Request::getBodyBegin( void ) {
+std::string::iterator	Request::getBodyBegin( void ) {
 
-	return (this->text_body_.begin());
+	return (this->body_.begin());
 }
 
-std::vector<std::string>::iterator	Request::getBodyEnd( void ) {
+std::string::iterator	Request::getBodyEnd( void ) {
 	
-	return (this->text_body_.end());
+	return (this->body_.end());
 }
 
 std::vector<char>::iterator	Request::getBinaryBodyBegin( void ) {
@@ -239,6 +240,10 @@ std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
 	return (this->binary_body_.end());
 }
 
+const std::string&	Request::getBody( void ) const {
+
+	return this->body_;
+}
 /************** PUBLIC SETTERS **************/
 
 void	Request::setCgiFlag( bool flag) {
@@ -358,7 +363,7 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 		this->body_len_received_ = 0;
 	}
 	else {
-		this->text_body_.push_back(to_add.substr(body_start + 1));
+		this->body_.append(to_add.substr(body_start + 1));
 		this->body_len_received_ += total_bytes - body_start; //check where plush one goes
 	}
 }
@@ -371,7 +376,7 @@ void	Request::parseBody_( std::string& to_parse, bool eof_marker ) {
 		to_parse.pop_back();
 		removed_chars++;
 	}
-	this->text_body_.push_back(to_parse);
+	this->body_.append(to_parse);
 	this->body_len_received_ += to_parse.length() + removed_chars;
 }
 

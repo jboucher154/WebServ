@@ -24,7 +24,7 @@ class	Request {
 		bool								sever_error_;
 		std::map<std::string, std::string>	request_line_;
 		std::map<std::string, std::string>	headers_;
-		std::vector<std::string>			text_body_;
+		std::string							body_;
 		std::vector<char>					binary_body_;//maybe take out, not currenlty using
 		//no footers for now
 
@@ -65,16 +65,17 @@ class	Request {
 		std::vector<char>::iterator	getBinaryBodyBegin( void );
 		std::vector<char>::iterator	getBinaryBodyEnd( void );
 
-		/* SETTERS */
-		void	setCgiFlag( bool flag);//public overload
-
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderEnd( void ) const;
 		std::string											getHeaderValueByKey( std::string key ) const;
-		std::vector<std::string>::iterator	getBodyBegin( void );
-		std::vector<std::string>::iterator	getBodyEnd( void );
-		// const std::string&	getBody() const;
+		std::string::iterator	getBodyBegin( void );
+		std::string::iterator	getBodyEnd( void );
+		const std::string&	getBody() const;
+		// std::string&	getBody( void );
+
+		/* SETTERS */
+		void	setCgiFlag( bool flag);//public overload
 };
 
 #endif
