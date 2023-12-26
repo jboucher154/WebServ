@@ -119,7 +119,7 @@ void	Response::createResponsePhase1( Request* request ) {
 		return ;
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
-		if (this->request_ != NULL && !this->request_->getComplete() && this->request_->getChunked()) {
+		if (this->request_ != NULL && !this->request_->getComplete()) { //&& this->request_->getChunked()
 			this->status_code_ = 100;
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
 		}
@@ -1002,6 +1002,35 @@ std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
 	}
 	return (values);
 }
+
+// void	Response::saveBodyToFile( std::vector<std::string> content_type_values ) {
+
+// 	std::string	content_type = content_type_values[0];
+// 	std::string	boundary = content_type_values.size() > 1 ? content_type_values[1] : "";
+
+// 	if (content_type == "multipart/form-data") {
+// 		parseMultiPartFormData(boundary);
+		
+// 	}
+// 	else {
+// 		//how to determine name
+// 	}
+
+
+// }
+/*
+ -process for file
+ 	- validate that it is multipart/form-data
+	- need to get the start of the file data
+	- lead up to that will have the form info with the filename
+	Q's
+	- if not multipart form data then what?
+
+ -process for cgi
+	- validate the form type
+	- prepare the info from multipart/form-data into QUERY_STRING and file data
+	- 
+*/
 
 /*! \brief	Post method currenly only works with cgi
 *

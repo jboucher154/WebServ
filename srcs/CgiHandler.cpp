@@ -148,6 +148,7 @@ int	CgiHandler::initializeCgi( Client& client ) {
 
 int	CgiHandler::cgiFinish( Response& response ) {
 
+	// Logger::log(E_DEBUG, COLOR_GREEN, "INSIDE cgiFinish!!!");
 	int	result;
 
 	if ((result = this->executeCgi_(response.getFileDataBegin(), response.getFileDataEnd())) != E_CGI_OK) {
@@ -390,7 +391,7 @@ int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::
 	for (std::vector<std::string>::iterator it = it_start; it != it_end; ++it) {
 		body_string += *it;
 	}
-
+	// Logger::log(E_DEBUG, COLOR_GREEN, "BEFOR FORKING executeCgi!!!");
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
 		this->forking_successful_ = false;
