@@ -7,9 +7,7 @@ std::string urlDecode(const std::string& input) {
     for (size_t i = 0; i < input.length(); ++i) {
         char ch = input[i];
 
-        if (ch == '+') {
-            decoded << ' ';
-        } else if (ch == '%' && i + 2 < input.length() &&
+        if (ch == '%' && i + 2 < input.length() &&
                    isxdigit(static_cast<unsigned char>(input[i + 1])) &&
                    isxdigit(static_cast<unsigned char>(input[i + 2]))) {
             int value;
