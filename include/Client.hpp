@@ -52,7 +52,7 @@ class	Client {
 		Request&				getRequest( void );
 		Response&				getResponse( void );
 		const std::string&		getResponseString( void );
-		void					addToRequest( std::string message );
+		void					addToRequest( std::string message, size_t bytes_read );
 		void					resetResponse( void );
 		void					resetRequest( void );
 

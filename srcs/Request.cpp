@@ -49,27 +49,39 @@ Request&	Request::operator=( const Request& rhs ) {
 *  More details to be filled as project progresses.
 *  
 */
-void	Request::add( std::string to_add ) {
+void	Request::add( std::string to_add, size_t bytes_read ) {
 	
 	std::stringstream	ss(to_add);
 	std::string			line;
 
 	try {
-		while (getline(ss, line, '\n')) {
+		while (!ss.eof() && headers_complete == false) {
+			if (!getline(ss, line, '\n'))
+				break ;
 			if (this->request_line_.empty()) {
 				this->parseRequestLine_(line);
 			}
 			else if (this->headers_complete == false) {
 				if (line.compare("\r") == 0) {
 					this->headers_complete = true;
-					continue ;
+					break ;// remove
 				}
 				else {
 					this->parseHeader_(line);
 				}
 			}
 			else {
-				this->parseBody_(line, ss.eof());
+				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "Line not recognized as Header or Requestline found in Request.add().");
+				// this->parseBody_(line, ss.eof());
+			}
+		}
+		if (!ss.eof()) {
+			ssize_t	body_start = ss.tellg();
+			if (body_start == -1) {
+				this->sever_error_ = true;
+			}
+			else {
+				this->saveBody_(to_add, body_start, bytes_read);
 			}
 		}
 		this->setRequestAttributes();
@@ -81,7 +93,7 @@ void	Request::add( std::string to_add ) {
 		Logger::log(E_ERROR, COLOR_RED, e.what());
 		this->sever_error_ = true;
 	}
-	std::cout << "WHOLE STREAM IN PARSE REQUEST [add] \n" << ss.str() << std::endl;
+	std::cout << "*** BODY LEN VS RECEIVED [add] : " << this->body_size_ << " vs. " << this->body_len_received_ << std::endl;
 	printRequest();//debugging
 }
 
@@ -165,7 +177,6 @@ bool	Request::getKeepAlive( void ) const {
 	return (this->keep_alive_);
 }
 
-
 bool	Request::getComplete( void ) const {
 
 	return (this->complete_);
@@ -228,7 +239,7 @@ std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
 	return (this->binary_body_.end());
 }
 
-/************** PRIVATE SETTERS **************/
+/************** PUBLIC SETTERS **************/
 
 void	Request::setCgiFlag( bool flag) {
 	
@@ -336,6 +347,19 @@ void	Request::parseHeader_( std::string& to_parse ) {
 	value.pop_back();
 	if (this->headers_[key].empty()) {
 		this->headers_[key] = value;
+	}
+}
+
+void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_bytes) {
+
+	//use text body to start with
+	// std::stringstream	ss(to_add);
+	if (body_start == to_add.length()) {
+		this->body_len_received_ = 0;
+	}
+	else {
+		this->text_body_.push_back(to_add.substr(body_start + 1));
+		this->body_len_received_ += total_bytes - body_start; //check where plush one goes
 	}
 }
 

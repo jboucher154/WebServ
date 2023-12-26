@@ -254,9 +254,9 @@ const std::string&	Client::getResponseString( void ) {
 	// 	return ("");
 }
 
-void	Client::addToRequest( std::string message ) {
+void	Client::addToRequest( std::string message, size_t bytes_read ) {
 	
-	this->request_.add(message);
+	this->request_.add(message, bytes_read);
 }
 
 void	Client::resetResponse( void ) {

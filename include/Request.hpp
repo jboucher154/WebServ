@@ -30,8 +30,11 @@ class	Request {
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
+
+		void 	saveBody_(std::string& to_add, size_t body_start, size_t total_bytes);
 		void	parseBody_( std::string& to_parse, bool eof_marker );
 		void 	storeBinaryBody_( std::string& to_parse);
+
 		void	setBodySize( void );
 		void	setChunked( void );
 		void	setKeepAlive( void );
@@ -47,7 +50,7 @@ class	Request {
 		Request&	operator=( const Request& to_copy );
 
 		/* PUBLIC METHODS */
-		void	add( std::string to_add );
+		void	add( std::string to_add, size_t bytes_read );
 		void	clear( void );
 		void	printRequest( void ) const;
 

@@ -172,7 +172,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		Logger::log(E_INFO, COLOR_MAGENTA, "Client %d has disconnected", client_fd);
 		return false;
 	} else {
-		client->addToRequest(client_msg);
+		client->addToRequest(client_msg, bytes_received);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
 	}
@@ -216,10 +216,11 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
 				server->getServerName().c_str(), client_fd, response.getStatusCode());
 	}
-
-	client->resetResponse();
-	client->resetRequest();
-
+	//only if complete reset FOR NOW
+	if (client->getRequest().getComplete()) {
+		client->resetResponse();
+		client->resetRequest();
+	}
 	return keep_alive;
 }
 
@@ -736,7 +737,7 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 
 		this->client_cgi_map_[client_fd] = pipe_vector;
 	} else
-		Logger::log(E_ERROR, COLOR_RED, "addClientCgiToCgiMap_; client %d is already in the map (THIS SHOULDN'T HAPPEN)", client_fd);
+		Logger::log(E_ERROR, COLOR_RED, "addClientCgiToCgiMap_; client %d is already in the map (THIS SHOULDN'T HAPPEN)", client_fd); // this is triggered
 		// handle error somehow
 }
 
