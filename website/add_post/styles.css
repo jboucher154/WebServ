@@ -47,4 +47,36 @@
 	background-color: #45a049;
   }
   
+  .Pet_Radio {
+	margin-bottom: 20px;
+  }
   
+  .Pet_Radio ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+  }
+  
+  .Pet_Radio li {
+	margin-right: 20px;
+  }
+  
+  .Pet_Radio label {
+	display: inline-block;
+	padding: 5px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	cursor: pointer;
+	transition: background-color 0.3s;
+  }
+  
+  .Pet_Radio input[type="radio"] {
+	display: none; /* Hide the actual radio button */
+  }
+  
+  /* Style for the selected radio button label */
+  .Pet_Radio input[type="radio"]:checked + label {
+	background-color: #4CAF50;
+	color: white;
+  } 
