@@ -12,8 +12,9 @@ commentInput.addEventListener('keydown', function(event) {
 
   // Set up an interval to repeatedly add the pressed character to the comment box
   repeatInterval = setInterval(function() {
+
     // Check if the pressed key is Enter
-    if (event.key !== 'Enter') {
+    if (event.key !== 'Enter' && event.key !== 'Tab') {
       // Add the pressed character to the comment box
       commentInput.value += event.key;
     }
