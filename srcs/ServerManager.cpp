@@ -165,9 +165,10 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	// std::cout << "bytes received: " << bytes_received << std::endl;
 	// std::cout << "messge:  " << client_msg << std::endl;
 
-	if (bytes_received == -1)
-		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
-			client_fd, server->getServerIdforLog().c_str());
+	if (bytes_received == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "recv error from socket %d to server %s, disconnecting client", client_fd, server->getServerIdforLog().c_str());
+		return false;
+	}
 	else if (bytes_received == 0){ // client has disconnected...
 		Logger::log(E_INFO, COLOR_MAGENTA, "Client %d has disconnected", client_fd);
 		return false;
@@ -201,10 +202,10 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		return keep_alive;
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to socket %d",
-			server->getServerIdforLog().c_str(), client_fd);
+		Logger::log(E_ERROR, COLOR_RED, "send error from server %s to socket %d, disconnecting client", server->getServerIdforLog().c_str(), client_fd);
+		return false;
 	}
-	else if (bytes_sent == 0) {
+	else if (bytes_sent == 0) {	// check later is this necessary...
 		Logger::log(E_DEBUG, COLOR_YELLOW, " Server %s sent 0 bytes to socket %d",
 			server->getServerIdforLog().c_str(), client_fd);
 	}
