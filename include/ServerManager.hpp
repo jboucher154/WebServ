@@ -65,6 +65,7 @@ class	ServerManager {
 		int		SELECT_getBiggestFd( int max_fd_size );
 		bool	SELECT_runServers( void );
 		void	SELECT_runServersLoopStart( timeval& select_timeout, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy );
+		void	SELECT_handleEvent( int fd, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy );
 		void	SELECT_acceptNewClientConnection( int server_fd );
 		void	SELECT_removeFdFromSets( int fd );
 		void	SELECT_removeClient( int client_fd );
@@ -79,6 +80,7 @@ class	ServerManager {
 
 		bool	POLL_initializeServers( void );
 		bool	POLL_runServers( void );
+		void	POLL_handleEvent( std::vector<pollfd>::iterator& it );
 		void	POLL_acceptNewClientConnection( int server_fd );
 		void	POLL_removeFdFromPollfds( int fd );
 		void	POLL_removeClient( int client_fd );
