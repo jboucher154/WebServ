@@ -9,6 +9,9 @@ en.subject.pdf
 *.obj
 *.elf
 
+# Object directory
+obj/*
+
 # Linker output
 *.ilk
 *.map
