@@ -50,7 +50,7 @@ class	Request {
 		Request&	operator=( const Request& to_copy );
 
 		/* PUBLIC METHODS */
-		void	add( std::string to_add, size_t bytes_read );
+		void	add( char* to_add, size_t bytes_read );
 		void	clear( void );
 		void	printRequest( void ) const;
 
@@ -71,7 +71,7 @@ class	Request {
 		std::string											getHeaderValueByKey( std::string key ) const;
 		std::string::iterator	getBodyBegin( void );
 		std::string::iterator	getBodyEnd( void );
-		const std::string&	getBody() const;
+		const std::string&		getBody() const;
 		// std::string&	getBody( void );
 
 		/* SETTERS */

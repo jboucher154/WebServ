@@ -9,6 +9,7 @@
 # include <map>
 # include <unistd.h>
 # include <cstdio>
+# include <fstream>
 
 # include <vector>
 
@@ -62,7 +63,7 @@ class	Response {
 		bool				alias_;
 		bool				directory_listing_;
 		std::string			query_string_;
-		std::vector<std::string> file_data_;
+		std::vector<char>	file_data_;
 		//maybe add map of headers, create them as I go?
 		
 		void	intializeMimeTypes( void );
@@ -131,8 +132,8 @@ class	Response {
 		int									getStatusCode( void ) const;
 		const std::string&					getResourcePath( void ) const;
 		const std::string&					getQueryString( void ) const;
-		std::vector<std::string>::iterator	getFileDataBegin( void );
-		std::vector<std::string>::iterator	getFileDataEnd( void );
+		std::vector<char>::iterator	getFileDataBegin( void );
+		std::vector<char>::iterator	getFileDataEnd( void );
 
 		/* SETTERS */
 		void				setStatusCode( unsigned int	new_code );

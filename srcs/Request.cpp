@@ -49,10 +49,12 @@ Request&	Request::operator=( const Request& rhs ) {
 *  More details to be filled as project progresses.
 *  
 */
-void	Request::add( std::string to_add, size_t bytes_read ) {
+void	Request::add( char* to_add, size_t bytes_read ) {
 	
+	std::cout << "*** raw body from recv [add] : " << to_add << std::endl;
 	std::stringstream	ss(to_add);
 	std::string			line;
+	std::string			string_add(to_add);
 
 	try {
 		while (!ss.eof() && headers_complete == false) {
@@ -81,7 +83,7 @@ void	Request::add( std::string to_add, size_t bytes_read ) {
 				this->sever_error_ = true;
 			}
 			else {
-				this->saveBody_(to_add, body_start, bytes_read);
+				this->saveBody_(string_add, body_start, bytes_read);
 			}
 		}
 		this->setRequestAttributes();
@@ -359,13 +361,21 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 
 	//use text body to start with
 	// std::stringstream	ss(to_add);
+	// this->body_= "";
 	if (body_start == to_add.length()) {
 		this->body_len_received_ = 0;
 	}
 	else {
-		this->body_.append(to_add.substr(body_start + 1));
-		this->body_len_received_ += total_bytes - body_start; //check where plush one goes
+		size_t	body_length = total_bytes - body_start;
+		this->body_.append(to_add.substr(body_start, body_length));
+		this->body_len_received_ += body_length;
 	}
+	std::cout << "BODY PRINT IN SAVEBODY_ : \n" << this->body_;
+	std::string::const_iterator body_it = this->body_.begin();
+	for (; body_it != this->body_.end(); body_it++) {
+		std::cout << *body_it;
+	}
+	std::cout << "BODY PRINT FINISHED\n";
 }
 
 void	Request::parseBody_( std::string& to_parse, bool eof_marker ) {

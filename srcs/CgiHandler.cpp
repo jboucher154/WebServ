@@ -383,14 +383,17 @@ int	CgiHandler::setUpCgiPipes_( void ) {
 *
 *	Talk with Jenny about how to get the bodyinfo into a string or an array of characters!
 */
-int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::vector<std::string>::iterator it_end ) {
+int		CgiHandler::executeCgi_( std::vector<char>::iterator it_start, std::vector<char>::iterator it_end ) {
 
+	(void) it_start;
+	(void) it_end;
 	std::string	body_string = "";	// get body into std::string (or c-style char array; TALK WITH JENNY)
 									//may need to track body size separately
 
-	for (std::vector<std::string>::iterator it = it_start; it != it_end; ++it) {
-		body_string += *it;
-	}
+	// for (std::vector<std::string>::iterator it = it_start; it != it_end; ++it) {
+	// 	body_string += *it;
+	// }
+
 	// Logger::log(E_DEBUG, COLOR_GREEN, "BEFOR FORKING executeCgi!!!");
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
