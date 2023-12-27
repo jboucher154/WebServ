@@ -245,6 +245,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	}
 }
 
+
 #if	POLL_TRUE_SELECT_FALSE
 /********************************************** POLL functions **********************************************************/
 
@@ -305,21 +306,9 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			int	i = 0;
 
 			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end() && i < this->pollfds_size_; ++it, ++i) {
-				if (it->revents & POLLIN) {
-					if (this->server_map_.count(it->fd)) {
-						this->POLL_acceptNewClientConnection(it->fd);
-					} else if (this->client_map_.count(it->fd)) {
-						this->POLL_receiveFromClient(it->fd);
-					}
-				}
-				if (it->revents & POLLOUT) {
-					if (this->client_map_.count(it->fd)) {
-						this->POLL_sendResponseToClient(it->fd);
-					} else {	//cgi pipe activity
-						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
-						this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
-					}
-				}
+				
+				if (it->revents & (POLLIN | POLLOUT))
+					this->POLL_handleEvent(it);
 
 				if (this->client_map_.count(it->fd))	//	if client, check if timeout
 					this->checkIfClientTimeout(it->fd);
@@ -332,6 +321,24 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
 		this->closeAllSockets();
 		return true;
+	}
+
+	void	ServerManager::POLL_handleEvent( std::vector<pollfd>::iterator& it ) {
+
+		if (it->revents & POLLIN) {
+			if (this->server_map_.count(it->fd)) {
+				this->POLL_acceptNewClientConnection(it->fd);
+			} else if (this->client_map_.count(it->fd)) {
+				this->POLL_receiveFromClient(it->fd);
+			}
+		} else if (it->revents & POLLOUT) {
+			if (this->client_map_.count(it->fd)) {
+				this->POLL_sendResponseToClient(it->fd);
+			} else {	//cgi pipe activity
+				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
+				this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
+			}
+		}
 	}
 
 	void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
@@ -538,20 +545,11 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			}
 		
 			for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
-				if (FD_ISSET(fd, &read_fd_set_copy)) {
-					if (this->server_map_.count(fd)) {
-						this->SELECT_acceptNewClientConnection(fd);	// new client connection
-					} else if (this->client_map_.count(fd))
-						this->SELECT_receiveFromClient(fd);	// client request or disconnection
+				
+				if (FD_ISSET(fd, &read_fd_set_copy) || FD_ISSET(fd, &write_fd_set_copy)) {
+					this->SELECT_handleEvent(fd, read_fd_set_copy, write_fd_set_copy);
 				}
-				if (FD_ISSET(fd, &write_fd_set_copy)) {
-					if (this->client_map_.count(fd)) {	// send a response to client
-						this->SELECT_sendResponseToClient(fd);
-					} else {	//cgi pipe activity
-						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
-						this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
-					}
-				}
+
 				if (this->client_map_.count(fd)) {	//	if client, check if timeout
 					this->checkIfClientTimeout(fd);
 				}
@@ -580,6 +578,24 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		write_fd_set_copy = this->write_fd_set_;
 
 		this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+	}
+
+	void	ServerManager::SELECT_handleEvent( int fd, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy ) {
+
+		if (FD_ISSET(fd, &read_fd_set_copy)) {
+			if (this->server_map_.count(fd)) {
+				this->SELECT_acceptNewClientConnection(fd);	// new client connection
+			} else if (this->client_map_.count(fd)) {
+				this->SELECT_receiveFromClient(fd);	// client request or disconnection
+			}
+		} else if (FD_ISSET(fd, &write_fd_set_copy)) {
+			if (this->client_map_.count(fd)) {	// send a response to client
+				this->SELECT_sendResponseToClient(fd);
+			} else {	//cgi pipe activity
+				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
+				this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
+			}
+		}
 	}
 
 
