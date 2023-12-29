@@ -419,7 +419,7 @@ int		CgiHandler::executeCgi_( std::vector<std::string>::iterator it_start, std::
 			deleteAllocatedCStringArray(this->metavariables_);
 			std::exit(EXIT_FAILURE);
 		}
-
+		std::cerr << "before execv" << std::endl;
 		execve(this->args_[0], this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
@@ -470,7 +470,7 @@ int		CgiHandler::storeCgiOutput_( void ) {
 	}
 
 	close(this->pipe_from_cgi_[E_PIPE_END_READ]);
-
+	std::cerr << " THE STRING: "<< cgi_output_as_string_ << std::endl;
 	if (ret < 0) {
 		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1 (cannot use errno after read to find reason for failure)");
 		return E_CGI_SERVERERROR;
