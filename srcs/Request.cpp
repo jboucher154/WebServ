@@ -4,8 +4,22 @@
 /* CONSTRUCTORS */
 
 Request::Request( void ) 
-: body_size_(0), body_len_received_(0), chunked_(false), keep_alive_(false), cgi_flag_(false), headers_complete(false), 
-	complete_(false), sever_error_(false), body_(""), binary_body_() {
+: body_size_(0), 
+body_len_received_(0), 
+chunked_(false), 
+keep_alive_(false), 
+cgi_flag_(false), 
+headers_complete(false), 
+complete_(false), 
+sever_error_(false), 
+raw_body_(""), 
+processed_body_(""),
+file_content_(""),
+file_name_(""),
+body_vector_(),
+file_upload_(false),
+file_mime_(""),
+status_code_(0) {
 
 	/* default constructor */
 }
@@ -33,10 +47,16 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->keep_alive_ = rhs.keep_alive_;
 		this->request_line_ = rhs.request_line_;
 		this->headers_ = rhs.headers_;
-		this->body_ = rhs.body_;
-		this->binary_body_ = rhs.binary_body_;
+		this->raw_body_ = rhs.raw_body_;
+		this->processed_body_ = rhs.processed_body_;
+		this->body_vector_ = rhs.body_vector_;
 		this->complete_ = rhs.complete_;
 		this->cgi_flag_ = rhs.cgi_flag_;
+		this->file_upload_ = rhs.file_upload_;
+		this->file_mime_ = rhs.file_mime_;
+		this->status_code_ = rhs.status_code_;
+		this->file_content_ = rhs.file_content_;
+		this->file_name_ = rhs.file_name_;
 	}
 	return (*this);
 }
@@ -51,7 +71,7 @@ Request&	Request::operator=( const Request& rhs ) {
 */
 void	Request::add( char* to_add, size_t bytes_read ) {
 	
-	std::cout << "*** raw body from recv [add] : " << to_add << std::endl;
+	// std::cout << "*** raw body from recv [add] : " << to_add << std::endl;
 	std::stringstream	ss(to_add);
 	std::string			line;
 	std::string			string_add(to_add);
@@ -63,36 +83,32 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 			if (this->request_line_.empty()) {
 				this->parseRequestLine_(line);
 			}
-			else if (this->headers_complete == false) {
-				if (line.compare("\r") == 0) {
+			else if (line.compare("\r") == 0) {
 					this->headers_complete = true;
-					break ;// remove
-				}
-				else {
-					this->parseHeader_(line);
-				}
 			}
 			else {
-				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "Line not recognized as Header or Requestline found in Request.add().");
-				// this->parseBody_(line, ss.eof());
-			}
-		}
-		if (!ss.eof()) {
-			ssize_t	body_start = ss.tellg();
-			if (body_start == -1) {
-				this->sever_error_ = true;
-			}
-			else {
-				this->saveBody_(string_add, body_start, bytes_read);
+				this->parseHeader_(line);
 			}
 		}
 		this->setRequestAttributes();
+		//process body
+		if (!ss.eof()) {
+			std::streampos	body_start = ss.tellg();
+			if (static_cast<int>(body_start) == -1) {
+				this->sever_error_ = true;
+			}
+			else {
+				saveBody_(string_add, static_cast<size_t>(body_start), bytes_read);
+				if (this->status_code_ < 400 && !this->raw_body_.empty())
+					parseBody_();
+			}
+		}
 		if (this->headers_complete && this->body_size_ == this->body_len_received_) {
 			this->complete_ = true;
 		}
 	}
 	catch (const std::exception& e) {
-		Logger::log(E_ERROR, COLOR_RED, e.what());
+		Logger::log(E_ERROR, COLOR_RED, "Request::add caught exception: %s", e.what());
 		this->sever_error_ = true;
 	}
 	std::cout << "*** BODY LEN VS RECEIVED [add] : " << this->body_size_ << " vs. " << this->body_len_received_ << std::endl;
@@ -115,10 +131,16 @@ void	Request::clear( void ) {
 	this->headers_complete = false;
 	this->request_line_.clear();
 	this->headers_.clear();
-	this->body_.clear();
-	this->binary_body_.clear();
+	this->raw_body_ = "";
+	this->processed_body_ = "";
+	this->body_vector_.clear();
 	this->complete_ = false;
 	this->sever_error_ = false;
+	this->file_upload_ = false;
+	this->file_mime_.clear();
+	this->status_code_ = 0;
+	this->file_content_.clear();
+	this->file_name_.clear();
 }
 
 /*! \brief prints to standard output `REQUEST` followed by
@@ -137,20 +159,27 @@ void	Request::printRequest( void ) const {
 	for (std::map<std::string, std::string>::const_iterator it = this->headers_.begin(); it != this->headers_.end(); it++) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
-	std::cout << "\nBody:" << std::endl;
-	if (!this->body_.empty()) {
-		// for (std::vector<std::string>::const_iterator it = this->body_.begin(); it != this->body_.end(); it++) {
-		// 	std::cout << *it;
-		// }
-		std::cout << this->body_;
+	std::cout << "\nBody raw:" << std::endl;
+	if (!this->raw_body_.empty()) {
+		std::cout << this->raw_body_;
 		std::cout << std::endl;
 	}
-	if (!this->binary_body_.empty()) {
-		for (std::vector<char>::const_iterator it = this->binary_body_.begin(); it != this->binary_body_.end(); it++) {
-			std::cout << *it;;
-		}
+	std::cout << "\nBody Processed:" << std::endl;
+	if (!this->processed_body_.empty()) {
+		std::cout << this->processed_body_;
 		std::cout << std::endl;
 	}
+	std::cout << "\nFile Content:" << std::endl;
+	if (!this->file_content_.empty()) {
+		std::cout << this->file_content_;
+		std::cout << std::endl;
+	}
+	// if (!this->body_vector_.empty()) {
+	// 	for (std::vector<u_int8_t>::const_iterator it = this->body_vector_.begin(); it != this->body_vector_.end(); it++) {
+	// 		std::cout << *it;;
+	// 	}
+	// 	std::cout << std::endl;
+	// }
 }
 
 /************** PUBLIC GETTERS **************/
@@ -224,27 +253,27 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 
 std::string::iterator	Request::getBodyBegin( void ) {
 
-	return (this->body_.begin());
+	return (this->raw_body_.begin());
 }
 
 std::string::iterator	Request::getBodyEnd( void ) {
 	
-	return (this->body_.end());
+	return (this->raw_body_.end());
 }
 
-std::vector<char>::iterator	Request::getBinaryBodyBegin( void ) {
+std::vector<u_int8_t>::iterator	Request::getBodyVectorBegin( void ) {
 
-	return (this->binary_body_.begin());
+	return (this->body_vector_.begin());
 }
 
-std::vector<char>::iterator	Request::getBinaryBodyEnd( void ) {
+std::vector<u_int8_t>::iterator	Request::getBodyVectorEnd( void ) {
 	
-	return (this->binary_body_.end());
+	return (this->body_vector_.end());
 }
 
 const std::string&	Request::getBody( void ) const {
 
-	return this->body_;
+	return this->raw_body_;
 }
 /************** PUBLIC SETTERS **************/
 
@@ -359,42 +388,140 @@ void	Request::parseHeader_( std::string& to_parse ) {
 
 void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_bytes) {
 
-	//use text body to start with
-	// std::stringstream	ss(to_add);
-	// this->body_= "";
-	if (body_start == to_add.length()) {
+	
+	if ( body_start == to_add.size()) {
 		this->body_len_received_ = 0;
+		return ;
 	}
 	else {
 		size_t	body_length = total_bytes - body_start;
-		this->body_.append(to_add.substr(body_start, body_length));
+		size_t	body_index = body_start;
+
+		this->body_vector_.clear();
+		for (; body_index < to_add.size(); ++body_index) {
+			this->body_vector_.push_back(to_add[body_index]);
+		}
+		if (body_length != body_index - body_start) {
+			this->status_code_ = 400;
+			return ;
+		}
+		this->raw_body_.append(this->body_vector_.begin(), this->body_vector_.end());
 		this->body_len_received_ += body_length;
 	}
-	std::cout << "BODY PRINT IN SAVEBODY_ : \n" << this->body_;
-	std::string::const_iterator body_it = this->body_.begin();
-	for (; body_it != this->body_.end(); body_it++) {
-		std::cout << *body_it;
-	}
-	std::cout << "BODY PRINT FINISHED\n";
+	// std::cout << "BODY PRINT IN SAVEBODY_ : \n" << this->raw_body_;
+	// std::string::const_iterator body_it = this->raw_body_.begin();
+	// for (; body_it != this->raw_body_.end(); body_it++) {
+	// 	std::cout << *body_it;
+	// }
+	// std::cout << "BODY PRINT FINISHED\n";
 }
 
-void	Request::parseBody_( std::string& to_parse, bool eof_marker ) {
+static std::string	parseBoundry(std::string& content_type_header ) {
 
-	int	removed_chars = eof_marker ? 0:1;
-
-	if (to_parse.back() == '\r') {
-		to_parse.pop_back();
-		removed_chars++;
-	}
-	this->body_.append(to_parse);
-	this->body_len_received_ += to_parse.length() + removed_chars;
+	int			boundry_start = content_type_header.find(";") + 1;
+	std::string	boundary = content_type_header.substr(boundry_start);
+	std::string	boundary_id = " boundary=";
+	if (boundary.size() < boundary_id.size())
+		return "";
+	boundary.erase(0, boundary_id.length());
+	Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "boundry from header : %s, parsed: %s", content_type_header.c_str(), boundary.c_str());
+	return boundary;
 }
 
-//may not be needed
-void	Request::storeBinaryBody_( std::string& to_parse) {
+void	Request::parseBody_( void ) {
+	//check if body present with GET request
+	//check body type (only plain for now)
+	std::string content_type_header = getHeaderValueByKey("Content-Type");
+	bool		is_multipart_form = content_type_header.find("multipart/form-data") != std::string::npos ? true : false;
 
-	for (std::string::const_iterator it = to_parse.begin(); it != to_parse.end(); it++) {
-		this->binary_body_.push_back(*it);
-		this->body_len_received_++;
+	if (this->chunked_) {
+		parseChunkedBody_();
+		return ;
 	}
+	if (is_multipart_form) {
+		std::string	boundry = parseBoundry(content_type_header);
+		if (boundry.empty()) {
+			this->status_code_ = 400; //no boundry provided, invalid request
+			return ;
+		}
+		parseMultipartForm_(boundry);
+	}
+	else {
+		this->processed_body_.append(this->raw_body_, this->raw_body_.size());
+	}
+}
+
+void	Request::parseChunkedBody_( void ) {
+
+	//to be written
+}
+
+void	Request::storeFileContents_( const std::string& section_bound, const std::string& last_bound, size_t& body_index ) {
+
+
+	std::string 	parse_buffer = "";
+
+	while (body_index < this->raw_body_.size()) {
+		while (parse_buffer.back() != '\n') {
+			parse_buffer += this->raw_body_[body_index];
+			body_index++;
+		}
+		if (parse_buffer == section_bound || parse_buffer == last_bound) {
+			break ;
+		}
+		else {
+			this->file_content_.append(parse_buffer);
+			parse_buffer.clear();
+		}
+	}
+}
+
+void	Request::setFilename( const std::string& to_parse ) {
+
+	int fname_start = to_parse.find("filename=") + 9;
+
+	this->file_name_ = to_parse.substr(fname_start);
+	this->file_upload_ = true;
+}
+
+void	Request::parseMultipartForm_( std::string boundary ) {
+
+	std::string 	section_bound = "--" + boundary;
+	std::string		last_bound = section_bound + "--\r\n"; section_bound.append("\r\n");
+	std::string 	parse_buffer = "";
+	size_t			body_index = 0;
+	bool			file_present = false;
+
+
+// this->raw_body_.find(section_bound, body_index!= std::string::npos)
+	while (body_index < this->raw_body_.size()) {
+		parse_buffer += this->raw_body_[body_index];
+		//line processed
+		std::cout << "Parse buffer before append to process body: " << parse_buffer << std::endl;
+		if (parse_buffer.back() == '\n' && parse_buffer.size() > 1 && parse_buffer[parse_buffer.size() - 2] == '\r') {
+			if (parse_buffer == CRLF) {
+				if (file_present) {
+					storeFileContents_(section_bound, last_bound, body_index);//next parse field contents ;
+					file_present = false;
+				}
+				else {
+					this->processed_body_.append("value=");
+				}
+			}
+			else if (parse_buffer == last_bound)
+				break ;
+			else if (parse_buffer != section_bound) {
+				if (parse_buffer.find("filename=") != std::string::npos) {
+					setFilename(parse_buffer);
+					file_present = true;
+				}
+				this->processed_body_.append(parse_buffer);
+			}
+			parse_buffer.clear();
+		}
+		++body_index;
+	}
+		// if (!this->file_upload_ && parse_buffer.find("filename="))
+		// 	this->file_upload_ == true;
+		// if (this->file_upload_ && parse_buffer.find()){}
 }

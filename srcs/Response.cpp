@@ -2,8 +2,6 @@
 #include "Response.hpp"
 #include <sstream>
 
-std::map<std::string, std::string>	Response::mime_types_;
-
 /* CONSTRUCTORS */
 
 /*! \brief Default constructor is private.
@@ -36,10 +34,7 @@ request_(NULL),
 redirect_(false),
 alias_(false),
 directory_listing_(false) {
-	
-	if (Response::mime_types_.empty()) {
-		intializeMimeTypes();
-	}
+
 }
 
 /*! \brief Copy constructor calls assignment operator.
@@ -76,9 +71,6 @@ Response::~Response( void ) {
 */
 Response&	Response::operator=( const Response& rhs ) {
 
-	if (Response::mime_types_.empty()) {
-		intializeMimeTypes();
-	}
 	if (this != &rhs) {
 
 		this->response_ = rhs.response_;
@@ -287,62 +279,6 @@ std::vector<char>::iterator	Response::getFileDataEnd( void ) {
 
 /* CLASS PRIVATE METHODS */
 
-/*! \brief	used to intialize Mime type values
-*
-*
-*	Sets values in the mime_types_ map to use for recognizing and setting mime types.
-*	All values are used based on the IANA standards linked below.
-*
-* 	REFERENCE: https://www.iana.org/assignments/media-types/media-types.xhtml
-*
-*/
-void	Response::intializeMimeTypes( void ) {
-
-	//text
-	Response::mime_types_["html"] = "text/html";
-	Response::mime_types_["css"] = "text/css";
-	Response::mime_types_["txt"] = "text/plain";
-	Response::mime_types_["js"] = "text/javascript";
-	Response::mime_types_["md"] = "text/markdown";
-	Response::mime_types_["csv"] = "text/csv";
-	Response::mime_types_["rtf"] = "text/rtf";
-	Response::mime_types_["xml"] = "text/xml";
-
-	//application
-	Response::mime_types_["unknown"] = "application/octet-stream";//unkown binary file
-	Response::mime_types_["pdf"] = "application/pdf";
-	Response::mime_types_["msword"] = "application/msword";//?
-	Response::mime_types_["zip"] = "application/zip";
-
-	//audio
-	// Response::mime_types_["mp4"] = {"mp4", "audio/mp4";
-
-	//font
-	Response::mime_types_["ttf"] = "font/ttf";
-
-	//image
-	Response::mime_types_["bmp"] = "image/bmp";
-	Response::mime_types_["gif"] = "image/gif";
-	Response::mime_types_["jpg"] = "image/jpeg";
-	Response::mime_types_["jpeg"] = "image/jpeg";
-	Response::mime_types_["png"] = "image/png";
-	Response::mime_types_["tiff"] = "image/tiff";
-	Response::mime_types_["ico"] = "image/x-icon";
-
-	//message
-
-
-	//model
-	//multipart
-
-	//video
-	// Response::mime_types_["jpeg"] = {"jpeg", "video/jpeg", true};
-	Response::mime_types_["mp4"] = "video/mp4";
-	Response::mime_types_["raw"] = "video/raw";
-	Response::mime_types_["MPV"] = "video/MPV";
-
-}
-
 /*! \brief checks for existance and file access rights for requested resource
 *
 *	
@@ -529,7 +465,7 @@ void	Response::createErrorBody_( void ) {
 	if (!complete) {
 		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
 	}
-	this->response_mime_ = Response::mime_types_["html"];
+	this->response_mime_ = MimeTypes::getMimeTypeByExtension("html");
 }
 
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
@@ -769,15 +705,15 @@ void	Response::setMimeType( void ) {
 	size_t	extension_start = this->resource_path_.find_last_of('.');
 
 	if (this->request_->getCgiFlag() || this->directory_listing_) {
-		this->response_mime_ = Response::mime_types_["html"];
+		this->response_mime_ = MimeTypes::getMimeTypeByExtension("html");
 		return ;
 	}
 	if (extension_start == std::string::npos) {
-		this->response_mime_ = Response::mime_types_["unknown"];
+		this->response_mime_ = MimeTypes::getMimeTypeByExtension("unknown");
 	}
 	else {
 		std::string extension = this->resource_path_.substr(extension_start + 1);
-		this->response_mime_ = Response::mime_types_[extension];
+		this->response_mime_ = MimeTypes::getMimeTypeByExtension(extension);
 	}
 	if (this->response_mime_.empty()) {
 		this->status_code_ = 415;
@@ -991,123 +927,123 @@ void	Response::deleteMethod_( void ) {
 *	consider if multiple files in one form? - return vector of filenames process eachone...
 *
 */
-std::string	Response::parseMultiPartFormData( std::string& boundary ) {
+// std::string	Response::parseMultiPartFormData( std::string& boundary ) {
 
-	if (boundary.empty()) {
-		this->query_string_ = "invalid boundary found";
-		this->status_code_ = 400; //invalid request
-		return "";
-	}
-	boundary = boundary.erase(0, 9);
-	boundary = "--" + boundary;	
-	const std::string&	body = this->request_->getBody();
-	size_t				body_size = this->request_->getBodySize();//new
-	std::cout << "BODY LEN : " << body_size << " BODY STRING LEN : " << body.length() << std::endl;
-	for (size_t i = 0; i < body_size; i++) {
-		std::cout << body[i];
-	}
-	std::cout << "BODY ENDED" << std::endl;
-	size_t				boundary_position = body.find(boundary);
-	size_t				next_boundary_position = body.find(boundary, boundary_position + 1);//
-	std::stringstream	ss;
-	ss << body.c_str();
-	std::string			line = "";
-	bool				file_present;
-	std::string			filename;
+// 	// if (boundary.empty()) {
+// 	// 	this->query_string_ = "invalid boundary found";
+// 	// 	this->status_code_ = 400; //invalid request
+// 	// 	return "";
+// 	// }
+// 	// boundary = boundary.erase(0, 9);
+// 	// boundary = "--" + boundary;	
+// 	// const std::string&	body = this->request_->getBody();
+// 	// size_t				body_size = this->request_->getBodySize();//new
+// 	// std::cout << "BODY LEN : " << body_size << " BODY STRING LEN : " << body.length() << std::endl;
+// 	// for (size_t i = 0; i < body_size; i++) {
+// 	// 	std::cout << body[i];
+// 	// }
+// 	// std::cout << "BODY ENDED" << std::endl;
+// 	size_t				boundary_position = body.find(boundary);
+// 	size_t				next_boundary_position = body.find(boundary, boundary_position + 1);//
+// 	std::stringstream	ss;
+// 	ss << body.c_str();
+// 	std::string			line = "";
+// 	bool				file_present;
+// 	std::string			filename;
 
-	size_t count = 0;
-	while (boundary_position != std::string::npos && !ss.eof()) {
-		//process entire section of form for each loop
-		while (getline(ss, line, '\n') && line != "\r") {
-			if (line.back() == '\r')
-				line.pop_back();
-			if (line == boundary) {
-				line = "";
-			}
-			else {
-				if (line.find("filename=") != std::string::npos) {
-					file_present = true;
-					size_t name_location = line.find("filename=");
-					if (name_location != std::string::npos) {
-						std::stringstream name_stream(line);
-						name_stream.seekg(name_location + 9);
-						getline(name_stream, filename, '\r');
-						filename.erase(0,1);
-						filename.pop_back();
-					}
-				}
-				line.append("\n");//check chrome URL encoded strings
-				this->query_string_.append(line);
-			}
-		}
-		// if ((size_t)ss.tellg() < next_boundary_position) { //
-			if (file_present) {
-				size_t	extension_start = filename.find_last_of('.'); //extension check is working
-				std::string	extension = filename.substr(extension_start + 1);
-				std::string upload_mime = this->mime_types_[extension];
+// 	size_t count = 0;
+// 	while (boundary_position != std::string::npos && !ss.eof()) {
+// 		//process entire section of form for each loop
+// 		while (getline(ss, line, '\n') && line != "\r") {
+// 			if (line.back() == '\r')
+// 				line.pop_back();
+// 			if (line == boundary) {
+// 				line = "";
+// 			}
+// 			else {
+// 				if (line.find("filename=") != std::string::npos) {
+// 					file_present = true;
+// 					size_t name_location = line.find("filename=");
+// 					if (name_location != std::string::npos) {
+// 						std::stringstream name_stream(line);
+// 						name_stream.seekg(name_location + 9);
+// 						getline(name_stream, filename, '\r');
+// 						filename.erase(0,1);
+// 						filename.pop_back();
+// 					}
+// 				}
+// 				line.append("\n");//check chrome URL encoded strings
+// 				this->query_string_.append(line);
+// 			}
+// 		}
+// 		// if ((size_t)ss.tellg() < next_boundary_position) { //
+// 			if (file_present) {
+// 				size_t	extension_start = filename.find_last_of('.'); //extension check is working
+// 				std::string	extension = filename.substr(extension_start + 1);
+// 				std::string upload_mime = this->mime_types_[extension];
 
-				//text file, was working
-				if (strncmp(upload_mime.c_str(), "text", 4) == 0) {
-					size_t file_start = ss.tellg();
-					size_t file_end = body.find(boundary, file_start);
-					size_t file_length = file_end - file_start - 2;
-					std::string file_content = body.substr(file_start, file_length);
-					for (std::string::const_iterator it = file_content.begin(); it != file_content.end(); ++it) {
-						this->file_data_.push_back(*it);
-					}
-					ss.seekg(file_end);
-				}
-				else {//bin file...new shit here
-					bool found_boundary = false;
-					size_t start_position = ss.tellg();
-					size_t current_position = start_position;
-					char to_add;
-					body_size -= ss.tellg();
-					std::cout << "STREAM LOCATION : " << ss.tellg() << " body size : " << body_size <<std::endl;
-					while (ss.get(to_add)) { // && found_boundary == false
-						current_position = ss.tellg();
-						if (to_add == boundary[0]) {
-							found_boundary = true;
-							next_boundary_position = current_position;
-							char	bound_check;
-							for (size_t i = 1; i < boundary.length(); ++i) {
-								// ss >> bound_check;
-								ss.get(bound_check);
-								if (bound_check != boundary[i]) {
-									found_boundary = false;
-									this->file_data_.push_back(to_add);
-									count++;
-									ss.seekg(current_position);
-								}
-							}
-						}
-						else {
-							this->file_data_.push_back(to_add);
-							count++;
-						}
-						//body_size--;
-					}
-				}
-				file_present = false;
-			}
-			else {
-				while ((size_t)ss.tellg() < next_boundary_position) {
-					getline(ss, line);
-					if (line.back() == '\r')
-						line.pop_back();
-					line = "value=" + line;
-					this->query_string_.append(line);
-				}
-			}
-		// }
-		if (!ss.eof())
-			ss.seekg(next_boundary_position + boundary.length());
-		boundary_position = body.find(boundary, next_boundary_position + 1);
-		next_boundary_position = body.find(boundary, boundary_position + 1);
-	}
-	std::cout << "COUNT FROM FILE SAVING : " << count << std::endl;
-	return filename;
-}
+// 				//text file, was working
+// 				if (strncmp(upload_mime.c_str(), "text", 4) == 0) {
+// 					size_t file_start = ss.tellg();
+// 					size_t file_end = body.find(boundary, file_start);
+// 					size_t file_length = file_end - file_start - 2;
+// 					std::string file_content = body.substr(file_start, file_length);
+// 					for (std::string::const_iterator it = file_content.begin(); it != file_content.end(); ++it) {
+// 						this->file_data_.push_back(*it);
+// 					}
+// 					ss.seekg(file_end);
+// 				}
+// 				else {//bin file...new shit here
+// 					bool found_boundary = false;
+// 					size_t start_position = ss.tellg();
+// 					size_t current_position = start_position;
+// 					char to_add;
+// 					body_size -= ss.tellg();
+// 					std::cout << "STREAM LOCATION : " << ss.tellg() << " body size : " << body_size <<std::endl;
+// 					while (ss.get(to_add)) { // && found_boundary == false
+// 						current_position = ss.tellg();
+// 						if (to_add == boundary[0]) {
+// 							found_boundary = true;
+// 							next_boundary_position = current_position;
+// 							char	bound_check;
+// 							for (size_t i = 1; i < boundary.length(); ++i) {
+// 								// ss >> bound_check;
+// 								ss.get(bound_check);
+// 								if (bound_check != boundary[i]) {
+// 									found_boundary = false;
+// 									this->file_data_.push_back(to_add);
+// 									count++;
+// 									ss.seekg(current_position);
+// 								}
+// 							}
+// 						}
+// 						else {
+// 							this->file_data_.push_back(to_add);
+// 							count++;
+// 						}
+// 						//body_size--;
+// 					}
+// 				}
+// 				file_present = false;
+// 			}
+// 			else {
+// 				while ((size_t)ss.tellg() < next_boundary_position) {
+// 					getline(ss, line);
+// 					if (line.back() == '\r')
+// 						line.pop_back();
+// 					line = "value=" + line;
+// 					this->query_string_.append(line);
+// 				}
+// 			}
+// 		// }
+// 		if (!ss.eof())
+// 			ss.seekg(next_boundary_position + boundary.length());
+// 		boundary_position = body.find(boundary, next_boundary_position + 1);
+// 		next_boundary_position = body.find(boundary, boundary_position + 1);
+// 	}
+// 	std::cout << "COUNT FROM FILE SAVING : " << count << std::endl;
+// 	return filename;
+// }
 
 /*! \brief returns vector of values from the Content-Type request Header
 *
@@ -1134,44 +1070,44 @@ std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
 	return (values);
 }
 
-void	Response::saveBodyToFile( std::vector<std::string> content_type_values ) {
+// void	Response::saveBodyToFile( std::vector<std::string> content_type_values ) {
 
-	std::string	content_type = content_type_values[0];
-	std::string	boundary = content_type_values.size() > 1 ? content_type_values[1] : "";
+// 	std::string	content_type = content_type_values[0];
+// 	std::string	boundary = content_type_values.size() > 1 ? content_type_values[1] : "";
 
-	if (content_type == "multipart/form-data") {
-		std::string filename = parseMultiPartFormData(boundary);
-		// filename.erase(0, 1);//remove leading and trailing quotes
-		// filename.pop_back();
+// 	if (content_type == "multipart/form-data") {
+// 		std::string filename = parseMultiPartFormData(boundary);
+// 		// filename.erase(0, 1);//remove leading and trailing quotes
+// 		// filename.pop_back();
 
-		std::cout << COLOR_BRIGHT_MAGENTA << "SAVE BODY QUERY STRING : " << this->query_string_ << std::endl;
-		std::cout << "FILENAME : " << filename << std::endl;
-		std::cout << "SAVE BODY FILE DATA : " << std::endl;
-		for (std::vector<char>::iterator it = this->file_data_.begin(); it != this->file_data_.end(); ++it) {
-			std::cout << *it;
-		}
-		std::cout << "------FILE SECTION END" << std::endl;
-		std::cout << COLOR_RESET;
+// 		std::cout << COLOR_BRIGHT_MAGENTA << "SAVE BODY QUERY STRING : " << this->query_string_ << std::endl;
+// 		std::cout << "FILENAME : " << filename << std::endl;
+// 		std::cout << "SAVE BODY FILE DATA : " << std::endl;
+// 		for (std::vector<char>::iterator it = this->file_data_.begin(); it != this->file_data_.end(); ++it) {
+// 			std::cout << *it;
+// 		}
+// 		std::cout << "------FILE SECTION END" << std::endl;
+// 		std::cout << COLOR_RESET;
 
-		// use resource location root to create file there
-		filename = this->server_->getLocationValue(this->resource_location_, "root")->front() + "/" + filename;
-		std::ofstream	new_file(filename);//open as binary mode
-		if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
-			this->status_code_ = 500;
-			return ;
-		}
-		this->file_data_.pop_back();
-		this->file_data_.pop_back();
-		for (std::vector<char>::const_iterator it = this->file_data_.begin(); it < this->file_data_.end(); ++it) {
-			new_file << *it;
-		}
-		new_file.close();
-		this->status_code_ = 201;//created
-	}
-	else {
-		//how to determine name?
-	}
-}
+// 		// use resource location root to create file there
+// 		filename = this->server_->getLocationValue(this->resource_location_, "root")->front() + "/" + filename;
+// 		std::ofstream	new_file(filename);//open as binary mode
+// 		if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
+// 			this->status_code_ = 500;
+// 			return ;
+// 		}
+// 		this->file_data_.pop_back();
+// 		this->file_data_.pop_back();
+// 		for (std::vector<char>::const_iterator it = this->file_data_.begin(); it < this->file_data_.end(); ++it) {
+// 			new_file << *it;
+// 		}
+// 		new_file.close();
+// 		this->status_code_ = 201;//created
+// 	}
+// 	else {
+// 		//how to determine name?
+// 	}
+// }
 /*
  -process for file
  	- validate that it is multipart/form-data
@@ -1206,13 +1142,15 @@ void	Response::postMethod_( void ) {
 		return ;
 	}
 	if (!cgi_flag) {
-		this->saveBodyToFile(content_type_values);
+		// this->saveBodyToFile(content_type_values);
+		std::cout << "POST:  NO CGI FLAG" << std::endl;
 	}
 	else if (content_type_values.front() == "multipart/form-data") {
 	//prepare CGI data ..
 		//handle form data
-		parseMultiPartFormData(content_type_values[1]);
-		this->query_string_ = urlEncode(this->query_string_);
+		// parseMultiPartFormData(content_type_values[1]);
+		std::cout << "POST:  CGI FLAG, multiform data" << std::endl;
+		// this->query_string_ = urlEncode(this->query_string_);
 	}
 	else if (content_type_values.front() == "application/x-www-form-urlencoded") { //assume no data for now
 		// send url encoded string to cgi
@@ -1220,7 +1158,8 @@ void	Response::postMethod_( void ) {
 		// 	// check it includes data for a file. can set flag for the cgi if needed
 		// 	Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "File included in URL encoded string of POST request");
 		// }
-		query_string_ = *(this->request_->getBodyBegin());
+		// query_string_ = *(this->request_->getBodyBegin());
+		std::cout << "POST:  CGI FLAG, urlencoded form" << std::endl;
 	}
 	else {
 		//unsupported

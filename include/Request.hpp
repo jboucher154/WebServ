@@ -7,6 +7,7 @@
 # include <vector>
 # include "utility.hpp"
 # include "Logger.hpp"
+# include "MimeTypes.hpp"
 
 # define CRLF "\r\n" //make this project wide?
 
@@ -24,16 +25,25 @@ class	Request {
 		bool								sever_error_;
 		std::map<std::string, std::string>	request_line_;
 		std::map<std::string, std::string>	headers_;
-		std::string							body_;
-		std::vector<char>					binary_body_;//maybe take out, not currenlty using
+		std::string							raw_body_;
+		std::string							processed_body_;
+		std::string							file_content_; //could make vector for multiple....
+		std::string							file_name_;
+		std::vector<u_int8_t>				body_vector_;
+		bool								file_upload_;//to tell if there is file data to save
+		std::string							file_mime_;
+		unsigned int						status_code_;
 		//no footers for now
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
 
 		void 	saveBody_(std::string& to_add, size_t body_start, size_t total_bytes);
-		void	parseBody_( std::string& to_parse, bool eof_marker );
-		void 	storeBinaryBody_( std::string& to_parse);
+		void	parseBody_( void );
+		void	parseChunkedBody_( void );
+		void 	storeFileContents_( const std::string& section_bound, const std::string& last_bound, size_t& body_index );
+		void	parseMultipartForm_( std::string boundary );
+		void	setFilename( const std::string& to_parse );
 
 		void	setBodySize( void );
 		void	setChunked( void );
@@ -62,8 +72,8 @@ class	Request {
 		bool		getComplete( void ) const;
 		bool		getServerError( void ) const;
 		bool		getCgiFlag( void ) const;
-		std::vector<char>::iterator	getBinaryBodyBegin( void );
-		std::vector<char>::iterator	getBinaryBodyEnd( void );
+		std::vector<u_int8_t>::iterator	getBodyVectorBegin( void );
+		std::vector<u_int8_t>::iterator	getBodyVectorEnd( void );
 
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
@@ -79,20 +89,3 @@ class	Request {
 };
 
 #endif
-
-/* Request */
-// Get /mysite/index.html HTTP/1.1\r\n
-// Host: 10.101.101.10\r\n
-// Accept: */*\r\n
-// \r\n
-
-/* Response */
-// HTTP/1.1 200 OK\r\n
-// Content-Length: 55\r\n
-// Content-Type: text/html\r\n
-// Last-Modified: Wed, 12 Aug 1998 15:03:50 GMT\r\n
-// Accept-Ranges: bytes\r\n
-// ETag: “04f97692cbd1:377”\r\n
-// Date: Thu, 19 Jun 2008 19:29:07 GMT\r\n
-// \r\n
-// <55-character response>

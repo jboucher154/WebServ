@@ -17,6 +17,7 @@
 # include "Server.hpp"
 # include "Request.hpp"
 # include "Logger.hpp"
+# include "MimeTypes.hpp"
 
 # ifndef CRLF
 #  define CRLF "\r\n"
@@ -65,8 +66,6 @@ class	Response {
 		std::string			query_string_;
 		std::vector<char>	file_data_;
 		//maybe add map of headers, create them as I go?
-		
-		void	intializeMimeTypes( void );
 
 		/* HEADER GENERATORS */
 		std::string&	addHeaders_( std::string& response) const;
@@ -114,7 +113,6 @@ class	Response {
 		std::string buildHtmlList(const std::string& path);
 
 	public:
-		static	std::map<std::string, std::string> mime_types_;
 		Response( const Response& to_copy );
 		Response( Server* server );
 		~Response( void );
