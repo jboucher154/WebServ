@@ -45,7 +45,7 @@
 # define POLL_TIMEOUT_MILLISEC 2 * 1000
 
 // time the servers will run for without any client action (in seconds)
-# define SERVER_SHUTDOWN_TIME_SEC 1 * 60
+# define SERVER_SHUTDOWN_TIME_SEC 1000 * 60
 
 // time a client connection is kept open from last client action (in seconds)
 # define CLIENT_TIMEOUT_SEC 1 * 10

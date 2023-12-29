@@ -24,7 +24,7 @@ int	main( int argc, char *argv[]) {
 	}
 	else if (argc == 1){
 		if (!Validator::validate("config/good/default.conf")){
-	    	Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
+	    	Logger::log(E_INFO, COLOR_RED, "Default config is not valid!");
 	    	Logger::closeLogFiles();
 	    	return 1;
 		}

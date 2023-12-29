@@ -120,7 +120,7 @@ bool Validator::validIpHostBuilder(){
 		}
 		// Convert the IP address to a readable format
 		inet_ntop(rp->ai_family, addr, ipstr, sizeof(ipstr));
-		validIpHostMap.insert(std::make_pair(hostname, std::string(ipstr)));
+		validIpHostMap.insert(std::make_pair(std::string(ipstr), hostname));
 	}
     // Free allocated memory
     freeaddrinfo(result);

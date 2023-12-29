@@ -31,7 +31,6 @@ def main():
                 </div>
             </div>
     """
-    # sys.stdout.write(to_be_added_content)
     try:
         with open(file_path, 'r') as file:
             file_content = file.read()
