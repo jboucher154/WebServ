@@ -41,7 +41,8 @@ SRCS = \
 	copyCStringArray.cpp	\
 	deleteAllocatedCStringArray.cpp	\
 	ft_strdup.cpp				\
-	Response_directory_listing.cpp
+	Response_directory_listing.cpp \
+	url_decoder.cpp
 
 
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)%.o)

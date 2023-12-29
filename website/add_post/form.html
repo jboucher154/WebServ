@@ -13,6 +13,8 @@
 					<li><a href="../index.html">Home</a></li>
 					<li><a href="../cat/cats.html">Cat</a></li>
 					<li><a href="../dog/index.html">Dog</a></li>
+					<li><a href="./form.html">Add your post</a></li>
+					<li><a href="../../cgi-bin/about_us.py">About us</a></li>
 				</ul>
 			</nav>
 		</header>
@@ -22,6 +24,15 @@
 			</div>
 			<div>
 				<input type="text" required="required" name="name" id="name">
+			</div>
+			<div>
+				<label for="pet_type">Pet type</label>
+			</div>
+			<div class="Pet_Radio" id="pet_type">
+				<ul>
+				  <li><div><label><input type="radio" name="petType" value="cat">cat</label></div></li>
+				  <li><div><label><input type="radio" name="petType" value="dog">dog</label></div></li>
+				</ul>
 			</div>
 			<div>
 				<label for="age">Pet's age</label>
@@ -42,6 +53,9 @@
 				<input type="text" required="required" name="about" id="about">
 			</div>
 			<div>
+				<input type="reset" value="Reset">
+			</div>
+			<div>
 				<input type="submit" value="sumbit">
 			</div>
 		</form>
@@ -55,4 +69,23 @@
 			</div>
 		</form>
 	</body>
+	<script>
+		const radioButtons = document.querySelectorAll('.Pet_Radio input[type="radio"]');
+		const labels = document.querySelectorAll('.Pet_Radio label');
+
+		// Add click event listener to each radio button
+		radioButtons.forEach((radioButton, index) => {
+		radioButton.addEventListener('click', () => {
+			// Reset color for all labels
+			labels.forEach(label => {
+			label.style.backgroundColor = '';
+			label.style.color = '';
+			});
+
+			// Set color for the selected label
+			labels[index].style.backgroundColor = '#3CB371';
+			labels[index].style.color = 'white';
+		});
+		});
+	</script>
 </html>

@@ -468,14 +468,6 @@ std::string	Server::getCgiExecutor( std::string extension ) const{
 		pathtIt++;
 	}
 	return (*pathtIt);
-	
-	// std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin", "cgi_path"))->begin();
-	// for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin", "cgi_ext"))->end(); extIt++){
-	// 	if (*extIt == extension)
-	// 		break;
-	// 	pathtIt++;
-	// }
-	// return (*pathtIt);
 }
 
 /*! \brief checks if a certain key exists in a certain location
