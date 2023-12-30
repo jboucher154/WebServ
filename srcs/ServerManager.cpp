@@ -153,17 +153,17 @@ void	ServerManager::removeClient( int client_fd ) {
 
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
-	char		client_msg[4000];
+	char		client_msg[500000];
 	Client*		client = &this->client_map_[client_fd];
 	Server*		server = client->getServer();
 	Request&	request = client->getRequest();
 
 	client->setLatestTime();
-	memset(client_msg, 0, 4000);
-	int bytes_received = recv(client_fd, &client_msg, 3999, 0);
+	memset(client_msg, 0, 500000);
+	int bytes_received = recv(client_fd, &client_msg, 500000 - 1, 0);
 
-	// std::cout << "bytes received: " << bytes_received << std::endl;
-	// std::cout << "messge:  " << client_msg << std::endl;
+	std::cout << "bytes received: " << bytes_received << std::endl;
+	std::cout << "messge:  \n" << client_msg << std::endl;
 
 	if (bytes_received == -1)
 		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
@@ -172,7 +172,9 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		Logger::log(E_INFO, COLOR_MAGENTA, "Client %d has disconnected", client_fd);
 		return false;
 	} else {
-		client->addToRequest(client_msg, bytes_received);
+		client_msg[bytes_received] = '\0';
+		char* msg_ptr = client_msg;
+		client->addToRequest(msg_ptr, bytes_received);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
 	}

@@ -66,6 +66,7 @@ void	MimeTypes::intializeMimeTypes( void ) {
 	MimeTypes::mime_types_["csv"] = "text/csv";
 	MimeTypes::mime_types_["rtf"] = "text/rtf";
 	MimeTypes::mime_types_["xml"] = "text/xml";
+	// text/x-python-script
 
 	//application
 	MimeTypes::mime_types_["unknown"] = "application/octet-stream";//unkown binary file

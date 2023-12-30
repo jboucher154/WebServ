@@ -74,7 +74,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 	// std::cout << "*** raw body from recv [add] : " << to_add << std::endl;
 	std::stringstream	ss(to_add);
 	std::string			line;
-	std::string			string_add(to_add);
+	std::string			string_add(to_add, bytes_read);
 
 	try {
 		while (!ss.eof() && headers_complete == false) {
@@ -98,13 +98,20 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 				this->sever_error_ = true;
 			}
 			else {
-				saveBody_(string_add, static_cast<size_t>(body_start), bytes_read);
-				if (this->status_code_ < 400 && !this->raw_body_.empty())
+				if (static_cast<int>(body_start) != static_cast<int>(bytes_read))
+					saveBody_(string_add, static_cast<int>(body_start), bytes_read);
+				if (this->status_code_ < 400 && !this->raw_body_.empty() && this->body_size_ == this->body_len_received_)
 					parseBody_();
 			}
 		}
 		if (this->headers_complete && this->body_size_ == this->body_len_received_) {
 			this->complete_ = true;
+			//TESTING !!!!!!!
+			if (!this->file_content_.empty()) {
+				std::ofstream	newfile(this->file_name_, std::ofstream::binary);
+				newfile << this->file_content_;
+				newfile.close();
+			}
 		}
 	}
 	catch (const std::exception& e) {
@@ -137,10 +144,10 @@ void	Request::clear( void ) {
 	this->complete_ = false;
 	this->sever_error_ = false;
 	this->file_upload_ = false;
-	this->file_mime_.clear();
+	this->file_mime_ = "";
 	this->status_code_ = 0;
-	this->file_content_.clear();
-	this->file_name_.clear();
+	this->file_content_ = "";
+	this->file_name_ = "";
 }
 
 /*! \brief prints to standard output `REQUEST` followed by
@@ -152,13 +159,13 @@ void	Request::clear( void ) {
 void	Request::printRequest( void ) const {
 
 	std::cout << "REQUEST: " << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = this->request_line_.begin(); it != this->request_line_.end(); it++) {
-		std::cout << it->first << ": " << it->second << std::endl;
-	}
-	std::cout << "\nHeaders:" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = this->headers_.begin(); it != this->headers_.end(); it++) {
-		std::cout << it->first << ": " << it->second << std::endl;
-	}
+	// for (std::map<std::string, std::string>::const_iterator it = this->request_line_.begin(); it != this->request_line_.end(); it++) {
+	// 	std::cout << it->first << ": " << it->second << std::endl;
+	// }
+	// std::cout << "\nHeaders:" << std::endl;
+	// for (std::map<std::string, std::string>::const_iterator it = this->headers_.begin(); it != this->headers_.end(); it++) {
+	// 	std::cout << it->first << ": " << it->second << std::endl;
+	// }
 	std::cout << "\nBody raw:" << std::endl;
 	if (!this->raw_body_.empty()) {
 		std::cout << this->raw_body_;
@@ -467,6 +474,7 @@ void	Request::storeFileContents_( const std::string& section_bound, const std::s
 			body_index++;
 		}
 		if (parse_buffer == section_bound || parse_buffer == last_bound) {
+			this->file_content_.erase(this->file_content_.end() - 2, this->file_content_.end());//remove the last CRLF
 			break ;
 		}
 		else {
@@ -480,7 +488,11 @@ void	Request::setFilename( const std::string& to_parse ) {
 
 	int fname_start = to_parse.find("filename=") + 9;
 
-	this->file_name_ = to_parse.substr(fname_start);
+	std::string fname = to_parse.substr(fname_start);
+	fname.erase(0,1);
+	fname.erase(fname.length() - 3, 3);
+	this->file_name_ = fname;
+
 	this->file_upload_ = true;
 }
 
@@ -492,12 +504,11 @@ void	Request::parseMultipartForm_( std::string boundary ) {
 	size_t			body_index = 0;
 	bool			file_present = false;
 
-
 // this->raw_body_.find(section_bound, body_index!= std::string::npos)
 	while (body_index < this->raw_body_.size()) {
-		parse_buffer += this->raw_body_[body_index];
+		parse_buffer += this->raw_body_[body_index++];
 		//line processed
-		std::cout << "Parse buffer before append to process body: " << parse_buffer << std::endl;
+		// std::cout << "Parse buffer before append to process body: " << parse_buffer << std::endl;
 		if (parse_buffer.back() == '\n' && parse_buffer.size() > 1 && parse_buffer[parse_buffer.size() - 2] == '\r') {
 			if (parse_buffer == CRLF) {
 				if (file_present) {
@@ -519,7 +530,7 @@ void	Request::parseMultipartForm_( std::string boundary ) {
 			}
 			parse_buffer.clear();
 		}
-		++body_index;
+		// ++body_index;
 	}
 		// if (!this->file_upload_ && parse_buffer.find("filename="))
 		// 	this->file_upload_ == true;
