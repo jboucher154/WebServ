@@ -72,16 +72,22 @@ class	Request {
 		bool		getComplete( void ) const;
 		bool		getServerError( void ) const;
 		bool		getCgiFlag( void ) const;
-		std::vector<u_int8_t>::iterator	getBodyVectorBegin( void );
-		std::vector<u_int8_t>::iterator	getBodyVectorEnd( void );
+		// std::vector<u_int8_t>::iterator	getBodyVectorBegin( void );
+		// std::vector<u_int8_t>::iterator	getBodyVectorEnd( void );
 
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderEnd( void ) const;
 		std::string											getHeaderValueByKey( std::string key ) const;
-		std::string::iterator	getBodyBegin( void );
-		std::string::iterator	getBodyEnd( void );
-		const std::string&		getBody() const;
+		// std::string::iterator	getBodyBegin( void );
+		// std::string::iterator	getBodyEnd( void );
+		const std::string&		getProcessedBody( void ) const;
+		const std::string&		getUploadContent( void ) const;
+		const std::string&		getUploadName( void ) const;
+		bool					isFileUpload( void ) const;
+		unsigned int			getStatusCode( void ) const;
+		const std::string&		getUploadMime( void ) const;
+
 		// std::string&	getBody( void );
 
 		/* SETTERS */

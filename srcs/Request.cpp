@@ -106,12 +106,12 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 		}
 		if (this->headers_complete && this->body_size_ == this->body_len_received_) {
 			this->complete_ = true;
-			//TESTING !!!!!!!
-			if (!this->file_content_.empty()) {
-				std::ofstream	newfile(this->file_name_, std::ofstream::binary);
-				newfile << this->file_content_;
-				newfile.close();
-			}
+			// //TESTING !!!!!!!
+			// if (!this->file_content_.empty()) {
+			// 	std::ofstream	newfile(this->file_name_, std::ofstream::binary);
+			// 	newfile << this->file_content_;
+			// 	newfile.close();
+			// }
 		}
 	}
 	catch (const std::exception& e) {
@@ -258,30 +258,56 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 	}
 }
 
-std::string::iterator	Request::getBodyBegin( void ) {
+// std::string::iterator	Request::getBodyBegin( void ) {
 
-	return (this->raw_body_.begin());
-}
+// 	return (this->raw_body_.begin());
+// }
 
-std::string::iterator	Request::getBodyEnd( void ) {
+// std::string::iterator	Request::getBodyEnd( void ) {
 	
-	return (this->raw_body_.end());
-}
+// 	return (this->raw_body_.end());
+// }
 
-std::vector<u_int8_t>::iterator	Request::getBodyVectorBegin( void ) {
+// std::vector<u_int8_t>::iterator	Request::getBodyVectorBegin( void ) {
 
-	return (this->body_vector_.begin());
-}
+// 	return (this->body_vector_.begin());
+// }
 
-std::vector<u_int8_t>::iterator	Request::getBodyVectorEnd( void ) {
+// std::vector<u_int8_t>::iterator	Request::getBodyVectorEnd( void ) {
 	
-	return (this->body_vector_.end());
+// 	return (this->body_vector_.end());
+// }
+
+const std::string&		Request::getProcessedBody( void ) const {
+
+	return this->processed_body_;
 }
 
-const std::string&	Request::getBody( void ) const {
+const std::string&		Request::getUploadContent( void ) const {
 
-	return this->raw_body_;
+	return this->file_content_;
 }
+
+const std::string&		Request::getUploadName( void ) const {
+
+	return this->file_name_;
+}
+
+bool				Request::isFileUpload( void ) const {
+
+	return this->file_upload_;
+}
+
+unsigned int		Request::getStatusCode( void ) const {
+
+	return this->status_code_;
+}
+
+const std::string&		Request::getUploadMime( void ) const {
+
+	return this->file_mime_;
+}
+
 /************** PUBLIC SETTERS **************/
 
 void	Request::setCgiFlag( bool flag) {
@@ -525,6 +551,10 @@ void	Request::parseMultipartForm_( std::string boundary ) {
 				if (parse_buffer.find("filename=") != std::string::npos) {
 					setFilename(parse_buffer);
 					file_present = true;
+				}
+				if (file_present && strncmp(parse_buffer.c_str(), "Content-Type:", 13) == 0) {
+					this->file_mime_ = parse_buffer.substr(14, parse_buffer.size() - 2);
+					// std::cout << "FILE MIME SAVED AS: " << this->file_mime_ << std::endl;
 				}
 				this->processed_body_.append(parse_buffer);
 			}

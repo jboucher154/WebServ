@@ -85,12 +85,10 @@ class	Response {
 
 		/* UTILITIES FOR GET */
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
+		std::vector<std::string>	getAcceptedFormats( void );
 
 		/* UTILITIES FOR POST */
-		std::vector<std::string> 	GetContentTypeValues_( void );
-		std::string					parseMultiPartFormData( std::string& boundary );
-		std::vector<std::string>	getAcceptedFormats( void );
-		void						saveBodyToFile( std::vector<std::string> content_type_values );
+		void	saveBodyToFile( void );
 		
 		/* RESOURCE AND LOCATION IDENTIFICATION */
 		int		setResourceLocationAndName( std::string uri );
