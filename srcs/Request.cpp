@@ -129,13 +129,16 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 					parseBody_();
 			}
 		}
+		if (this->headers_complete && this->body_size_ == this->body_len_received_) {
+			this->complete_ = true;
+		}
 	}
 	catch (const std::exception& e) {
 		Logger::log(E_ERROR, COLOR_RED, "Request::add caught exception: %s", e.what());
 		this->sever_error_ = true;
 	}
 	std::cout << "*** BODY LEN VS RECEIVED [add] : " << this->body_size_ << " vs. " << this->body_len_received_ << std::endl;
-	printRequest();//debugging
+	// printRequest();//debugging
 }
 
 /*! \brief clears all containers and resets all values to intial state
@@ -520,11 +523,13 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		throw(std::runtime_error("Stringstream failed in parseRequestLine_"));
 	}
 	ss >> part;
-	if (part != "GET" || part != "HEAD" || part != "POST" || part != "DELETE") {
+	if (part == "GET" || part == "HEAD" || part == "POST" || part == "DELETE") {
+		this->request_line_["method"] = part;
+	}
+	else {
 		this->status_code_ = 501; //not implemented
 		return ;
 	}
-	this->request_line_["method"] = part;
 	ss >> part;
 	this->request_line_["uri"] = part;
 	ss >> part;
