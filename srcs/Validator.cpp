@@ -466,6 +466,7 @@ bool Validator::locationRoot( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "location root has to be an existing directory!");
 		return false;
 	}
+	//std::cout << value << std::endl;
 	return true;
 }
 
@@ -734,6 +735,43 @@ bool Validator::checkCgiBlockKeyValues(){
 
 /*! \brief validates cgi location block key and values
 *  
+*  If this block doesn't have a return or/and alias key
+*  the default value for its root and index have to be added, and verified.
+*  OtherWise location key will be added to root.
+*  Default root is the location specific key, and default index is index.html.
+*/
+void Validator::setUpLocationRootAndIndex(std::string	locationKey){
+
+	if (innerBlock.find("return") == innerBlock.end() && innerBlock.find("alias") == innerBlock.end()){
+		//add default root value if no root value is specified
+		if (innerBlock.find("root") == innerBlock.end()){
+			//add the location root to main root for compelete path
+			std::string	temp = mainRootPath;
+			temp.append(locationKey);
+			rootPath = temp;
+			std::vector<std::string> rootValue;
+			rootValue.push_back(rootPath);
+			innerBlock["root"] = rootValue;
+		}
+		else{
+			std::string	temp = innerBlock["root"][0];
+			temp.append(locationKey);
+			rootPath = temp;
+			std::vector<std::string> rootValue;
+			rootValue.push_back(rootPath);
+			innerBlock["root"] = rootValue;
+		}
+		//add index default value if no index is specified
+		if (innerBlock.find("index") == innerBlock.end()){
+			std::vector<std::string> indexValue;
+			indexValue.push_back("index.html");
+			innerBlock["index"] = indexValue;
+		}
+	}
+}
+
+/*! \brief validates cgi location block key and values
+*  
 *  cgi block will be validated by its own validator.
 *  location specific key can not contain spaces or #
 *  -that is coment indicator.it has to begin with an opening curly
@@ -741,9 +779,7 @@ bool Validator::checkCgiBlockKeyValues(){
 *  true it means that the closing curly braces is found and the
 *  format of key and value being seperated by a space is maintained.
 *  from there we check that storeInnerBlock actually created a non_empty
-*  block. If this block doesn't have a return or and alias key
-*  the default value for its root and index have to be added, and verified
-*  default root is the location specific key, and default index is index.html.
+*  block. 
 *  Now we call the coresponding function to validate each key's value.
 *  One last check is to see if that this is the only location block with this
 *  location specift key in this server. If all checks
@@ -770,24 +806,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		Logger::log(E_ERROR, COLOR_RED, "%s location block can not be empty!", locationKey.c_str());
 		return false;
 	}
-	if (innerBlock.find("return") == innerBlock.end() && innerBlock.find("alias") == innerBlock.end()){
-		//add default root value if no root value is specified
-		if (innerBlock.find("root") == innerBlock.end()){
-			//add the location root to main root for compelete path
-			std::string	temp = mainRootPath;
-			temp.append(locationKey);
-			rootPath = temp;
-			std::vector<std::string> rootValue;
-			rootValue.push_back(rootPath);
-			innerBlock["root"] = rootValue;
-		}
-		//add index default value if no index is specified
-		if (innerBlock.find("index") == innerBlock.end()){
-			std::vector<std::string> indexValue;
-			indexValue.push_back("index.html");
-			innerBlock["index"] = indexValue;
-		}
-	}
+	setUpLocationRootAndIndex(locationKey);
 	t_location_block_functs  locationFunct[] = {&Validator::autoIndex, &Validator::returnKey,
 				&Validator::alias, &Validator::locationIndex, &Validator::clientMaxBodySize, &Validator::allowedMethods,
 				&Validator::locationRoot};
@@ -800,7 +819,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for %s location.", (*outerIt).first.c_str(), locationKey.c_str());
 			return false;
 		}
-		if ( outerIt->first == "root" && outerIt->second.size() > 1 ){
+		if ( outerIt->first != "allow_methods" && outerIt->second.size() > 1 ){
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
 		}
@@ -817,7 +836,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		|| std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "DELETE") != innerBlock["allow_methods"].end())){
 			Logger::log(E_ERROR, COLOR_RED, "post or delete can not be allowed without get being allowed on %s!", locationKey.c_str());
 			return false;
-	}
+	}	
 	//check for no deplication
 	//add to server vector
 	if ( servers[servers.size() - 1].isLocationInServer(locationKey)){
@@ -1081,7 +1100,10 @@ bool Validator::validate(std::string	input){
 		Logger::log(E_ERROR, COLOR_RED, "Server failed to read host name and/or ip addresses from the system!");
 		return false;
 	}
-	if ( !store_lines(input) || lines.empty()){
+	if ( !store_lines(input)){
+		return false;
+	}
+	if (lines.empty()){
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 		return false;
 	}
