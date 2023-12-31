@@ -439,7 +439,7 @@ void	Request::setBodySize( void ) {
 		}
 		catch (std::exception& e){
 			Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on conversion.");
-			//413 content too large
+			this->status_code_ = 413;//413 content too large
 		}
 	}
 }

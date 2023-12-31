@@ -106,14 +106,22 @@ void	Response::createResponsePhase1( Request* request ) {
 	response_methods_	methods = { &Response::getMethod_, &Response::headMethod_, &Response::postMethod_, &Response::deleteMethod_ };
 
 	this->request_ = request;
+	this->status_code_ = request->getStatusCode();//make sure server errors are added here too
+	if (this->status_code_ >= 400)
+		return ;
 	if (this->server_ == NULL) {
 		Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Response server is NULL");
+		this->status_code_ = 500;
 		return ;
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
-		if (this->request_ != NULL && !this->request_->getComplete()) { //&& this->request_->getChunked()
+		if (this->request_ != NULL && this->request_->getChunked()) {
 			this->status_code_ = 100;
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
+		}
+		else if (!this->request_->getComplete()) {
+			this->status_code_ = 202;
+			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is not complete. 202 Accepted set!");
 		}
 		else {
 			this->status_code_ = 400; //Bad Request
@@ -781,11 +789,6 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 		std::stringstream		contents;
 		contents << resource.rdbuf();
 		this->body_ += contents.str();
-		// char	bin_char;
-		// while (!resource.eof()) {
-		// 	resource >> bin_char;
-		// 	this->binary_data_.push_back(bin_char);
-		// }
 	}
 	else {
 		std::cout << "Text one here2" << std::endl;
@@ -845,7 +848,7 @@ void	Response::deleteMethod_( void ) {
 	}
 	
 	if (std::remove(this->resource_path_.c_str()) != 0 ) {
-		Logger::log(E_ERROR, COLOR_RED, "DELETE METHOD, removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
+		Logger::log(E_ERROR, COLOR_RED, "DELETE: removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
 		this->status_code_ = 500; //internal server error for now
 	}
 	else {
