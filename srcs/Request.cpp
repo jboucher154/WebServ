@@ -493,6 +493,7 @@ void	Request::parseChunkedBody_( void ) {
 			return ;
 		}
 		else if (parse_buffer == "0\r\n") { //end of chunks
+			this->chunked_ = false; //? or set another value to see that all chunks processed?
 			break ;
 		}
 		else {
