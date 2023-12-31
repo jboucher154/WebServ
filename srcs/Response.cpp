@@ -858,6 +858,15 @@ void	Response::deleteMethod_( void ) {
 
 /****************************************** POST ******************************************/
 
+/*! \brief creates resource requested for non-cgi requests
+*       
+*	Creates file for request based on multipart/form-data information parsed in request.
+*	File is created based on the uri location. If a file already exists by that name
+*	it will be overwritten.
+*	If successful, the 201 created status code is set.
+*	TODO: check if mime types is allowed (could be gotten around by users with cgi script)
+*  
+*/
 void	Response::saveBodyToFile( void ) {
 
 	const std::string& filename = this->request_->getUploadName();
@@ -868,29 +877,12 @@ void	Response::saveBodyToFile( void ) {
 		this->status_code_ = 500;
 		return ;
 	}
-
-	// for (std::vector<char>::const_iterator it = this->file_data_.begin(); it < this->file_data_.end(); ++it) {
-	// 	new_file << *it;
-	// }
 	new_file << this->request_->getUploadContent();
 	new_file.close();
 	this->status_code_ = 201;//created
 }
-/*
- -process for file
- 	- validate that it is multipart/form-data
-	- need to get the start of the file data
-	- lead up to that will have the form info with the filename
-	Q's
-	- if not multipart form data then what?
 
- -process for cgi
-	- validate the form type
-	- prepare the info from multipart/form-data into QUERY_STRING and file data
-	- 
-*/
-
-/*! \brief	Post method currenly only works with cgi
+/*! \brief	post method will create resource or set query string for cgi script
 *
 *
 *
@@ -918,7 +910,7 @@ void	Response::postMethod_( void ) {
 		//handle form data
 		// parseMultiPartFormData(content_type_values[1]);
 		std::cout << "POST:  CGI FLAG, form type not checked here" << std::endl;
-		// this->query_string_ = urlEncode(this->query_string_);
+		this->query_string_ = urlEncode(this->request_->getProcessedBody());
 	}
 	// else {
 	// 	//unsupported
