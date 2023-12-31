@@ -3,6 +3,11 @@
 
 /* CONSTRUCTORS */
 
+/*! \brief default constructor, zeros all attributes on construction
+*
+*	Default constructor, zeros all attributes on construction.
+*    
+*/
 Request::Request( void ) 
 : body_size_(0), 
 body_len_received_(0), 
@@ -24,6 +29,12 @@ status_code_(0) {
 	/* default constructor */
 }
 
+/*! \brief copy constructor calls copy assignment operator
+*
+*	
+*  Copy constructor calls copy assignment operator.
+*  
+*/
 Request::Request( const Request& to_copy ) {
 
 	*this = to_copy;
@@ -31,6 +42,10 @@ Request::Request( const Request& to_copy ) {
 
 /* DESTRUCTOR */
 
+/*! \brief default destructor
+*
+*	default destructor
+*/
 Request::~Request( void ) {
 
 	/* destructor */
@@ -38,6 +53,12 @@ Request::~Request( void ) {
 
 /* OPERATOR OVERLOADS */
 
+/*! \brief copy assignment operator copies all values from rhs
+*
+*	
+*  Copy assignment operator copies all values from rhs.
+*  
+*/
 Request&	Request::operator=( const Request& rhs ) {
 
 	if (this != &rhs ) {
@@ -65,13 +86,15 @@ Request&	Request::operator=( const Request& rhs ) {
 
 /*! \brief add to any part of the Request, directs to correct private parsing function
 *       
-*
-*  More details to be filled as project progresses.
-*  
+*	Character buffer is converted to string and string stream to process into the relevant
+*	request part: request line, header, or body. Request attributes are set and checked
+*	based on headers then body is saved and parsed nusing the total bytes read from the 
+*	recv() call to guide the parsing. If exception for string conversions occur they are 
+*	caught and the error printed.
+*    
 */
 void	Request::add( char* to_add, size_t bytes_read ) {
 	
-	// std::cout << "*** raw body from recv [add] : " << to_add << std::endl;
 	std::stringstream	ss(to_add);
 	std::string			line;
 	std::string			string_add(to_add, bytes_read);
@@ -89,6 +112,8 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 			else {
 				this->parseHeader_(line);
 			}
+			if (this->status_code_ > 0)
+				return ; //stop processing if error found
 		}
 		this->setRequestAttributes();
 		//process body
@@ -115,8 +140,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 
 /*! \brief clears all containers and resets all values to intial state
 *       
-*
-*  More details to be filled as project progresses.
+*	All attributes are cleared so client can reuse the object for the next request.
 *  
 */
 void	Request::clear( void ) {
@@ -141,82 +165,129 @@ void	Request::clear( void ) {
 	this->file_name_ = "";
 }
 
-/*! \brief prints to standard output `REQUEST` followed by
+/*! \brief prints to standard output `REQUEST:` followed by
 *				each request element on a newline.
 *
-*  More details to be filled as project progresses.
+*	Prints to standard output `REQUEST:` followed by each request element on a newline.
+*	Each version of the body that is stored is printed or indicates that it is empty.
 *  
 */
 void	Request::printRequest( void ) const {
 
 	std::cout << "REQUEST: " << std::endl;
-	// for (std::map<std::string, std::string>::const_iterator it = this->request_line_.begin(); it != this->request_line_.end(); it++) {
-	// 	std::cout << it->first << ": " << it->second << std::endl;
-	// }
-	// std::cout << "\nHeaders:" << std::endl;
-	// for (std::map<std::string, std::string>::const_iterator it = this->headers_.begin(); it != this->headers_.end(); it++) {
-	// 	std::cout << it->first << ": " << it->second << std::endl;
-	// }
+	for (std::map<std::string, std::string>::const_iterator it = this->request_line_.begin(); it != this->request_line_.end(); it++) {
+		std::cout << it->first << ": " << it->second << std::endl;
+	}
+	std::cout << "\nHeaders:" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = this->headers_.begin(); it != this->headers_.end(); it++) {
+		std::cout << it->first << ": " << it->second << std::endl;
+	}
 	std::cout << "\nBody raw:" << std::endl;
 	if (!this->raw_body_.empty()) {
 		std::cout << this->raw_body_;
 		std::cout << std::endl;
+	}
+	else {
+		std::cout << "no body" << std::endl;
 	}
 	std::cout << "\nBody Processed:" << std::endl;
 	if (!this->processed_body_.empty()) {
 		std::cout << this->processed_body_;
 		std::cout << std::endl;
 	}
+	else {
+		std::cout << "no body" << std::endl;
+	}
 	std::cout << "\nFile Content:" << std::endl;
 	if (!this->file_content_.empty()) {
 		std::cout << this->file_content_;
 		std::cout << std::endl;
 	}
-	// if (!this->body_vector_.empty()) {
-	// 	for (std::vector<u_int8_t>::const_iterator it = this->body_vector_.begin(); it != this->body_vector_.end(); it++) {
-	// 		std::cout << *it;;
-	// 	}
-	// 	std::cout << std::endl;
-	// }
+	else {
+		std::cout << "no file content" << std::endl;
+	}
 }
 
 /************** PUBLIC GETTERS **************/
 
+/*! \brief returns bool indicating if this request is for a cgi script
+*
+*	Returns bool indicating if this request is for a cgi script.
+*  
+*/
 bool	Request::getCgiFlag( void ) const {
 
 	return (this->cgi_flag_);
 }
 
+/*! \brief returns size_t of the body size indicated by the request header
+*
+*	Returns size_t of the body size indicated by the request header
+*  
+*/
 size_t		Request::getBodySize( void ) const {
 	
 	return (this->body_size_);
 }
 
+/*! \brief returns size_t of the body size actually received
+*
+*	Returns size_t of the body size actually received so far.
+*  
+*/
 size_t		Request::getBodyLengthReceived( void ) const {
 
 	return (this->body_len_received_);
 }
 
+/*! \brief returns bool indicating if the Transfer-Encoding = chunked
+*
+*	Returns bool indicating if request body is chunked based on the 
+*	value of the Transfer-Encoding header;
+*  
+*/
 bool	Request::getChunked( void ) const {
 
 	return (this->chunked_);
 }
 
+/*! \brief returns bool indicating requests Connetion header value for keep alive.
+*
+*	rRturns bool indicating requests Connetion header value for keep alive.
+*  
+*/
 bool	Request::getKeepAlive( void ) const {
 
 	return (this->keep_alive_);
 }
 
+/*! \brief returns bool indicating if request is completed
+*
+*	Returns bool indicating if the request is considered complete.
+*	This is based on all headers and promised body length received.
+*  
+*/
 bool	Request::getComplete( void ) const {
 
 	return (this->complete_);
 }
 
+/*! \brief returns bool if there was a server error
+*
+*	Returns bool if there was a server error while processing the request.
+*  
+*/
 bool	Request::getServerError( void ) const {
 	
 	return (this->sever_error_);
 }
 
+/*! \brief returns the request line value for the key passed
+*
+*	Returns request line value for key passed as parameter. If key is not in
+*	request line map, an empty string is returned.
+*  
+*/
 std::string	Request::getRequestLineValue( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->request_line_.find(key);
@@ -228,16 +299,32 @@ std::string	Request::getRequestLineValue( std::string key ) const {
 	}
 }
 
+/*! \brief returns a const_iterator to the begining of request headers map
+*
+*	Returns a const_iterator to the request headers using the map begin() method.
+*  
+*/
 std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void ) const {
 
 	return (this->headers_.begin());
 }
 
+/*! \brief returns a const_iterator to the end of the request headers map
+*
+*	Returns a const_iterator to the request headers using the map end() method.
+*  
+*/
 std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void ) const {
 
 	return (this->headers_.end());
 }
 
+/*! \brief returns header value as std::string for header name passed as key
+*
+*	Returns header value as std::string for header name passed as key. If header is not
+*	in request, an empty string is returned.
+*  
+*/
 std::string	Request::getHeaderValueByKey( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->headers_.find(key);
@@ -249,51 +336,69 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 	}
 }
 
-// std::string::iterator	Request::getBodyBegin( void ) {
-
-// 	return (this->raw_body_.begin());
-// }
-
-// std::string::iterator	Request::getBodyEnd( void ) {
-	
-// 	return (this->raw_body_.end());
-// }
-
-// std::vector<u_int8_t>::iterator	Request::getBodyVectorBegin( void ) {
-
-// 	return (this->body_vector_.begin());
-// }
-
-// std::vector<u_int8_t>::iterator	Request::getBodyVectorEnd( void ) {
-	
-// 	return (this->body_vector_.end());
-// }
-
+/*! \brief returns a const reference to the procesed body string
+*
+*	Returns a const reference to the processed body string. Will not include any 
+*	file contents that were submitted by multipart form.
+*  
+*/
 const std::string&		Request::getProcessedBody( void ) const {
 
 	return this->processed_body_;
 }
 
+/*! \brief returns a const reference to the file content for upload
+*
+*	Returns a const reference to the file content for upload that is stored from
+*	a multipart form. The file name can be obtained from getUploadName().
+*  
+*/
 const std::string&		Request::getUploadContent( void ) const {
 
 	return this->file_content_;
 }
 
+/*! \brief returns a const reference to the file name for upload
+*
+*	Returns a const reference to the file name for upload that is stored from
+*	a multipart form. The file content can be obtained from getUploadContent().	
+*  
+*/
 const std::string&		Request::getUploadName( void ) const {
 
 	return this->file_name_;
 }
 
+/*! \brief returns bool indicating if a file has been stored for upload
+*
+*	Returns bool indicating if a file has been stored for upload. File name and content
+*	can be obtained from getUploadName() and getUploadContent().
+*  
+*/
 bool				Request::isFileUpload( void ) const {
 
 	return this->file_upload_;
 }
 
+/*! \brief returns the http status code that indicates the status for response based on 
+*				processing of body and headers in request class.
+*
+*	Returns unsigned int indicating the status code thatt may be set to an error based on
+*	the header checks and body processing thatt occurs in the request class. It is intialized
+*	to 0, which indicates no errors. Any other value may indicate an error encountered.
+*  
+*/
 unsigned int		Request::getStatusCode( void ) const {
 
 	return this->status_code_;
 }
 
+/*! \brief returns const reference to the upload mime type
+*
+*	Returns a const reference to the mime type for the upload file indicated
+*	in the header in the multipart form.
+*  
+*/
 const std::string&		Request::getUploadMime( void ) const {
 
 	return this->file_mime_;
@@ -301,6 +406,12 @@ const std::string&		Request::getUploadMime( void ) const {
 
 /************** PUBLIC SETTERS **************/
 
+/*! \brief public setter for the cgi flag take new bool value
+*
+*	Public setter for the cgi flag to allow response to change value of cgi bool
+*	if redirection or alias points to cgi script.
+*  
+*/
 void	Request::setCgiFlag( bool flag) {
 	
 	this->cgi_flag_ = flag;
@@ -310,6 +421,12 @@ void	Request::setCgiFlag( bool flag) {
 
 /************** PRIVATE SETTERS **************/
 
+/*! \brief private setter for body_length based on request headers
+*
+*	Private setter for body_length based on request Content-Length Header.
+*	If no Content-Length header is present the body size is set to 0.
+*  
+*/
 void	Request::setBodySize( void ) {
 
 	std::string	content_length = this->headers_["Content-Length"];
@@ -327,6 +444,11 @@ void	Request::setBodySize( void ) {
 	}
 }
 
+/*! \brief private setter for chunked bool based on request headers
+*
+*	Private setter for chunked bool based on Transfer-Encoding header.
+*  
+*/
 void	Request::setChunked( void ) {
 
 	std::string	transfer_encoding = this->headers_["Transfer-Encoding"];
@@ -338,6 +460,11 @@ void	Request::setChunked( void ) {
 	}
 }
 
+/*! \brief private setter for keep_alive_ bool based on request headers
+*
+*	Private setter for keep_alive_ bool based on Connection header.
+*  
+*/
 void	Request::setKeepAlive( void ) {
 
 	std::string connection = this->headers_["Connection"];
@@ -349,6 +476,11 @@ void	Request::setKeepAlive( void ) {
 	}
 }
 
+/*! \brief 
+*
+*	
+*  
+*/
 void	Request::setCgiFlag( void ) {
 
 	std::string	uri = this->getRequestLineValue("uri");
@@ -360,6 +492,11 @@ void	Request::setCgiFlag( void ) {
 	}
 }
 
+/*! \brief calls all private setters to intialize request attibutes based on headers
+*
+*	Calls all private setters to intialize request attibutes based on headers.
+*  
+*/
 void	Request::setRequestAttributes( void ) {
 
 	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize , &Request::setCgiFlag };
@@ -368,6 +505,12 @@ void	Request::setRequestAttributes( void ) {
 	}
 }
 
+/*! \brief stores request line values in map
+*
+*	Stores request line values in map. if method not implemented or HTTP version
+*	is not supported the status code will be set and the parsing stops.
+*  
+*/
 void	Request::parseRequestLine_( std::string& to_parse ) {
 
 	std::stringstream	ss(to_parse);
@@ -377,12 +520,19 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		throw(std::runtime_error("Stringstream failed in parseRequestLine_"));
 	}
 	ss >> part;
+	if (part != "GET" || part != "HEAD" || part != "POST" || part != "DELETE") {
+		this->status_code_ = 501; //not implemented
+		return ;
+	}
 	this->request_line_["method"] = part;
 	ss >> part;
 	this->request_line_["uri"] = part;
 	ss >> part;
+	if (part != "HTTP/1.1") {
+		this->status_code_ = 505; //HTTP version not supported
+		return ;
+	}
 	this->request_line_["version"] = part;
-
 }
 
 /*! \brief parses key and value from request header.
@@ -410,9 +560,15 @@ void	Request::parseHeader_( std::string& to_parse ) {
 	}
 }
 
+/*! \brief saves request body into raw_body_ and adds the length to body_len_recieved
+*
+*	Saves request body into raw_body_ character by character to ensure entire message
+*	(including any binary file content) is transfered and adds the length to 
+*	body_len_recieved_.
+*  
+*/
 void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_bytes) {
 
-	
 	if ( body_start == to_add.size()) {
 		this->body_len_received_ = 0;
 		return ;
@@ -432,14 +588,13 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 		this->raw_body_.append(this->body_vector_.begin(), this->body_vector_.end());
 		this->body_len_received_ += body_length;
 	}
-	// std::cout << "BODY PRINT IN SAVEBODY_ : \n" << this->raw_body_;
-	// std::string::const_iterator body_it = this->raw_body_.begin();
-	// for (; body_it != this->raw_body_.end(); body_it++) {
-	// 	std::cout << *body_it;
-	// }
-	// std::cout << "BODY PRINT FINISHED\n";
 }
 
+/*! \brief static function that parses boundary from the Content-Type header
+*
+*	Static function parses boundary from the Content-Type header for multipart form.
+*  
+*/
 static std::string	parseBoundry(std::string& content_type_header ) {
 
 	int			boundry_start = content_type_header.find(";") + 1;
@@ -452,6 +607,12 @@ static std::string	parseBoundry(std::string& content_type_header ) {
 	return boundary;
 }
 
+/*! \brief directs parsing of raw_body_ into processed_body_ based on the content type
+*
+*	Directs parsing of raw_body_ based on the content type (chunked, multipart/form-data, or other)
+*	If no boundary found for multipart/form-data the request is rejected.
+*  
+*/
 void	Request::parseBody_( void ) {
 	//check if body present with GET request
 	//check body type (only plain for now)
@@ -460,9 +621,8 @@ void	Request::parseBody_( void ) {
 
 	if (this->chunked_) {
 		parseChunkedBody_();
-		return ;
 	}
-	if (is_multipart_form) {
+	else if (is_multipart_form) {
 		std::string	boundry = parseBoundry(content_type_header);
 		if (boundry.empty()) {
 			this->status_code_ = 400; //no boundry provided, invalid request
@@ -475,6 +635,14 @@ void	Request::parseBody_( void ) {
 	}
 }
 
+/*! \brief parses chunked body setting chunked value to false if all chunks are processed
+*
+*	Parses chunked body setting chunked value to false if all chunks are processed. Each
+*	loop process one chunk and may process multiple chunks if they are present in the same message.
+*	If invalid formatting is found the status code is set to 400/Bad Request. If an conversion for
+*	the hexadecimal to decimal fails 500/Internal Server Error is set.
+*  
+*/
 void	Request::parseChunkedBody_( void ) {
 
 	std::string		parse_buffer = "";
@@ -522,6 +690,13 @@ void	Request::parseChunkedBody_( void ) {
 	}
 }
 
+/*! \brief stores file contents from multipart form data
+*
+*	Stores file contents from multipart/form-data, stopping once a boundary is found.
+*	The last two characters are removed as they are the CRLF formatting and not
+*	part of the file contents.
+*  
+*/
 void	Request::storeFileContents_( const std::string& section_bound, const std::string& last_bound, size_t& body_index ) {
 
 
@@ -543,6 +718,12 @@ void	Request::storeFileContents_( const std::string& section_bound, const std::s
 	}
 }
 
+/*! \brief sets the filename indicated in the from data header and sets file_upload to true
+*
+*	Sets the filename indicated in the from data header. Removes quotes 
+*	surrounding the filename. Sets file_upload bool to true.
+*  
+*/
 void	Request::setFilename( const std::string& to_parse ) {
 
 	int fname_start = to_parse.find("filename=") + 9;
@@ -555,6 +736,15 @@ void	Request::setFilename( const std::string& to_parse ) {
 	this->file_upload_ = true;
 }
 
+/*! \brief parses multipart/form-data, removing boundaries and saving file content 
+*			separately from processed_body_
+*
+*	Parses multipart/form-data by Removing boundaries. Non-file content is added to 
+*	processed_body_, including CRLF formatting, and prepending "value=" to form feild
+*	values that are not files.
+*	File content is procesed and stored separatley by storeFileContents_().
+*
+*/
 void	Request::parseMultipartForm_( std::string boundary ) {
 
 	std::string 	section_bound = "--" + boundary;
@@ -563,11 +753,8 @@ void	Request::parseMultipartForm_( std::string boundary ) {
 	size_t			body_index = 0;
 	bool			file_present = false;
 
-// this->raw_body_.find(section_bound, body_index!= std::string::npos)
 	while (body_index < this->raw_body_.size()) {
 		parse_buffer += this->raw_body_[body_index++];
-		//line processed
-		// std::cout << "Parse buffer before append to process body: " << parse_buffer << std::endl;
 		if (parse_buffer.back() == '\n' && parse_buffer.size() > 1 && parse_buffer[parse_buffer.size() - 2] == '\r') {
 			if (parse_buffer == CRLF) {
 				if (file_present) {
@@ -587,15 +774,10 @@ void	Request::parseMultipartForm_( std::string boundary ) {
 				}
 				if (file_present && strncmp(parse_buffer.c_str(), "Content-Type:", 13) == 0) {
 					this->file_mime_ = parse_buffer.substr(14, parse_buffer.size() - 2);
-					// std::cout << "FILE MIME SAVED AS: " << this->file_mime_ << std::endl;
 				}
 				this->processed_body_.append(parse_buffer);
 			}
 			parse_buffer.clear();
 		}
-		// ++body_index;
 	}
-		// if (!this->file_upload_ && parse_buffer.find("filename="))
-		// 	this->file_upload_ == true;
-		// if (this->file_upload_ && parse_buffer.find()){}
 }
