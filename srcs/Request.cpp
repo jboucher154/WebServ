@@ -104,15 +104,6 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 					parseBody_();
 			}
 		}
-		if (this->headers_complete && this->body_size_ == this->body_len_received_) {
-			this->complete_ = true;
-			// //TESTING !!!!!!!
-			// if (!this->file_content_.empty()) {
-			// 	std::ofstream	newfile(this->file_name_, std::ofstream::binary);
-			// 	newfile << this->file_content_;
-			// 	newfile.close();
-			// }
-		}
 	}
 	catch (const std::exception& e) {
 		Logger::log(E_ERROR, COLOR_RED, "Request::add caught exception: %s", e.what());
@@ -486,7 +477,48 @@ void	Request::parseBody_( void ) {
 
 void	Request::parseChunkedBody_( void ) {
 
-	//to be written
+	std::string		parse_buffer = "";
+	size_t			body_index = 0;
+	long int		convertedLength = 0;
+	
+
+	while (body_index < this->raw_body_.size()) {
+		//get first line that will have hex number followed by CRLF
+		while (parse_buffer.back() != '\n') {
+			parse_buffer += this->raw_body_[body_index];
+			body_index++;
+		}
+		if ((parse_buffer.size() > 1 && parse_buffer[parse_buffer.size() - 2] != '\r') || !isxdigit(parse_buffer[0])) {
+			this->status_code_ = 400; //bad request, incorrect format
+			return ;
+		}
+		else if (parse_buffer == "0\r\n") { //end of chunks
+			break ;
+		}
+		else {
+			//convert hex number to decimal
+			std::istringstream	converter(parse_buffer);
+			if (!(converter >> std::hex >> convertedLength)) {
+				this->status_code_ = 500; //conversion error
+				return ;
+			}
+			parse_buffer.clear();
+			while (convertedLength && body_index < this->raw_body_.size()) {
+				parse_buffer += this->raw_body_[body_index];
+				body_index++;
+				convertedLength--;
+			}
+			if (convertedLength != 0) {
+				this->status_code_ = 400; //bad request, chunk not length indicated
+				return ;
+			}
+			else {
+				this->processed_body_.append(parse_buffer);
+				parse_buffer.clear();
+				body_index += 2; //move past CRLF
+			}
+		}
+	}
 }
 
 void	Request::storeFileContents_( const std::string& section_bound, const std::string& last_bound, size_t& body_index ) {
