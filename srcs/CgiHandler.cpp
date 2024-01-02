@@ -151,7 +151,7 @@ int	CgiHandler::cgiFinish( Response& response ) {
 	// Logger::log(E_DEBUG, COLOR_GREEN, "INSIDE cgiFinish!!!");
 	int	result;
 
-	if ((result = this->executeCgi_(response.getFileDataBegin(), response.getFileDataEnd())) != E_CGI_OK) {
+	if ((result = this->executeCgi_(response.getUploadData())) != E_CGI_OK) {
 		this->ClearCgiHandler();
 		return result;
 	}
@@ -383,16 +383,7 @@ int	CgiHandler::setUpCgiPipes_( void ) {
 *
 *	Talk with Jenny about how to get the bodyinfo into a string or an array of characters!
 */
-int		CgiHandler::executeCgi_( std::vector<char>::iterator it_start, std::vector<char>::iterator it_end ) {
-
-	(void) it_start;
-	(void) it_end;
-	std::string	body_string = "";	// get body into std::string (or c-style char array; TALK WITH JENNY)
-									//may need to track body size separately
-
-	// for (std::vector<std::string>::iterator it = it_start; it != it_end; ++it) {
-	// 	body_string += *it;
-	// }
+int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 	// Logger::log(E_DEBUG, COLOR_GREEN, "BEFOR FORKING executeCgi!!!");
 	if ((this->pid_ = fork()) == -1) {
@@ -408,12 +399,12 @@ int		CgiHandler::executeCgi_( std::vector<char>::iterator it_start, std::vector<
 		dup2(this->pipe_from_cgi_[E_PIPE_END_WRITE], STDOUT_FILENO);
 
 		ssize_t 	bytes_sent = 0;
-		ssize_t		msg_length = body_string.empty() ? 1 : body_string.length();
+		ssize_t		msg_length = body_string.empty() ? 1 : body_string.size();
 
 		if (body_string.empty())
 			bytes_sent = write(STDIN_FILENO, "\0", 1);
 		else
-			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.length());
+			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.size());
 	
 		this->closeCgiPipes();
 

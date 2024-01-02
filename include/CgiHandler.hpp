@@ -51,7 +51,7 @@ class	CgiHandler {
 		void	cgiTimer_( int& status );
 
 		int		setUpCgiPipes_( void );
-		int		executeCgi_( std::vector<char>::iterator it_start, std::vector<char>::iterator it_end );
+		int		executeCgi_( const std::string& body_string );
 		int		storeCgiOutput_( void );
 
 	public:

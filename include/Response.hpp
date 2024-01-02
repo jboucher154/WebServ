@@ -125,11 +125,10 @@ class	Response {
 		std::string&	buildAndGetResponsePhase2( const std::string& body );
 
 		/* GETTERS */
-		int									getStatusCode( void ) const;
-		const std::string&					getResourcePath( void ) const;
-		const std::string&					getQueryString( void ) const;
-		std::vector<char>::iterator	getFileDataBegin( void );
-		std::vector<char>::iterator	getFileDataEnd( void );
+		int						getStatusCode( void ) const;
+		const std::string&		getResourcePath( void ) const;
+		const std::string&		getQueryString( void ) const;
+		const std::string&		getUploadData( void );
 
 		/* SETTERS */
 		void				setStatusCode( unsigned int	new_code );

@@ -271,22 +271,10 @@ const std::string&	Response::getQueryString( void ) const {
 *	returns begin iterator for the stored filedata for upload
 *
 */
-std::vector<char>::iterator	Response::getFileDataBegin( void ) {
+const std::string&	Response::getUploadData( void ) {
 
-	return (this->file_data_.begin());
+	return (this->request_->getUploadContent());
 }
-
-/*! \brief returns end iterator for the stored filedata for upload
-*
-*
-*	returns end iterator for the stored filedata for upload
-*
-*/
-std::vector<char>::iterator	Response::getFileDataEnd( void ) {
-
-	return (this->file_data_.end());
-}
-
 
 /* CLASS PRIVATE METHODS */
 
