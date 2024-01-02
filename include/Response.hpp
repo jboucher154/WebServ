@@ -74,6 +74,7 @@ class	Response {
 		std::string 	contentLengthHeader_( void ) const;
 		std::string		contentLocationHeader_( void ) const;
 		std::string		locationHeader_( void ) const;
+		std::string		retryAfterHeader_( void ) const;
 
 		/* METHODS */
 		void	getMethod_( void );
@@ -99,7 +100,6 @@ class	Response {
 
 		void	setMimeType( void );
 		bool	validateResource_( void );
-
 		void	createErrorBody_( void );
 
 

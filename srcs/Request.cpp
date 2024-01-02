@@ -15,8 +15,7 @@ chunked_(false),
 keep_alive_(false), 
 cgi_flag_(false), 
 headers_complete(false), 
-complete_(false), 
-sever_error_(false), 
+complete_(false),  
 raw_body_(""), 
 processed_body_(""),
 file_content_(""),
@@ -120,7 +119,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 		if (!ss.eof()) {
 			std::streampos	body_start = ss.tellg();
 			if (static_cast<int>(body_start) == -1) {
-				this->sever_error_ = true;
+				this->status_code_ = 500;
 			}
 			else {
 				if (static_cast<int>(body_start) != static_cast<int>(bytes_read))
@@ -135,7 +134,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 	}
 	catch (const std::exception& e) {
 		Logger::log(E_ERROR, COLOR_RED, "Request::add caught exception: %s", e.what());
-		this->sever_error_ = true;
+		this->status_code_ = 500;
 	}
 	std::cout << "*** BODY LEN VS RECEIVED [add] : " << this->body_size_ << " vs. " << this->body_len_received_ << std::endl;
 	// printRequest();//debugging
@@ -160,7 +159,6 @@ void	Request::clear( void ) {
 	this->processed_body_ = "";
 	this->body_vector_.clear();
 	this->complete_ = false;
-	this->sever_error_ = false;
 	this->file_upload_ = false;
 	this->file_mime_ = "";
 	this->status_code_ = 0;
@@ -273,16 +271,6 @@ bool	Request::getKeepAlive( void ) const {
 bool	Request::getComplete( void ) const {
 
 	return (this->complete_);
-}
-
-/*! \brief returns bool if there was a server error
-*
-*	Returns bool if there was a server error while processing the request.
-*  
-*/
-bool	Request::getServerError( void ) const {
-	
-	return (this->sever_error_);
 }
 
 /*! \brief returns the request line value for the key passed

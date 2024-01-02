@@ -114,12 +114,15 @@ void	Response::createResponsePhase1( Request* request ) {
 		this->status_code_ = 500;
 		return ;
 	}
+	if (this->server_->getClientMaxBodySize() < static_cast<int>(request->getBodySize())) {
+		this->status_code_ = 413; //413 Content Too Large
+	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
 		if (this->request_ != NULL && this->request_->getChunked()) {
 			this->status_code_ = 100;
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
 		}
-		else if (!this->request_->getComplete()) {
+		else if (this->request_ != NULL && !this->request_->getComplete()) {
 			this->status_code_ = 202;
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is not complete. 202 Accepted set!");
 		}
@@ -187,6 +190,9 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
 	this->body_ = body;
 
+	if (this->status_code_ == 202) { //don't send anything if not ready yet
+		return this->response_;
+	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400 || this->status_code_ == 0) {
 		createErrorBody_();
@@ -310,8 +316,6 @@ bool	Response::validateResource_( void ) {
 
 /****************************************** HEADER GENERATORS ******************************************/
 
-//could make this an array of methods and call them, appending CRLF to each in a loop
-
 /*! \brief	calls methods to add headers to the response
 *
 *	Appends each header to the response as needed. No errors are set here. 
@@ -333,9 +337,23 @@ std::string&	Response::addHeaders_( std::string& response) const {
 	if (this->redirect_) {
 		response += this->locationHeader_() + CRLF;
 	}
+	if (this->status_code_ == 413) { //send if body content too large
+		response += this->retryAfterHeader_() + CRLF;
+	}
 	//between headers and body
 	response += CRLF;
 	return ( response );
+}
+
+/*! \brief creates `Retry-After' header to add to response
+*       
+*	`Retry-After' header returned with default value in seconds for client to wait
+*	before sending a request again.
+*  
+*/
+std::string	Response::retryAfterHeader_( void ) const {
+
+	return "Retry-After: 30";
 }
 
 /*! \brief creates the location header for a redirection, sets redirect the index page of 
@@ -361,14 +379,14 @@ std::string	Response::locationHeader_( void ) const {
 	}
 	location_pos = redirect_path.find(path_location);
 	if (location_pos == std::string::npos) {
-		return "Location: " + this->resource_location_ + "/" + "index.html" + CRLF;
+		return "Location: " + this->resource_location_ + "/" + "index.html";
 	}
 	else {
 		redirect_path = redirect_path.substr(location_pos + path_location.length());
 		if (this->resource_location_ == "/")
-			return "Location: " + redirect_path + CRLF;
+			return "Location: " + redirect_path;
 		else
-			return "Location: " + this->resource_location_ + redirect_path + CRLF;
+			return "Location: " + this->resource_location_ + redirect_path;
 	}
 }
 
@@ -900,7 +918,7 @@ void	Response::postMethod_( void ) {
 	else {
 	//prepare CGI data ..
 		//handle form data
-		// parseMultiPartFormData(content_type_values[1]);
+		setMimeType();
 		std::cout << "POST:  CGI FLAG, form type not checked here" << std::endl;
 		this->query_string_ = urlEncode(this->request_->getProcessedBody());
 	}

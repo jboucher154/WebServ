@@ -22,7 +22,6 @@ class	Request {
 		bool								cgi_flag_;
 		bool								headers_complete;
 		bool								complete_;
-		bool								sever_error_;
 		std::map<std::string, std::string>	request_line_;
 		std::map<std::string, std::string>	headers_;
 		std::string							raw_body_;
