@@ -181,9 +181,10 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 *			reference to the response string built.
 *       
 *
-*	Builds and returns response, checking if there has been an error, adding headers as 
-*	required, and appending the body passed to the function. All are separated by the 
-*	CRLF or "/r/n" per HTTP guidelines.
+*	If the cgi process has run with out error, the body from the cgi is returned as 
+*	the full response. If the status code indicates an error, this will builds and returns 
+*	response, adding headers as required, and appending the body passed to the function. 
+*	All are separated by the CRLF or "/r/n" per HTTP guidelines.
 *  
 */
 std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
@@ -192,6 +193,9 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 
 	if (this->status_code_ == 202) { //don't send anything if not ready yet
 		return this->response_;
+	}
+	if (this->status_code_ < 400) {
+		return this->body_;
 	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400 || this->status_code_ == 0) {
