@@ -198,7 +198,7 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
 	this->metavariables_map_["SERVER_NAME"] = server.getServerName();
 	this->metavariables_map_["SERVER_PORT"] = server.getListeningPortInt();
-	this->metavariables_map_["SERVER_PROTOCOL"] = "http/1.1";
+	this->metavariables_map_["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->metavariables_map_["SERVER_SOFTWARE"] = "JAS-webserver/0.75"; // come up with server name (JAS would be great!)
 
 	this->metavariables_map_["REMOTE_HOST"] = client.getClientHost();

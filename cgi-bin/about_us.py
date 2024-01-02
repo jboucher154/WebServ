@@ -1,5 +1,9 @@
 import sys
-header="HTTP/1.1 200 OK\r\nDate: Tue, 02 Jan 2024 15:16:17 GMT\r\nContent-Length: 2654\r\nContent-Location: /cgi-bin\r\nContent-Type: text/html\r\n\r\n"
+import os
+from datetime import datetime , timezone
+from email.utils import formatdate
+
+
 html_content = """
 <!DOCTYPE html>
 <html lang="en">
@@ -89,6 +93,10 @@ html_content = """
 </body>
 </html>\r\n\r\n
 """
+current_datetime = datetime.now(timezone.utc)
+formatted_date = formatdate(timeval=current_datetime.timestamp(), localtime=False, usegmt=True)
+http_version = os.environ.get('SERVER_PROTOCOL')
+header=f"{http_version} 200 OK\r\nDate: {formatted_date}\r\nContent-Length: {len(html_content)}\r\nContent-Location: /cgi-bin\r\nContent-Type: text/html\r\n\r\n"
 
-sys.stdout.write(html_content)
+sys.stdout.write(header + html_content)
 
