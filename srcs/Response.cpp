@@ -116,6 +116,7 @@ void	Response::createResponsePhase1( Request* request ) {
 	}
 	if (this->server_->getClientMaxBodySize() < static_cast<int>(request->getBodySize())) {
 		this->status_code_ = 413; //413 Content Too Large
+		return ;
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
 		if (this->request_ != NULL && this->request_->getChunked()) {
