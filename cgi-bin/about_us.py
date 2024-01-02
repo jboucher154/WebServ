@@ -1,5 +1,5 @@
 import sys
-
+header="HTTP/1.1 200 OK\r\nDate: Tue, 02 Jan 2024 15:16:17 GMT\r\nContent-Length: 2654\r\nContent-Location: /cgi-bin\r\nContent-Type: text/html\r\n\r\n"
 html_content = """
 <!DOCTYPE html>
 <html lang="en">
@@ -87,7 +87,7 @@ html_content = """
 		<ul>
     </section>
 </body>
-</html>
+</html>\r\n\r\n
 """
 
 sys.stdout.write(html_content)

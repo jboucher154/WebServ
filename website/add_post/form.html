@@ -53,34 +53,51 @@
 			</div>
 		</form>
 
-		<form id="photoForm" action="../../cgi-bin/add_file.py" method="POST" enctype="multipart/form-data">
+		<!-- <form id="photoForm" action="../../cgi-bin/add_file.py" method="POST" enctype="multipart/form-data">
 			<div>
 				<label for="photo">Upload photo</label>
 				<input type="file" required="required" name="photo" id="photo">
 				<input type="submit" value="Upload">
 			</div>
-		</form>
+		</form> -->
 
-		<script>
-			document.getElementById('mainForm').addEventListener('submit', function(event) {
-				event.preventDefault(); // Prevent the default form submission
+	</body>
+	<script>
+		const radioButtons = document.querySelectorAll('.Pet_Radio input[type="radio"]');
+			const labels = document.querySelectorAll('.Pet_Radio label');
 
-				// Submit the main form
-				const mainForm = document.getElementById('mainForm');
-				const formData = new FormData(mainForm);
-				fetch(mainForm.action, {
-					method: 'POST',
-					body: formData
-				});
+			// Add click event listener to each radio button
+			radioButtons.forEach((radioButton, index) => {
+				radioButton.addEventListener('click', () => {
+					// Reset color for all labels
+					labels.forEach(label => {
+						label.style.backgroundColor = '';
+						label.style.color = '';
+					});
 
-				// Submit the photo form
-				const photoForm = document.getElementById('photoForm');
-				const photoFormData = new FormData(photoForm);
-				fetch(photoForm.action, {
-					method: 'POST',
-					body: photoFormData
+					// Set color for the selected label
+					labels[index].style.backgroundColor = '#3CB371';
+					labels[index].style.color = 'white';
 				});
 			});
-		</script>
-	</body>
+		// document.getElementById('mainForm').addEventListener('submit', function(event) {
+		// 	event.preventDefault(); // Prevent the default form submission
+
+		// 	// Submit the main form
+		// 	const mainForm = document.getElementById('mainForm');
+		// 	const formData = new FormData(mainForm);
+		// 	fetch(mainForm.action, {
+		// 		method: 'POST',
+		// 		body: formData
+		// 	});
+
+		// 	// Submit the photo form
+		// 	const photoForm = document.getElementById('photoForm');
+		// 	const photoFormData = new FormData(photoForm);
+		// 	fetch(photoForm.action, {
+		// 		method: 'POST',
+		// 		body: photoFormData
+		// 	});
+		// });
+	</script>
 </html>
