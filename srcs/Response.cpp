@@ -129,7 +129,7 @@ void	Response::createResponsePhase1( Request* request ) {
 		}
 		return ;
 	}
-	if (setResourceLocationAndName(this->request_->getRequestLineValue("uri")) >= 400 || this->status_code_ / 100 == 3) {
+	if (setResourceLocationAndName(this->request_->getRequestLineValue("uri")) >= 400 || (this->status_code_ / 100 == 3 && this->request_->getRequestLineValue("method") != "POST")) {
 		return ;
 	}
 	if (!methodAllowed_(this->request_->getRequestLineValue("method"))) {
@@ -159,6 +159,9 @@ void	Response::createResponsePhase1( Request* request ) {
 */
 std::string&	Response::buildAndGetResponsePhase2( void ) {
 
+	if (this->status_code_ == 202) { //don't send anything if not ready yet
+		return this->response_;
+	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400 || this->status_code_ == 0) {
 		createErrorBody_();
@@ -490,6 +493,7 @@ bool	Response::handleRedirection( void ) {
 	if (this->server_->isKeyInLocation(this->resource_location_, "return")) {
 	    this->resource_location_ = this->server_->getLocationValue(this->resource_location_, "return")->front();
 		this->redirect_ = true;
+		this->status_code_ = 302;//
 	    Logger::log(E_DEBUG, COLOR_CYAN, "Redirection found for location new location : %s", this->resource_location_.c_str());
 		return true;
 	}

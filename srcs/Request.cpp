@@ -573,7 +573,7 @@ void	Request::parseHeader_( std::string& to_parse ) {
 *  
 */
 void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_bytes) {
-
+	
 	if ( body_start == to_add.size()) {
 		this->body_len_received_ = 0;
 		return ;
@@ -592,6 +592,7 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 		}
 		this->raw_body_.append(this->body_vector_.begin(), this->body_vector_.end());
 		this->body_len_received_ += body_length;
+		Logger::log(E_DEBUG, COLOR_MAGENTA, "SAVING PART OF BODY: this chunk: %li, total received: %li", body_length, this->body_len_received_);
 	}
 }
 
@@ -615,12 +616,13 @@ static std::string	parseBoundry(std::string& content_type_header ) {
 /*! \brief directs parsing of raw_body_ into processed_body_ based on the content type
 *
 *	Directs parsing of raw_body_ based on the content type (chunked, multipart/form-data, or other)
-*	If no boundary found for multipart/form-data the request is rejected.
+*	If no boundary found for multipart/form-data the request is rejected. 
+*	According to RFC 7231 "the definition of GET has been relaxed so that requests can have a body, 
+*	even though a body has no meaning for GET", therefore the request is not rejected based on method.
 *  
 */
 void	Request::parseBody_( void ) {
-	//check if body present with GET request
-	//check body type (only plain for now)
+
 	std::string content_type_header = getHeaderValueByKey("Content-Type");
 	bool		is_multipart_form = content_type_header.find("multipart/form-data") != std::string::npos ? true : false;
 
