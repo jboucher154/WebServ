@@ -1,24 +1,20 @@
 import argparse
 import sys
 import os
-import re
 from urllib.parse import unquote
 from email import message_from_string
 
 
-def extract_value(name, msg):
-    # Find the first occurrence of the specified name in the form data
-    content = msg.get_payload()
-    pattern = re.compile(fr'name="{name}"\s+value=(\S+)', re.IGNORECASE)
-    match = pattern.search(content)
-
-    if match:
-        # Extract the matched value
-        value = match.group(1)
-        # URL decode the value
-        return unquote(value)
+def return_value(key, text):
+    key = 'name="{}"'.format(key) 
+    text_list = text.split("Content-Disposition:")
+    text_item = [item for item in text_list if key in item]
+    if len(text_item) > 0 :
+        text_item = text_item[0]
+        value = text_item.split('value=')[-1]
     else:
-        return None
+        value = ''
+    return(value.strip())
 
 ## Check if stdin is provided
    # if not sys.stdin.isatty():
@@ -28,12 +24,11 @@ def main():
     path_translated = os.environ.get('PATH_TRANSLATED')
     query_string = os.environ.get("QUERY_STRING")
     decoded_string = unquote(query_string)
-    msg = message_from_string(decoded_string)
-    name = extract_value("name", msg)
-    pet_type = extract_value("petType", msg)
-    age = extract_value("age", msg)
-    parents = extract_value("parents", msg)
-    about = extract_value("about", msg)
+    name = return_value("name", decoded_string)
+    pet_type = return_value("petType", decoded_string)
+    age = return_value("age", decoded_string)
+    parents = return_value("parents", decoded_string)
+    about = return_value("about", decoded_string)
     file_path = "website/dog/index.html" #the path has to be obtained from path translated + the query string,
     indicator = "<!-- last post ended here -->"
     to_be_added_content =  f"""
