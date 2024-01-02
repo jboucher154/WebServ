@@ -42,6 +42,7 @@ SRCS = \
 	deleteAllocatedCStringArray.cpp	\
 	ft_strdup.cpp				\
 	Response_directory_listing.cpp \
+	MimeTypes.cpp \
 	url_decoder.cpp
 
 

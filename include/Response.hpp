@@ -9,6 +9,7 @@
 # include <map>
 # include <unistd.h>
 # include <cstdio>
+# include <fstream>
 
 # include <vector>
 
@@ -16,6 +17,7 @@
 # include "Server.hpp"
 # include "Request.hpp"
 # include "Logger.hpp"
+# include "MimeTypes.hpp"
 
 # ifndef CRLF
 #  define CRLF "\r\n"
@@ -62,10 +64,8 @@ class	Response {
 		bool				alias_;
 		bool				directory_listing_;
 		std::string			query_string_;
-		std::vector<std::string> file_data_;
+		std::vector<char>	file_data_;
 		//maybe add map of headers, create them as I go?
-		
-		void	intializeMimeTypes( void );
 
 		/* HEADER GENERATORS */
 		std::string&	addHeaders_( std::string& response) const;
@@ -85,11 +85,10 @@ class	Response {
 
 		/* UTILITIES FOR GET */
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
+		std::vector<std::string>	getAcceptedFormats( void );
 
 		/* UTILITIES FOR POST */
-		std::vector<std::string> 	GetContentTypeValues_( void );
-		void						parseMultiPartFormData( std::string& boundary );
-		std::vector<std::string>	getAcceptedFormats( void );
+		void	saveBodyToFile( void );
 		
 		/* RESOURCE AND LOCATION IDENTIFICATION */
 		int		setResourceLocationAndName( std::string uri );
@@ -112,7 +111,6 @@ class	Response {
 		std::string buildHtmlList(const std::string& path);
 
 	public:
-		static	std::map<std::string, std::string> mime_types_;
 		Response( const Response& to_copy );
 		Response( Server* server );
 		~Response( void );
@@ -127,11 +125,10 @@ class	Response {
 		std::string&	buildAndGetResponsePhase2( const std::string& body );
 
 		/* GETTERS */
-		int									getStatusCode( void ) const;
-		const std::string&					getResourcePath( void ) const;
-		const std::string&					getQueryString( void ) const;
-		std::vector<std::string>::iterator	getFileDataBegin( void );
-		std::vector<std::string>::iterator	getFileDataEnd( void );
+		int						getStatusCode( void ) const;
+		const std::string&		getResourcePath( void ) const;
+		const std::string&		getQueryString( void ) const;
+		const std::string&		getUploadData( void );
 
 		/* SETTERS */
 		void				setStatusCode( unsigned int	new_code );
