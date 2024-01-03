@@ -22,6 +22,8 @@ class	Request {
 		bool								cgi_flag_;
 		bool								headers_complete;
 		bool								complete_;
+		std::string							host_name_;
+		int									port_;
 		std::map<std::string, std::string>	request_line_;
 		std::map<std::string, std::string>	headers_;
 		std::string							raw_body_;
@@ -49,6 +51,7 @@ class	Request {
 		void	setKeepAlive( void );
 		void	setRequestAttributes( void );
 		void	setCgiFlag( void );
+		void	setHostNameAndPort( void );
 
 	public:
 		Request( void );
@@ -64,13 +67,15 @@ class	Request {
 		void	printRequest( void ) const;
 
 		/* GETTERS */
-		size_t		getBodySize( void ) const;
-		size_t		getBodyLengthReceived( void ) const;
-		bool		getChunked( void ) const;
-		bool		getKeepAlive( void ) const;
-		bool		getComplete( void ) const;
-		bool		getServerError( void ) const;
-		bool		getCgiFlag( void ) const;
+		size_t				getBodySize( void ) const;
+		size_t				getBodyLengthReceived( void ) const;
+		bool				getChunked( void ) const;
+		bool				getKeepAlive( void ) const;
+		bool				getComplete( void ) const;
+		bool				getServerError( void ) const;
+		bool				getCgiFlag( void ) const;
+		const std::string&	getRequestHostName( void ) const;
+		int					getRequestPort( void ) const;
 
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;

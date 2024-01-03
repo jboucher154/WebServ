@@ -231,16 +231,7 @@ void	Response::clear( void ) { 	/* reset for next use */
 	this->directory_listing_ = false;
 }
 
-/*! \brief	returns http status code set for the response
-*
-*
-*	returns http status code set for the response
-*
-*/
-int	Response::getStatusCode( void ) const {
-
-	return (this->status_code_);
-}
+/******************************* SETTERS ******************************/
 
 /*! \brief	setter for the response status code
 *
@@ -252,6 +243,27 @@ void	Response::setStatusCode( unsigned int	new_code ) {
 
 	this->status_code_ = new_code;
 }
+
+void	Response::setServer( Server* server ) {
+
+	if (server) {
+		this->server_ = server;
+	}
+}
+
+/******************************* GETTERS ******************************/
+
+/*! \brief	returns http status code set for the response
+*
+*
+*	returns http status code set for the response
+*
+*/
+int	Response::getStatusCode( void ) const {
+
+	return (this->status_code_);
+}
+
 
 /*! \brief returns the filepath to the requested resource
 *
