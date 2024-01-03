@@ -515,7 +515,7 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		this->request_line_["method"] = part;
 	}
 	else {
-		this->status_code_ = 501; //not implemented
+		this->status_code_ = 501; //not implemented 
 		return ;
 	}
 	ss >> part;
