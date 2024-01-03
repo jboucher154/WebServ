@@ -500,6 +500,8 @@ void	Request::setRequestAttributes( void ) {
 *
 *	Stores request line values in map. if method not implemented or HTTP version
 *	is not supported the status code will be set and the parsing stops.
+*	The uri as recieved is stored under "raw_uri" and the url decoded uri is stored
+*	under "uri" in the request_line_ map.
 *  
 */
 void	Request::parseRequestLine_( std::string& to_parse ) {
@@ -515,11 +517,12 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		this->request_line_["method"] = part;
 	}
 	else {
-		this->status_code_ = 501; //not implemented
+		this->status_code_ = 501; //not implemented 
 		return ;
 	}
 	ss >> part;
-	this->request_line_["uri"] = part;
+	this->request_line_["raw_uri"] = part;
+	this->request_line_["uri"] = urlDecode(part);
 	ss >> part;
 	if (part != "HTTP/1.1") {
 		this->status_code_ = 505; //HTTP version not supported
