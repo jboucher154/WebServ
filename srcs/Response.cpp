@@ -849,20 +849,19 @@ void	Response::headMethod_( void ) {
 
 /****************************************** DELETE ******************************************/
 
-/*! \brief if no cgi present, calls remove on resource path to delete file
+/*! \brief if no cgi present, calls remove on resource path to delete file, otherwise sets 
+*				query string to processed body
 *
-*
-*
+*	If no cgi present, calls remove() on resource path to delete file, otherwise sets
+*	query string to processed body. In case of failure 500, server error is set.
 *
 */
 void	Response::deleteMethod_( void ) {
 
 	if (this->request_->getCgiFlag()) {
-		//maybe set the query string here?
-		return ;
+		this->query_string_ = urlEncode(this->request_->getProcessedBody());
 	}
-	
-	if (std::remove(this->resource_path_.c_str()) != 0 ) {
+	else if (std::remove(this->resource_path_.c_str()) != 0 ) {
 		Logger::log(E_ERROR, COLOR_RED, "DELETE: removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
 		this->status_code_ = 500; //internal server error for now
 	}
