@@ -519,7 +519,8 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		return ;
 	}
 	ss >> part;
-	this->request_line_["uri"] = part;
+	this->request_line_["raw_uri"] = part;
+	this->request_line_["uri"] = urlDecode(part);
 	ss >> part;
 	if (part != "HTTP/1.1") {
 		this->status_code_ = 505; //HTTP version not supported
