@@ -1082,7 +1082,7 @@ bool Validator::checkListenServernameUniqueness(){
 				Logger::log(E_ERROR, COLOR_RED, "Same severnames can not be listening on same listening ports!");
 				return false;
 			}
-			similars[similars.size() - 1] = temp;
+			similars.push_back(temp);
 		}
 	}
 	return true;
