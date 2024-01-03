@@ -30,9 +30,27 @@ def main():
     parents = return_value("parents", decoded_string)
     about = return_value("about", decoded_string)
     file_path = "website/dog/index.html" #the path has to be obtained from path translated + the query string,
+    id = 0
+    post_id = '<!-- id="{}" -->'.format(id)
+    while True:
+        try:
+            with open(file_path, 'r') as file:
+                file_content = file.read()
+                index = file_content.find(post_id)
+            if index != -1:
+                id += 1
+            else:
+                new_content = file_content[:index] + file_content[index + len(post_id):]
+                with open(file_path, 'w') as write_file:
+                    write_file.write(new_content)
+                id += 1
+                break
+        except Exception as e:
+            print(f'Error processing {file_path}: {e}')
+
     indicator = "<!-- last post ended here -->"
-    to_be_added_content =  f"""
-        <div class="container default post">
+    to_be_added_content =  f"""{post_id}
+        <div class="container {id} post">
             <aside class="image">
                 <img src="Elvis.jpeg" alt="test png" alt="cute doggo photo"/>
             </aside>
