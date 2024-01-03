@@ -414,6 +414,7 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 			deleteAllocatedCStringArray(this->metavariables_);
 			std::exit(EXIT_FAILURE);
 		}
+		std::cerr << "EXECVE to be called now!" << std::endl;
 		execve(this->args_[0], this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
@@ -427,7 +428,7 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 		close(this->pipe_into_cgi_[E_PIPE_END_WRITE]);
 		close(this->pipe_from_cgi_[E_PIPE_END_WRITE]);
 
-		int status;
+		int status = 0;
 		this->cgiTimer_(status);
 		if (WIFSIGNALED(status) > 0 || WEXITSTATUS(status) != 0)
 			return E_CGI_SERVERERROR;

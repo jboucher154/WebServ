@@ -26,7 +26,7 @@
 			</div>
 			<div>
 				<label for="pet_type">Pet type</label>
-				<div class="Pet_Radio" id="pet_type">
+				<div class="Pet_Radio" required="required" id="pet_type">
 					<ul>
 						<li><div><label><input type="radio" name="petType" value="cat">cat</label></div></li>
 						<li><div><label><input type="radio" name="petType" value="dog">dog</label></div></li>
@@ -80,24 +80,24 @@
 					labels[index].style.color = 'white';
 				});
 			});
-		// document.getElementById('mainForm').addEventListener('submit', function(event) {
-		// 	event.preventDefault(); // Prevent the default form submission
+		document.getElementById('mainForm').addEventListener('submit', function(event) {
+			event.preventDefault(); // Prevent the default form submission
 
-		// 	// Submit the main form
-		// 	const mainForm = document.getElementById('mainForm');
-		// 	const formData = new FormData(mainForm);
-		// 	fetch(mainForm.action, {
-		// 		method: 'POST',
-		// 		body: formData
-		// 	});
+			// Submit the main form
+			const mainForm = document.getElementById('mainForm');
+			const formData = new FormData(mainForm);
+			fetch(mainForm.action, {
+				method: 'POST',
+				body: formData
+			});
 
-		// 	// Submit the photo form
-		// 	const photoForm = document.getElementById('photoForm');
-		// 	const photoFormData = new FormData(photoForm);
-		// 	fetch(photoForm.action, {
-		// 		method: 'POST',
-		// 		body: photoFormData
-		// 	});
-		// });
+			// Submit the photo form
+			const photoForm = document.getElementById('photoForm');
+			const photoFormData = new FormData(photoForm);
+			fetch(photoForm.action, {
+				method: 'POST',
+				body: photoFormData
+			});
+		});
 	</script>
 </html>
