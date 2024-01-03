@@ -315,7 +315,7 @@ bool	Response::validateResource_( void ) {
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->resource_path_.c_str());
 		return (false);
 	}
-	if (this->request_->getRequestLineValue("method") == "DELETE") { //set different rules here if cgi flag is set => && !this->request_->getCgiFlag()
+	if (!this->request_->getCgiFlag() && this->request_->getRequestLineValue("method") == "DELETE") {
 		return (true);
 	}
 	else if (this->request_->getCgiFlag() && access(this->resource_path_.c_str(), X_OK) != 0) {
@@ -861,20 +861,19 @@ void	Response::headMethod_( void ) {
 
 /****************************************** DELETE ******************************************/
 
-/*! \brief if no cgi present, calls remove on resource path to delete file
+/*! \brief if no cgi present, calls remove on resource path to delete file, otherwise sets 
+*				query string to processed body
 *
-*
-*
+*	If no cgi present, calls remove() on resource path to delete file, otherwise sets
+*	query string to processed body. In case of failure 500, server error is set.
 *
 */
 void	Response::deleteMethod_( void ) {
 
 	if (this->request_->getCgiFlag()) {
-		//maybe set the query string here?
-		return ;
+		this->query_string_ = urlEncode(this->request_->getProcessedBody());
 	}
-	
-	if (std::remove(this->resource_path_.c_str()) != 0 ) {
+	else if (std::remove(this->resource_path_.c_str()) != 0 ) {
 		Logger::log(E_ERROR, COLOR_RED, "DELETE: removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
 		this->status_code_ = 500; //internal server error for now
 	}
