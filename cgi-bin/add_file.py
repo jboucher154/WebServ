@@ -36,10 +36,15 @@
 import sys
 
 def save_binary_to_file(file_path, output_file_path):
+    chunk_size = 4096
     try:
-        with open(file_path, 'rb') as input_file:
-            # Read binary data from the input file
-            binary_data = input_file.read()
+        binary_data = b''
+        chunk = b'...'
+        while True:
+            chunk = sys.stdin.buffer.read(chunk_size)
+            if not chunk:
+                break
+            binary_data += chunk
 
             # Write binary data to the output file
             with open(output_file_path, 'wb') as output_file:

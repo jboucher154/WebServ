@@ -65,3 +65,23 @@ function addComments(event) {
     //add timestamp
   }
 }
+
+function deletePost(postId) {
+  fetch('../cgi-bin/delete_post.sh', {
+      method: 'DELETE',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: postId }),
+  }).then(response => {
+      if (response.ok) {
+          // Handle success, e.g., remove the container
+          document.getElementById(postId).remove();
+      } else {
+          // Handle error
+          console.error('Failed to delete post');
+      }
+  }).catch(error => {
+      console.error('Error:', error);
+  });
+}
