@@ -58,6 +58,9 @@ class	ServerManager {
 		bool	sendResponseToClient( int client_fd );
 		int		getClientFdByItsCgiPipeFd( int pipe_fd );
 		void	checkIfClientTimeout( int client_fd );
+		void	checkServerAssignmentBasedOnRequest( Client& client );//
+
+		int		getServerFdFromServerMap( Server* server ) const;
 
 
 		bool	SELECT_initializeServers( void );
