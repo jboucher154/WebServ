@@ -153,26 +153,29 @@ void	ServerManager::removeClient( int client_fd ) {
 
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
-	char		client_msg[4000];
+	char		client_msg[500000];
 	Client*		client = &this->client_map_[client_fd];
 	Server*		server = client->getServer();
 	Request&	request = client->getRequest();
 
 	client->setLatestTime();
-	memset(client_msg, 0, 4000);
-	int bytes_received = recv(client_fd, &client_msg, 3999, 0);
+	memset(client_msg, 0, 500000);
+	int bytes_received = recv(client_fd, &client_msg, 500000 - 1, 0);
 
-	// std::cout << "bytes received: " << bytes_received << std::endl;
-	// std::cout << "messge:  " << client_msg << std::endl;
+	std::cout << "bytes received: " << bytes_received << std::endl;
+	std::cout << "messge:  \n" << client_msg << std::endl;
 
-	if (bytes_received == -1)
-		Logger::log(E_ERROR, COLOR_RED, "recv error, from socket %d to server %s",
-			client_fd, server->getServerIdforLog().c_str());
+	if (bytes_received == -1) {
+		Logger::log(E_ERROR, COLOR_RED, "recv error from socket %d to server %s, disconnecting client", client_fd, server->getServerIdforLog().c_str());
+		return false;
+	}
 	else if (bytes_received == 0){ // client has disconnected...
 		Logger::log(E_INFO, COLOR_MAGENTA, "Client %d has disconnected", client_fd);
 		return false;
 	} else {
-		client->addToRequest(client_msg);
+		client_msg[bytes_received] = '\0';
+		char* msg_ptr = client_msg;
+		client->addToRequest(msg_ptr, bytes_received);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
 	}
@@ -201,10 +204,10 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		return keep_alive;
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
-		Logger::log(E_ERROR, COLOR_RED, "send error, from server %s to socket %d",
-			server->getServerIdforLog().c_str(), client_fd);
+		Logger::log(E_ERROR, COLOR_RED, "send error from server %s to socket %d, disconnecting client", server->getServerIdforLog().c_str(), client_fd);
+		return false;
 	}
-	else if (bytes_sent == 0) {
+	else if (bytes_sent == 0) {	// check later is this necessary...
 		Logger::log(E_DEBUG, COLOR_YELLOW, " Server %s sent 0 bytes to socket %d",
 			server->getServerIdforLog().c_str(), client_fd);
 	}
@@ -216,10 +219,11 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
 				server->getServerName().c_str(), client_fd, response.getStatusCode());
 	}
-
-	client->resetResponse();
-	client->resetRequest();
-
+	//only if complete reset FOR NOW
+	if (client->getRequest().getComplete()) {
+		client->resetResponse();
+		client->resetRequest();
+	}
 	return keep_alive;
 }
 
@@ -244,6 +248,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		#endif
 	}
 }
+
 
 #if	POLL_TRUE_SELECT_FALSE
 /********************************************** POLL functions **********************************************************/
@@ -305,21 +310,9 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			int	i = 0;
 
 			for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end() && i < this->pollfds_size_; ++it, ++i) {
-				if (it->revents & POLLIN) {
-					if (this->server_map_.count(it->fd)) {
-						this->POLL_acceptNewClientConnection(it->fd);
-					} else if (this->client_map_.count(it->fd)) {
-						this->POLL_receiveFromClient(it->fd);
-					}
-				}
-				if (it->revents & POLLOUT) {
-					if (this->client_map_.count(it->fd)) {
-						this->POLL_sendResponseToClient(it->fd);
-					} else {	//cgi pipe activity
-						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
-						this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
-					}
-				}
+				
+				if (it->revents & (POLLIN | POLLOUT))
+					this->POLL_handleEvent(it);
 
 				if (this->client_map_.count(it->fd))	//	if client, check if timeout
 					this->checkIfClientTimeout(it->fd);
@@ -332,6 +325,24 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		Logger::log(E_INFO, COLOR_GREEN, "Server run timeout; servers shutting down... [THE GOOD AND PROPER ENDING]");
 		this->closeAllSockets();
 		return true;
+	}
+
+	void	ServerManager::POLL_handleEvent( std::vector<pollfd>::iterator& it ) {
+
+		if (it->revents & POLLIN) {
+			if (this->server_map_.count(it->fd)) {
+				this->POLL_acceptNewClientConnection(it->fd);
+			} else if (this->client_map_.count(it->fd)) {
+				this->POLL_receiveFromClient(it->fd);
+			}
+		} else if (it->revents & POLLOUT) {
+			if (this->client_map_.count(it->fd)) {
+				this->POLL_sendResponseToClient(it->fd);
+			} else {	//cgi pipe activity
+				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
+				this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
+			}
+		}
 	}
 
 	void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
@@ -424,8 +435,10 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->POLL_removeClient(client_fd);
 		else {
-			client.getResponse().createResponsePhase1(&client.getRequest());
-			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+			Request& request = client.getRequest();
+			client.getResponse().createResponsePhase1(&request);
+
+			if (request.getComplete() && request.getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "valid cgi request, going to startCgiResponse");	// remove later, trying to debug heap use after free error!
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
@@ -538,20 +551,11 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			}
 		
 			for (int fd = 0; fd <= this->biggest_fd_; ++fd) {
-				if (FD_ISSET(fd, &read_fd_set_copy)) {
-					if (this->server_map_.count(fd)) {
-						this->SELECT_acceptNewClientConnection(fd);	// new client connection
-					} else if (this->client_map_.count(fd))
-						this->SELECT_receiveFromClient(fd);	// client request or disconnection
+				
+				if (FD_ISSET(fd, &read_fd_set_copy) || FD_ISSET(fd, &write_fd_set_copy)) {
+					this->SELECT_handleEvent(fd, read_fd_set_copy, write_fd_set_copy);
 				}
-				if (FD_ISSET(fd, &write_fd_set_copy)) {
-					if (this->client_map_.count(fd)) {	// send a response to client
-						this->SELECT_sendResponseToClient(fd);
-					} else {	//cgi pipe activity
-						Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
-						this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
-					}
-				}
+
 				if (this->client_map_.count(fd)) {	//	if client, check if timeout
 					this->checkIfClientTimeout(fd);
 				}
@@ -580,6 +584,24 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		write_fd_set_copy = this->write_fd_set_;
 
 		this->biggest_fd_ = SELECT_getBiggestFd(FD_SETSIZE - 1);
+	}
+
+	void	ServerManager::SELECT_handleEvent( int fd, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy ) {
+
+		if (FD_ISSET(fd, &read_fd_set_copy)) {
+			if (this->server_map_.count(fd)) {
+				this->SELECT_acceptNewClientConnection(fd);	// new client connection
+			} else if (this->client_map_.count(fd)) {
+				this->SELECT_receiveFromClient(fd);	// client request or disconnection
+			}
+		} else if (FD_ISSET(fd, &write_fd_set_copy)) {
+			if (this->client_map_.count(fd)) {	// send a response to client
+				this->SELECT_sendResponseToClient(fd);
+			} else {	//cgi pipe activity
+				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", fd, this->getClientFdByItsCgiPipeFd(fd));
+				this->SELECT_handleClientCgi_(this->getClientFdByItsCgiPipeFd(fd));
+			}
+		}
 	}
 
 
@@ -664,8 +686,10 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		if (!this->receiveFromClient(client_fd))
 			this->SELECT_removeClient(client_fd);
 		else {
-			client.getResponse().createResponsePhase1(&client.getRequest());
-			if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
+			Request& request = client.getRequest();
+			client.getResponse().createResponsePhase1(&request);
+
+			if (request.getComplete() && request.getCgiFlag() && client.getResponse().getStatusCode() < 400) {
 				if ((client.startCgiResponse()) == true) {
 					CgiHandler* client_cgi = client.getCgiHandler();
 					this->addClientCgiFdsToCgiMap_(client_fd, client_cgi->getPipeIn()[1], client_cgi->getPipeOut()[0]);
@@ -736,7 +760,7 @@ void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pi
 
 		this->client_cgi_map_[client_fd] = pipe_vector;
 	} else
-		Logger::log(E_ERROR, COLOR_RED, "addClientCgiToCgiMap_; client %d is already in the map (THIS SHOULDN'T HAPPEN)", client_fd);
+		Logger::log(E_ERROR, COLOR_RED, "addClientCgiToCgiMap_; client %d is already in the map (THIS SHOULDN'T HAPPEN)", client_fd); // this is triggered
 		// handle error somehow
 }
 

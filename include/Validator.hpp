@@ -60,6 +60,7 @@ private:
 	static bool validIpHostBuilder();
 	static bool checkListenServernameUniqueness();
 	static bool cgiScript( std::string value );
+	static void setUpLocationRootAndIndex(std::string	locationKey);
 
 	Validator();
 	Validator( const Validator& src );

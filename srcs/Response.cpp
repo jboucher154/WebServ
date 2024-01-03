@@ -2,8 +2,6 @@
 #include "Response.hpp"
 #include <sstream>
 
-std::map<std::string, std::string>	Response::mime_types_;
-
 /* CONSTRUCTORS */
 
 /*! \brief Default constructor is private.
@@ -36,10 +34,7 @@ request_(NULL),
 redirect_(false),
 alias_(false),
 directory_listing_(false) {
-	
-	if (Response::mime_types_.empty()) {
-		intializeMimeTypes();
-	}
+
 }
 
 /*! \brief Copy constructor calls assignment operator.
@@ -76,9 +71,6 @@ Response::~Response( void ) {
 */
 Response&	Response::operator=( const Response& rhs ) {
 
-	if (Response::mime_types_.empty()) {
-		intializeMimeTypes();
-	}
 	if (this != &rhs) {
 
 		this->response_ = rhs.response_;
@@ -114,14 +106,26 @@ void	Response::createResponsePhase1( Request* request ) {
 	response_methods_	methods = { &Response::getMethod_, &Response::headMethod_, &Response::postMethod_, &Response::deleteMethod_ };
 
 	this->request_ = request;
+	this->status_code_ = request->getStatusCode();//make sure server errors are added here too
+	if (this->status_code_ >= 400)
+		return ;
 	if (this->server_ == NULL) {
 		Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Response server is NULL");
+		this->status_code_ = 500;
+		return ;
+	}
+	if (this->server_->getClientMaxBodySize() < static_cast<int>(request->getBodySize())) {
+		this->status_code_ = 413; //413 Content Too Large
 		return ;
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
-		if (this->request_ != NULL && !this->request_->getComplete() && this->request_->getChunked()) {
+		if (this->request_ != NULL && this->request_->getChunked()) {
 			this->status_code_ = 100;
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
+		}
+		else if (this->request_ != NULL && !this->request_->getComplete()) {
+			this->status_code_ = 202;
+			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is not complete. 202 Accepted set!");
 		}
 		else {
 			this->status_code_ = 400; //Bad Request
@@ -129,7 +133,7 @@ void	Response::createResponsePhase1( Request* request ) {
 		}
 		return ;
 	}
-	if (setResourceLocationAndName(this->request_->getRequestLineValue("uri")) >= 400 || this->status_code_ / 100 == 3) {
+	if (setResourceLocationAndName(this->request_->getRequestLineValue("uri")) >= 400 || (this->status_code_ / 100 == 3 && this->request_->getRequestLineValue("method") != "POST")) {
 		return ;
 	}
 	if (!methodAllowed_(this->request_->getRequestLineValue("method"))) {
@@ -159,6 +163,9 @@ void	Response::createResponsePhase1( Request* request ) {
 */
 std::string&	Response::buildAndGetResponsePhase2( void ) {
 
+	if (this->status_code_ == 202) { //don't send anything if not ready yet
+		return this->response_;
+	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400 || this->status_code_ == 0) {
 		createErrorBody_();
@@ -175,15 +182,22 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 *			reference to the response string built.
 *       
 *
-*	Builds and returns response, checking if there has been an error, adding headers as 
-*	required, and appending the body passed to the function. All are separated by the 
-*	CRLF or "/r/n" per HTTP guidelines.
+*	If the cgi process has run with out error, the body from the cgi is returned as 
+*	the full response. If the status code indicates an error, this will builds and returns 
+*	response, adding headers as required, and appending the body passed to the function. 
+*	All are separated by the CRLF or "/r/n" per HTTP guidelines.
 *  
 */
 std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
 	this->body_ = body;
 
+	if (this->status_code_ == 202) { //don't send anything if not ready yet
+		return this->response_;
+	}
+	if (this->status_code_ < 400) {
+		return this->body_;
+	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
 	if (this->status_code_ >= 400 || this->status_code_ == 0) {
 		createErrorBody_();
@@ -268,80 +282,12 @@ const std::string&	Response::getQueryString( void ) const {
 *	returns begin iterator for the stored filedata for upload
 *
 */
-std::vector<std::string>::iterator	Response::getFileDataBegin( void ) {
+const std::string&	Response::getUploadData( void ) {
 
-	return (this->file_data_.begin());
+	return (this->request_->getUploadContent());
 }
-
-/*! \brief returns end iterator for the stored filedata for upload
-*
-*
-*	returns end iterator for the stored filedata for upload
-*
-*/
-std::vector<std::string>::iterator	Response::getFileDataEnd( void ) {
-
-	return (this->file_data_.end());
-}
-
 
 /* CLASS PRIVATE METHODS */
-
-/*! \brief	used to intialize Mime type values
-*
-*
-*	Sets values in the mime_types_ map to use for recognizing and setting mime types.
-*	All values are used based on the IANA standards linked below.
-*
-* 	REFERENCE: https://www.iana.org/assignments/media-types/media-types.xhtml
-*
-*/
-void	Response::intializeMimeTypes( void ) {
-
-	//text
-	Response::mime_types_["html"] = "text/html";
-	Response::mime_types_["css"] = "text/css";
-	Response::mime_types_["txt"] = "text/plain";
-	Response::mime_types_["js"] = "text/javascript";
-	Response::mime_types_["md"] = "text/markdown";
-	Response::mime_types_["csv"] = "text/csv";
-	Response::mime_types_["rtf"] = "text/rtf";
-	Response::mime_types_["xml"] = "text/xml";
-
-	//application
-	Response::mime_types_["unknown"] = "application/octet-stream";//unkown binary file
-	Response::mime_types_["pdf"] = "application/pdf";
-	Response::mime_types_["msword"] = "application/msword";//?
-	Response::mime_types_["zip"] = "application/zip";
-
-	//audio
-	// Response::mime_types_["mp4"] = {"mp4", "audio/mp4";
-
-	//font
-	Response::mime_types_["ttf"] = "font/ttf";
-
-	//image
-	Response::mime_types_["bmp"] = "image/bmp";
-	Response::mime_types_["gif"] = "image/gif";
-	Response::mime_types_["jpg"] = "image/jpeg";
-	Response::mime_types_["jpeg"] = "image/jpeg";
-	Response::mime_types_["png"] = "image/png";
-	Response::mime_types_["tiff"] = "image/tiff";
-	Response::mime_types_["ico"] = "image/x-icon";
-
-	//message
-
-
-	//model
-	//multipart
-
-	//video
-	// Response::mime_types_["jpeg"] = {"jpeg", "video/jpeg", true};
-	Response::mime_types_["mp4"] = "video/mp4";
-	Response::mime_types_["raw"] = "video/raw";
-	Response::mime_types_["MPV"] = "video/MPV";
-
-}
 
 /*! \brief checks for existance and file access rights for requested resource
 *
@@ -375,8 +321,6 @@ bool	Response::validateResource_( void ) {
 
 /****************************************** HEADER GENERATORS ******************************************/
 
-//could make this an array of methods and call them, appending CRLF to each in a loop
-
 /*! \brief	calls methods to add headers to the response
 *
 *	Appends each header to the response as needed. No errors are set here. 
@@ -398,9 +342,23 @@ std::string&	Response::addHeaders_( std::string& response) const {
 	if (this->redirect_) {
 		response += this->locationHeader_() + CRLF;
 	}
+	if (this->status_code_ == 413) { //send if body content too large
+		response += this->retryAfterHeader_() + CRLF;
+	}
 	//between headers and body
 	response += CRLF;
 	return ( response );
+}
+
+/*! \brief creates `Retry-After' header to add to response
+*       
+*	`Retry-After' header returned with default value in seconds for client to wait
+*	before sending a request again.
+*  
+*/
+std::string	Response::retryAfterHeader_( void ) const {
+
+	return "Retry-After: 30";
 }
 
 /*! \brief creates the location header for a redirection, sets redirect the index page of 
@@ -426,14 +384,14 @@ std::string	Response::locationHeader_( void ) const {
 	}
 	location_pos = redirect_path.find(path_location);
 	if (location_pos == std::string::npos) {
-		return "Location: " + this->resource_location_ + "/" + "index.html" + CRLF;
+		return "Location: " + this->resource_location_ + "/" + "index.html";
 	}
 	else {
 		redirect_path = redirect_path.substr(location_pos + path_location.length());
 		if (this->resource_location_ == "/")
-			return "Location: " + redirect_path + CRLF;
+			return "Location: " + redirect_path;
 		else
-			return "Location: " + this->resource_location_ + redirect_path + CRLF;
+			return "Location: " + this->resource_location_ + redirect_path;
 	}
 }
 
@@ -529,7 +487,7 @@ void	Response::createErrorBody_( void ) {
 	if (!complete) {
 		this->body_ = ResponseCodes::getCodeElementBody(this->status_code_);
 	}
-	this->response_mime_ = Response::mime_types_["html"];
+	this->response_mime_ = MimeTypes::getMimeTypeByExtension("html");
 }
 
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
@@ -546,6 +504,7 @@ bool	Response::handleRedirection( void ) {
 	if (this->server_->isKeyInLocation(this->resource_location_, "return")) {
 	    this->resource_location_ = this->server_->getLocationValue(this->resource_location_, "return")->front();
 		this->redirect_ = true;
+		this->status_code_ = 302;//
 	    Logger::log(E_DEBUG, COLOR_CYAN, "Redirection found for location new location : %s", this->resource_location_.c_str());
 		return true;
 	}
@@ -769,15 +728,15 @@ void	Response::setMimeType( void ) {
 	size_t	extension_start = this->resource_path_.find_last_of('.');
 
 	if (this->request_->getCgiFlag() || this->directory_listing_) {
-		this->response_mime_ = Response::mime_types_["html"];
+		this->response_mime_ = MimeTypes::getMimeTypeByExtension("html");
 		return ;
 	}
 	if (extension_start == std::string::npos) {
-		this->response_mime_ = Response::mime_types_["unknown"];
+		this->response_mime_ = MimeTypes::getMimeTypeByExtension("unknown");
 	}
 	else {
 		std::string extension = this->resource_path_.substr(extension_start + 1);
-		this->response_mime_ = Response::mime_types_[extension];
+		this->response_mime_ = MimeTypes::getMimeTypeByExtension(extension);
 	}
 	if (this->response_mime_.empty()) {
 		this->status_code_ = 415;
@@ -845,11 +804,6 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 		std::stringstream		contents;
 		contents << resource.rdbuf();
 		this->body_ += contents.str();
-		// char	bin_char;
-		// while (!resource.eof()) {
-		// 	resource >> bin_char;
-		// 	this->binary_data_.push_back(bin_char);
-		// }
 	}
 	else {
 		std::cout << "Text one here2" << std::endl;
@@ -909,7 +863,7 @@ void	Response::deleteMethod_( void ) {
 	}
 	
 	if (std::remove(this->resource_path_.c_str()) != 0 ) {
-		Logger::log(E_ERROR, COLOR_RED, "DELETE METHOD, removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
+		Logger::log(E_ERROR, COLOR_RED, "DELETE: removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
 		this->status_code_ = 500; //internal server error for now
 	}
 	else {
@@ -919,91 +873,31 @@ void	Response::deleteMethod_( void ) {
 
 /****************************************** POST ******************************************/
 
-/*! \brief	parses multiform data into a the query string and stores any file data int file_data_ vector
-*
-*
-*
-*
+/*! \brief creates resource requested for non-cgi requests
+*       
+*	Creates file for request based on multipart/form-data information parsed in request.
+*	File is created based on the uri location. If a file already exists by that name
+*	it will be overwritten.
+*	If successful, the 201 created status code is set.
+*	TODO: check if mime types is allowed (could be gotten around by users with cgi script)
+*  
 */
-void	Response::parseMultiPartFormData( std::string& boundary ) {
+void	Response::saveBodyToFile( void ) {
 
-	if (boundary.empty()) {
-		this->query_string_ = "invalid boundary found";
-		this->status_code_ = 400; //invalid request
+	const std::string& filename = this->request_->getUploadName();
+	//if fname is empty then reject
+	std::string file_path = this->server_->getLocationValue(this->resource_location_, "root")->front() + "/" + filename;
+	std::ofstream	new_file(file_path, std::ostream::binary);//open as binary mode
+	if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
+		this->status_code_ = 500;
 		return ;
 	}
-	boundary = boundary.erase(0, 9);
-	boundary = "--" + boundary;
-	std::string	file_datum;
-	bool		file_present = false;
-
-	for (std::vector<std::string>::iterator it = this->request_->getBodyBegin(); it != this->request_->getBodyEnd(); it++) {
-		while (it != this->request_->getBodyEnd() && *it != boundary ) {
-			std::stringstream	ss(*it);
-			std::string	segment;
-
-			ss >> segment;
-			if (strncmp(it->c_str(), "Content-Disposition", 19) == 0) {
-				while (!ss.eof()) {
-					ss >> segment;
-					if (segment == "form-data;")
-						query_string_ += "type=form_data ";
-					else {
-						if (strncmp(segment.c_str(), "filename=", 9) == 0)
-							file_present = true;
-						query_string_ += segment + " ";
-					}
-				}
-			}
-			else if (strncmp(it->c_str(), "Content-Type", 12) == 0) {
-				ss >> segment;
-				query_string_ += "content-type=" + segment + " ";
-			}
-			else {
-				if (file_present)
-					file_datum += *it;
-				else if (!segment.empty())
-					query_string_ += "value=" + *it + " ";
-			}
-			it++;
-		}
-		if (!file_datum.empty()) {
-			this->file_data_.push_back(file_datum);
-			file_datum.clear();
-			file_present = false;
-		}
-		if (it == this->request_->getBodyEnd())
-			break ;
-	}
+	new_file << this->request_->getUploadContent();
+	new_file.close();
+	this->status_code_ = 201;//created
 }
 
-
-/*! \brief returns vector of values from the Content-Type request Header
-*
-*
-*
-*
-*/
-std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
-	
-	std::string 				content_type = this->request_->getHeaderValueByKey("Content-Type");
-	std::stringstream			ss(content_type);
-	std::string					value;
-	std::vector<std::string>	values;
-
-	while (getline(ss, value, ';' )) {
-		if (value.front() == ' ') {
-			value.erase(0, 1);
-		}
-		while (*(value.end()) == '\r' || *(value.end()) == '\n') {
-			value.pop_back();
-		}
-		values.push_back(value);
-	}
-	return (values);
-}
-
-/*! \brief	Post method currenly only works with cgi
+/*! \brief	post method will create resource or set query string for cgi script
 *
 *
 *
@@ -1011,32 +905,33 @@ std::vector<std::string> 	Response::GetContentTypeValues_( void ) {
 */
 void	Response::postMethod_( void ) {
 
-	std::vector<std::string>	content_type_values = this->GetContentTypeValues_();
+	std::string	content_type_values = this->request_->getHeaderValueByKey("Content-Type");
 	bool						cgi_flag = this->request_->getCgiFlag();
 	
-	if (!cgi_flag || content_type_values.empty()) {
+	// if (!cgi_flag || content_type_values.empty()) {
+	// 	this->status_code_ = 406; //not acceptable???
+	// 	return ;
+	// }
+	if (content_type_values.empty()) {
 		this->status_code_ = 406; //not acceptable???
 		return ;
 	}
-	//prepare CGI data ..
-	if (content_type_values.front() == "multipart/form-data") {
-		//handle form data
-		parseMultiPartFormData(content_type_values[1]);
-		this->query_string_ = urlEncode(this->query_string_);
-	}
-	else if (content_type_values.front() == "application/x-www-form-urlencoded") { //assume no data for now
-		// send url encoded string to cgi
-		if ((*(this->request_->getBodyBegin())).find("filename=") != std::string::npos) {
-			// check it includes data for a file. can set flag for the cgi if needed
-			Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "File included in URL encoded string of POST request");
-		}
-		query_string_ = *(this->request_->getBodyBegin());
+	if (!cgi_flag) {
+		this->saveBodyToFile();
+		std::cout << "POST:  NO CGI FLAG" << std::endl;
 	}
 	else {
-		//unsupported
-		this->status_code_ = 403; //Forbidden - couldn't find a better one to reply with unsported..., will keep looking
-		Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "POST request without form-data detected, not currently processed, 403 Forbidden reply will send");
+	//prepare CGI data ..
+		//handle form data
+		setMimeType();
+		std::cout << "POST:  CGI FLAG, form type not checked here" << std::endl;
+		this->query_string_ = urlEncode(this->request_->getProcessedBody());
 	}
+	// else {
+	// 	//unsupported
+	// 	this->status_code_ = 403; //Forbidden - couldn't find a better one to reply with unsported..., will keep looking
+	// 	Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "POST request without form-data detected, not currently processed, 403 Forbidden reply will send");
+	// }
 
 	//call CGI  handler here if no error code
 
