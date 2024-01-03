@@ -131,7 +131,8 @@ class	Response {
 		const std::string&		getUploadData( void );
 
 		/* SETTERS */
-		void				setStatusCode( unsigned int	new_code );
+		void			setStatusCode( unsigned int	new_code );
+		void			setServer( Server* server );
 };
 
 #endif
