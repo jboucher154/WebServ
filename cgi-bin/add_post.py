@@ -91,8 +91,8 @@ def main():
         current_datetime = datetime.now(timezone.utc)
         formatted_date = formatdate(timeval=current_datetime.timestamp(), localtime=False, usegmt=True)
         http_version = os.environ.get('SERVER_PROTOCOL')
-        header=f"{http_version} 303 See Other\r\nContent-Length: {len(new_content)}\r\nDate: {formatted_date}\r\nLocation: /{pet_type}/index.html\r\n\r\n"
-        sys.stdout.write(header + new_content)
+        header=f"{http_version} 303 See Other\r\nDate: {formatted_date}\r\nLocation: /{pet_type}/index.html\r\nContent-Type: text/html\r\n\r\n"
+        sys.stdout.write(header)
         #sys.stderr.write("The script did its thing")
     except Exception as e:
         print(f'Error processing {file_path}: {e}')
