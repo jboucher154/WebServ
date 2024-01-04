@@ -214,13 +214,14 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	Response&	response = client->getResponse();	
 
 	bool	keep_alive = client->getRequest().getKeepAlive();
-	std::string	response_string = client->getResponseString();
+	const std::string&	response_string = client->getResponseString();
 
 	client->setLatestTime();
 
 	if (response_string.empty())
 		return keep_alive;
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
+	// std::cout << "response: \n" << response_string << std::endl;//
 	if (bytes_sent == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "send error from server %s to socket %d, disconnecting client", server->getServerIdforLog().c_str(), client_fd);
 		return false;
