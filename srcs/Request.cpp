@@ -94,6 +94,7 @@ Request&	Request::operator=( const Request& rhs ) {
 *	based on headers then body is saved and parsed nusing the total bytes read from the 
 *	recv() call to guide the parsing. If exception for string conversions occur they are 
 *	caught and the error printed.
+*	After the headers are complete the timer for the request is started.
 *    
 */
 void	Request::add( char* to_add, size_t bytes_read ) {
@@ -112,6 +113,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 			else if (line.compare("\r") == 0) {
 				this->headers_complete = true;
 				this->setRequestAttributes();
+				time(&this->request_start_time_);
 			}
 			else {
 				this->parseHeader_(line);
@@ -417,6 +419,24 @@ unsigned int		Request::getStatusCode( void ) const {
 const std::string&		Request::getUploadMime( void ) const {
 
 	return this->file_mime_;
+}
+
+/*! \brief returns bool if request timed out based on REQUEST_TIMEOUT_SEC macro
+*
+*	Returns bool if request timed out based on REQUEST_TIMEOUT_SEC macro  calculating
+*	from current time and time response	processing started.
+*  
+*/
+bool	Request::checkRequestTimeout( void ) const {
+
+	time_t	current_time = time(NULL);
+	double	time_since_latest_action = difftime(current_time, this->request_start_time_);
+	
+	if (time_since_latest_action >= REQUEST_TIMEOUT_SEC) {
+		Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "request for uri: %s timed out!", getHeaderValueByKey("uri").c_str());
+		return true;
+	}
+	return false;
 }
 
 /************** PUBLIC SETTERS **************/

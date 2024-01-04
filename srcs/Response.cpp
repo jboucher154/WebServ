@@ -119,7 +119,10 @@ void	Response::createResponsePhase1( Request* request ) {
 		return ;
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
-		if (this->request_ != NULL && this->request_->getChunked()) {
+		if (this->request_->checkRequestTimeout() == true) {
+			this->status_code_ = 408;//request timout
+		}
+		else if (this->request_ != NULL && this->request_->getChunked()) {
 			this->status_code_ = 100;
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
 		}
@@ -357,9 +360,26 @@ std::string&	Response::addHeaders_( std::string& response) const {
 	if (this->status_code_ == 413) { //send if body content too large
 		response += this->retryAfterHeader_() + CRLF;
 	}
+	if (this->status_code_ == 408) {
+		response += this->connectionHeader_(false) + CRLF;
+	}
 	//between headers and body
 	response += CRLF;
 	return ( response );
+}
+
+/*! \brief creates `Connection' header to add to response
+*       
+*	`Retry-After' header returned with default value in seconds for client to wait
+*	before sending a request again.
+*  
+*/
+std::string	Response::connectionHeader_( bool connection_continue ) const {
+
+	if (!connection_continue) 
+		return "Connection: close";
+	else
+		return "Connection: keep-alive";
 }
 
 /*! \brief creates `Retry-After' header to add to response
@@ -897,10 +917,14 @@ void	Response::saveBodyToFile( void ) {
 
 	const std::string& filename = this->request_->getUploadName();
 	//if fname is empty then reject
+	if (filename.empty()) {
+		this->status_code_ = 400;// invalid request
+	}
 	std::string file_path = this->server_->getLocationValue(this->resource_location_, "root")->front() + "/" + filename;
 	std::ofstream	new_file(file_path, std::ostream::binary);//open as binary mode
 	if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
 		this->status_code_ = 500;
+		Logger::log(E_DEBUG, COLOR_BRIGHT_CYAN, "POST failed to create new file. filepath: %s", file_path.c_str());
 		return ;
 	}
 	new_file << this->request_->getUploadContent();
