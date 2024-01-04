@@ -39,6 +39,7 @@ class	Client {
 
 		// setters
 		void					setLatestTime( void );
+		void					setServerAndFd( Server* server, int new_server_fd );
 
 		// getters
 		int						getFd( void ) const;

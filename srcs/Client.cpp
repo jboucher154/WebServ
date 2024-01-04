@@ -170,6 +170,15 @@ void	Client::setLatestTime( void ) {
 	time(&this->latest_time_);
 }
 
+void	Client::setServerAndFd( Server* new_server, int new_server_fd ) {
+
+	if (new_server) {
+		this->server_ = new_server;
+		this->server_fd_ = new_server_fd;
+		this->response_.setServer(this->server_);
+	}
+}
+
 // getters
 int	Client::getFd( void ) const {
 

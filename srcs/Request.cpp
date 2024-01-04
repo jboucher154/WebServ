@@ -15,7 +15,9 @@ chunked_(false),
 keep_alive_(false), 
 cgi_flag_(false), 
 headers_complete(false), 
-complete_(false),  
+complete_(false), 
+host_name_(""),
+port_(0), 
 raw_body_(""), 
 processed_body_(""),
 file_content_(""),
@@ -71,6 +73,8 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->processed_body_ = rhs.processed_body_;
 		this->body_vector_ = rhs.body_vector_;
 		this->complete_ = rhs.complete_;
+		this->host_name_ = rhs.host_name_;
+		this->port_ = rhs.port_;
 		this->cgi_flag_ = rhs.cgi_flag_;
 		this->file_upload_ = rhs.file_upload_;
 		this->file_mime_ = rhs.file_mime_;
@@ -106,7 +110,8 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 				this->parseRequestLine_(line);
 			}
 			else if (line.compare("\r") == 0) {
-					this->headers_complete = true;
+				this->headers_complete = true;
+				this->setRequestAttributes();
 			}
 			else {
 				this->parseHeader_(line);
@@ -114,7 +119,6 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 			if (this->status_code_ > 0)
 				return ; //stop processing if error found
 		}
-		this->setRequestAttributes();
 		//process body
 		if (!ss.eof()) {
 			std::streampos	body_start = ss.tellg();
@@ -210,6 +214,26 @@ void	Request::printRequest( void ) const {
 }
 
 /************** PUBLIC GETTERS **************/
+
+/*! \brief returns const reference tot the hostname from the Host header
+*
+*	Returns const reference tot the hostname from the Host header
+*  
+*/
+const std::string&	Request::getRequestHostName( void ) const {
+
+	return this->host_name_;
+}
+
+/*! \brief returns bool indicating if this request is for a cgi script
+*
+*	Returns bool indicating if this request is for a cgi script.
+*  
+*/
+int	Request::getRequestPort( void ) const {
+
+	return this->port_;
+}
 
 /*! \brief returns bool indicating if this request is for a cgi script
 *
@@ -467,9 +491,10 @@ void	Request::setKeepAlive( void ) {
 	}
 }
 
-/*! \brief 
+/*! \brief private setter for the cgi flag. Sets bool based on uri
 *
-*	
+*	Private setter for the cgi flag. Sets bool true if uri begins with 
+*	`/cgi-bin'.
 *  
 */
 void	Request::setCgiFlag( void ) {
@@ -483,6 +508,27 @@ void	Request::setCgiFlag( void ) {
 	}
 }
 
+/*! \brief private setter for the host name and port based on Host Header
+*
+*	Private setter for the the host name and port based on Host Header
+*  
+*/
+void	Request::setHostNameAndPort( void ) {
+
+	std::string	host_header = getHeaderValueByKey("Host");
+	if (host_header.empty()) {
+		this->status_code_ = 400; //invalid request
+		return ;
+	}
+	std::string	request_host_name;
+	std::string request_port;
+	int	last_colon_pos = host_header.find_last_of(':');
+
+	this->host_name_ = host_header.substr(0, last_colon_pos);
+	this->port_ = ft_stoi(host_header.substr(last_colon_pos + 1));
+	Logger::log(E_DEBUG, COLOR_BRIGHT_BLUE, "Request Host Name: %s, Request Port: %d", this->host_name_.c_str(), this->port_);
+}
+
 /*! \brief calls all private setters to intialize request attibutes based on headers
 *
 *	Calls all private setters to intialize request attibutes based on headers.
@@ -490,8 +536,8 @@ void	Request::setCgiFlag( void ) {
 */
 void	Request::setRequestAttributes( void ) {
 
-	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize , &Request::setCgiFlag };
-	for (int i = 0; i < 4; i++) { //get size of setters instead of 3
+	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize , &Request::setCgiFlag, &Request::setHostNameAndPort };
+	for (int i = 0; i < 5; i++) { //get size of setters instead of 3
 		(this->*setters[i])();
 	}
 }
@@ -500,6 +546,8 @@ void	Request::setRequestAttributes( void ) {
 *
 *	Stores request line values in map. if method not implemented or HTTP version
 *	is not supported the status code will be set and the parsing stops.
+*	The uri as recieved is stored under "raw_uri" and the url decoded uri is stored
+*	under "uri" in the request_line_ map.
 *  
 */
 void	Request::parseRequestLine_( std::string& to_parse ) {
@@ -515,11 +563,12 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		this->request_line_["method"] = part;
 	}
 	else {
-		this->status_code_ = 501; //not implemented
+		this->status_code_ = 501; //not implemented 
 		return ;
 	}
 	ss >> part;
-	this->request_line_["uri"] = part;
+	this->request_line_["raw_uri"] = part;
+	this->request_line_["uri"] = urlDecode(part);
 	ss >> part;
 	if (part != "HTTP/1.1") {
 		this->status_code_ = 505; //HTTP version not supported

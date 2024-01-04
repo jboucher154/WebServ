@@ -150,6 +150,22 @@ void	ServerManager::removeClient( int client_fd ) {
 	this->client_map_.erase(client_fd);
 }
 
+void	ServerManager::checkServerAssignmentBasedOnRequest( Client& client ) {
+
+	Server*				current_server = client.getServer();
+	const std::string&	request_host = client.getRequest().getRequestHostName();
+	int					request_port = client.getRequest().getRequestPort();
+
+	if (current_server->getServerName() != request_host) {
+		for (std::map<int, Server*>::const_iterator it = this->server_map_.begin(); it != this->server_map_.end(); it++) {
+			if (it->second->getListeningPortInt() == request_port && it->second->getServerName() == request_host) {
+				client.setServerAndFd(it->second, it->first);
+				Logger::log(E_INFO, COLOR_BRIGHT_YELLOW, "Server for client fd %d changed from server %s => server %s", 
+				client.getFd(), current_server->getServerIdforLog().c_str(), it->second->getServerIdforLog().c_str());
+			}
+		}
+	}
+}
 
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
@@ -176,6 +192,8 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		client_msg[bytes_received] = '\0';
 		char* msg_ptr = client_msg;
 		client->addToRequest(msg_ptr, bytes_received);
+		//check for correct server
+		checkServerAssignmentBasedOnRequest(*client);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
 	}
@@ -247,6 +265,23 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			this->SELECT_removeClient(client_fd);
 		#endif
 	}
+}
+
+/*! \brief Allows lookup of server fd from the server pointer, returns -1 if server not found
+*       
+*  	Allows lookup of server fd from the server pointer, returns -1 if server not found or if server
+*	pointer is NULL
+*
+*/
+int		ServerManager::getServerFdFromServerMap( Server* server ) const {
+
+	if (server) {
+		for (std::map<int, Server*>::const_iterator it = this->server_map_.begin(); it != this->server_map_.end(); it++) {
+			if (it->second == server)
+				return it->first;
+		}
+	}
+	return -1;
 }
 
 
