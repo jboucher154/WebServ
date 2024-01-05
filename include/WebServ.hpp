@@ -31,7 +31,7 @@
 // MACRO FOR SWITCHING BETWEEN HIVE COMPUTERS AND MACBOOKS (REMOVE LATER?)
 // (switch between desktop version (default.conf and logger uses vsprintf) and macbook version (default_macbook.conf and logger uses vsnprintf))
 # ifndef HIVE_DESKTOP_OR_MACBOOK
-#  define HIVE_DESKTOP_OR_MACBOOK false
+#  define HIVE_DESKTOP_OR_MACBOOK true
 # endif
 
 
