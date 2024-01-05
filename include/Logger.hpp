@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 # include "WebServ.hpp"
 # include "Color.hpp"
+#include "utility.hpp"
 
 # define LOG_BUFF_SIZE 1024
 

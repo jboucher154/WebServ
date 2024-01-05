@@ -1,7 +1,5 @@
 
 #include "Logger.hpp"
-#include "TimeUtils.hpp"
-#include "Color.hpp"
 
 bool	Logger::log_to_console_ = true;
 bool	Logger::log_to_files_ = true;

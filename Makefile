@@ -25,10 +25,10 @@ SRCS = \
 	Response.cpp \
 	Request.cpp \
 	Logger.cpp			\
-	TimeUtils.cpp		\
+	time_utils.cpp		\
 	Server.cpp			\
 	ft_stoi.cpp			\
-	int_to_string.cpp		\
+	int_to_string.cpp	\
 	ServerManager.cpp	\
 	Client.cpp			\
 	Validator.cpp		\
