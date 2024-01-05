@@ -11,7 +11,7 @@ std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
 		"error_page_510", "error_page_511"};
 std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_array
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
-std::string valid_location_keys_array[] = {"autoindex", "return",
+std::string valid_location_keys_array[] = {"save_dir", "autoindex", "return",
 		 "alias", "index", "client_body_size", "allow_methods", "root", "cgi_ext", "cgi_path", "script"};
 std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_location_keys_array
 	+ sizeof(valid_location_keys_array) / sizeof(valid_location_keys_array[0]));
@@ -322,6 +322,25 @@ bool Validator::errorPage( std::string value, std::string key ){
 	return true;
 }
 
+/*! \brief validates saving directory for file uploads
+*  
+*  Checks that the saving directory is an existing one and 
+*  validates if it is, rejecting if it is not.     
+* 
+*/
+bool Validator::saveDir( std::string value ){
+
+	if( value.empty() ){
+		Logger::log(E_ERROR, COLOR_RED, "The field for save_dir value can not be empty!");
+		return false;
+	}
+	if (!isDirectory(value)){
+		Logger::log(E_ERROR, COLOR_RED, "saving directory has to be an existing directory!");
+		return false;
+	}
+	return true;
+}
+
 /*! \brief validates allowed methods for location blocks
 *  
 *  Checks against the list of valid methods and returns false
@@ -466,7 +485,6 @@ bool Validator::locationRoot( std::string value ){
 		Logger::log(E_ERROR, COLOR_RED, "location root has to be an existing directory!");
 		return false;
 	}
-	//std::cout << value << std::endl;
 	return true;
 }
 
@@ -690,7 +708,7 @@ bool Validator::checkCgiBlockKeyValues(){
 	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
 		int i = 0;
-		while (i < 5 && valid_location_keys[i + 5].compare(outerIt->first))
+		while (i < 5 && valid_location_keys[i + 6].compare(outerIt->first))
 			i++ ;
 		if (i == 5){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for Cgi location.", (*outerIt).first.c_str());
@@ -807,15 +825,15 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 		return false;
 	}
 	setUpLocationRootAndIndex(locationKey);
-	t_location_block_functs  locationFunct[] = {&Validator::autoIndex, &Validator::returnKey,
+	t_location_block_functs  locationFunct[] = {&Validator::saveDir, &Validator::autoIndex, &Validator::returnKey,
 				&Validator::alias, &Validator::locationIndex, &Validator::clientMaxBodySize, &Validator::allowedMethods,
 				&Validator::locationRoot};
 	//validate key values till the closing }
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
 		int i = 0;
-		while (i < 7 && valid_location_keys[i].compare(outerIt->first))
+		while (i < 8 && valid_location_keys[i].compare(outerIt->first))
 			i++ ;
-		if (i == 7){
+		if (i == 8){
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for %s location.", (*outerIt).first.c_str(), locationKey.c_str());
 			return false;
 		}
