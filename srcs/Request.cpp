@@ -82,7 +82,7 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->file_content_ = rhs.file_content_;
 		this->file_name_ = rhs.file_name_;
 	}
-	return (*this);
+	return *this;
 }
 
 /************** CLASS PUBLIC METHODS **************/
@@ -117,9 +117,8 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 				this->parseHeader_(line);
 			}
 			if (this->status_code_ > 0)
-				return ; //stop processing if error found
+				return ;
 		}
-		//process body
 		if (!ss.eof()) {
 			std::streampos	body_start = ss.tellg();
 			if (static_cast<int>(body_start) == -1) {
@@ -140,8 +139,6 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 		Logger::log(E_ERROR, COLOR_RED, "Request::add caught exception: %s", e.what());
 		this->status_code_ = E_INTERNAL_SERVER_ERROR;
 	}
-	std::cout << "*** BODY LEN VS RECEIVED [add] : " << this->body_size_ << " vs. " << this->body_len_received_ << std::endl;
-	// printRequest();//debugging
 }
 
 /*! \brief clears all containers and resets all values to intial state
@@ -242,7 +239,7 @@ int	Request::getRequestPort( void ) const {
 */
 bool	Request::getCgiFlag( void ) const {
 
-	return (this->cgi_flag_);
+	return this->cgi_flag_;
 }
 
 /*! \brief returns size_t of the body size indicated by the request header
@@ -252,7 +249,7 @@ bool	Request::getCgiFlag( void ) const {
 */
 size_t		Request::getBodySize( void ) const {
 	
-	return (this->body_size_);
+	return this->body_size_;
 }
 
 /*! \brief returns size_t of the body size actually received
@@ -262,7 +259,7 @@ size_t		Request::getBodySize( void ) const {
 */
 size_t		Request::getBodyLengthReceived( void ) const {
 
-	return (this->body_len_received_);
+	return this->body_len_received_;
 }
 
 /*! \brief returns bool indicating if the Transfer-Encoding = chunked
@@ -273,7 +270,7 @@ size_t		Request::getBodyLengthReceived( void ) const {
 */
 bool	Request::getChunked( void ) const {
 
-	return (this->chunked_);
+	return this->chunked_;
 }
 
 /*! \brief returns bool indicating requests Connetion header value for keep alive.
@@ -283,7 +280,7 @@ bool	Request::getChunked( void ) const {
 */
 bool	Request::getKeepAlive( void ) const {
 
-	return (this->keep_alive_);
+	return this->keep_alive_;
 }
 
 /*! \brief returns bool indicating if request is completed
@@ -294,7 +291,7 @@ bool	Request::getKeepAlive( void ) const {
 */
 bool	Request::getComplete( void ) const {
 
-	return (this->complete_);
+	return this->complete_;
 }
 
 /*! \brief returns the request line value for the key passed
@@ -307,10 +304,10 @@ std::string	Request::getRequestLineValue( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->request_line_.find(key);
 	if (value ==  this->request_line_.end()) {
-		return ("");
+		return "";
 	}
 	else {
-		return (value->second);
+		return value->second;
 	}
 }
 
@@ -321,7 +318,7 @@ std::string	Request::getRequestLineValue( std::string key ) const {
 */
 std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void ) const {
 
-	return (this->headers_.begin());
+	return this->headers_.begin();
 }
 
 /*! \brief returns a const_iterator to the end of the request headers map
@@ -331,7 +328,7 @@ std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void
 */
 std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void ) const {
 
-	return (this->headers_.end());
+	return this->headers_.end();
 }
 
 /*! \brief returns header value as std::string for header name passed as key
@@ -344,10 +341,10 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->headers_.find(key);
 	if (value ==  this->headers_.end()) {
-		return ("");
+		return "";
 	}
 	else {
-		return (value->second);
+		return value->second;
 	}
 }
 
@@ -523,7 +520,6 @@ void	Request::setHostNameAndPort( void ) {
 	std::string	request_host_name;
 	std::string request_port;
 	int	last_colon_pos = host_header.find_last_of(':');
-
 	this->host_name_ = host_header.substr(0, last_colon_pos);
 	this->port_ = ft_stoi(host_header.substr(last_colon_pos + 1));
 	Logger::log(E_DEBUG, COLOR_BRIGHT_BLUE, "Request Host Name: %s, Request Port: %d", this->host_name_.c_str(), this->port_);
@@ -752,7 +748,7 @@ void	Request::storeFileContents_( const std::string& section_bound, const std::s
 			body_index++;
 		}
 		if (parse_buffer == section_bound || parse_buffer == last_bound) {
-			this->file_content_.erase(this->file_content_.end() - 2, this->file_content_.end());//remove the last CRLF
+			this->file_content_.erase(this->file_content_.end() - 2, this->file_content_.end());
 			break ;
 		}
 		else {
