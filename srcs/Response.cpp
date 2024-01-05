@@ -812,13 +812,11 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 		return ;
 	}
 	if (mode == std::ios::binary) {
-		std::cout << "Binary one here1" << std::endl;
 		std::stringstream		contents;
 		contents << resource.rdbuf();
 		this->body_ += contents.str();
 	}
 	else {
-		std::cout << "Text one here2" << std::endl;
 		std::string line;
 		while (std::getline(resource, line, '\n')) {
 			if (!resource.eof())
@@ -871,7 +869,10 @@ void	Response::headMethod_( void ) {
 void	Response::deleteMethod_( void ) {
 
 	if (this->request_->getCgiFlag()) {
-		this->query_string_ = urlEncode(this->request_->getProcessedBody());
+		if (this->request_->getQueryEncode())
+			this->query_string_ = urlEncode(this->request_->getProcessedBody());
+		else
+			this->query_string_ = this->request_->getProcessedBody();
 	}
 	else if (std::remove(this->resource_path_.c_str()) != 0 ) {
 		Logger::log(E_ERROR, COLOR_RED, "DELETE: removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
@@ -929,14 +930,13 @@ void	Response::postMethod_( void ) {
 	}
 	if (!cgi_flag) {
 		this->saveBodyToFile();
-		std::cout << "POST:  NO CGI FLAG" << std::endl;
 	}
 	else {
-	//prepare CGI data ..
-		//handle form data
 		setMimeType();
-		std::cout << "POST:  CGI FLAG, form type not checked here" << std::endl;
-		this->query_string_ = urlEncode(this->request_->getProcessedBody());
+		if (this->request_->getQueryEncode())
+			this->query_string_ = urlEncode(this->request_->getProcessedBody());
+		else
+			this->query_string_ = this->request_->getProcessedBody();
 	}
 	// else {
 	// 	//unsupported
