@@ -331,7 +331,7 @@ bool Validator::errorPage( std::string value, std::string key ){
 bool Validator::saveDir( std::string value ){
 
 	if( value.empty() ){
-		Logger::log(E_ERROR, COLOR_RED, "The field for allowed methods value can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for save_dir value can not be empty!");
 		return false;
 	}
 	if (!isDirectory(value)){
