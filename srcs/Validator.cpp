@@ -322,6 +322,12 @@ bool Validator::errorPage( std::string value, std::string key ){
 	return true;
 }
 
+/*! \brief validates saving directory for file uploads
+*  
+*  Checks that the saving directory is an existing one and 
+*  validates if it is, rejecting if it is not.     
+* 
+*/
 bool Validator::saveDir( std::string value ){
 
 	if( value.empty() ){
