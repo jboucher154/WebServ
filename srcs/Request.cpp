@@ -25,7 +25,8 @@ file_name_(""),
 body_vector_(),
 file_upload_(false),
 file_mime_(""),
-status_code_(0) {
+status_code_(0),
+query_encode_(false) {
 
 	/* default constructor */
 }
@@ -81,6 +82,7 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->status_code_ = rhs.status_code_;
 		this->file_content_ = rhs.file_content_;
 		this->file_name_ = rhs.file_name_;
+		this->query_encode_ = rhs.query_encode_;
 	}
 	return (*this);
 }
@@ -168,6 +170,7 @@ void	Request::clear( void ) {
 	this->status_code_ = 0;
 	this->file_content_ = "";
 	this->file_name_ = "";
+	this->query_encode_ = false;
 }
 
 /*! \brief prints to standard output `REQUEST:` followed by
@@ -215,7 +218,18 @@ void	Request::printRequest( void ) const {
 
 /************** PUBLIC GETTERS **************/
 
-/*! \brief returns const reference tot the hostname from the Host header
+/*! \brief returns bool indicating if the body should be url encoded if saved to a query string
+*
+*	Returns bool indicating if the body should be url encoded if saved to a query string.
+*	by default it is false and set to true in parseBody_ if multipart form is present.
+*  
+*/
+bool	Request::getQueryEncode( void ) const {
+
+	return this->query_encode_;
+}
+
+/*! \brief returns const reference to the hostname from the Host header
 *
 *	Returns const reference tot the hostname from the Host header
 *  
@@ -673,6 +687,7 @@ void	Request::parseBody_( void ) {
 			return ;
 		}
 		parseMultipartForm_(boundry);
+		query_encode_ = true;
 	}
 	else {
 		this->processed_body_.append(this->raw_body_, this->raw_body_.size());
