@@ -37,8 +37,8 @@ SRCS = \
 	url_encoder.cpp \
 	is_all_digit.cpp \
 	CgiHandler.cpp			\
-	copyCStringArray.cpp	\
-	deleteAllocatedCStringArray.cpp	\
+	copy_c_string_array.cpp	\
+	delete_allocated_c_string_array.cpp	\
 	ft_strdup.cpp				\
 	Response_directory_listing.cpp \
 	MimeTypes.cpp \
