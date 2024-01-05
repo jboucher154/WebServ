@@ -23,11 +23,19 @@ int	main( int argc, char *argv[]) {
 		return 1;
 	}
 	else if (argc == 1){
-		if (!Validator::validate("config/good/default.conf")){
-	    	Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
-	    	Logger::closeLogFiles();
-	    	return 1;
-		}
+		#if HIVE_DESKTOP_OR_MACBOOK
+			if (!Validator::validate("config/good/default.conf")){
+				Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
+				Logger::closeLogFiles();
+				return 1;
+			}
+		#else
+			if (!Validator::validate("config/good/default_macbook.conf")){
+				Logger::log(E_INFO, COLOR_RED, "Defaul config is not valid!");
+				Logger::closeLogFiles();
+				return 1;
+			}
+		#endif
 	}
 	#if POLL_TRUE_SELECT_FALSE
 		// POLL VERSION
