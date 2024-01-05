@@ -1,5 +1,5 @@
 
-NAME = WebServ
+NAME = webserv
 
 SRC_DIR = $(sort $(dir $(wildcard srcs/*/))) srcs/
 OBJ_DIR = obj/
