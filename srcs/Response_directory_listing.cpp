@@ -8,8 +8,7 @@
 *  This function take a vector to fill with files that exist
 *  within a path. hidden file are not added to the list.
 */
-void Response::listFiles(const std::string& path, std::vector<std::string>& directoryVec)
-{
+void Response::listFiles(const std::string& path, std::vector<std::string>& directoryVec) {
   
     DIR                         *dir;
     struct dirent               *ent;
@@ -46,8 +45,7 @@ void Response::listFiles(const std::string& path, std::vector<std::string>& dire
 *  This function takes a path, calls its helper to save the files
 *  in a vector, then makes an html complient string listing the files.
 */
-std::string Response::buildHtmlList(const std::string& path)
-{
+std::string Response::buildHtmlList(const std::string& path) {
 
     int cut_size = 0;
     std::string location_path = "";

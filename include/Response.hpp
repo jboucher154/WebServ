@@ -2,7 +2,6 @@
 # define RESPONSE_HPP
 
 # include <string>
-# include "ResponseCodes.hpp"
 # include <ctime>
 # include <time.h>
 # include <ostream>
@@ -10,9 +9,9 @@
 # include <unistd.h>
 # include <cstdio>
 # include <fstream>
-
 # include <vector>
 
+# include "ResponseCodes.hpp"
 # include "utility.hpp"
 # include "Server.hpp"
 # include "Request.hpp"
@@ -22,16 +21,6 @@
 # ifndef CRLF
 #  define CRLF "\r\n"
 # endif
-
-/* auto index overideable? max client_body_size? */
-typedef struct	s_request_location_info {
-	std::string								resource_location;
-	std::string								resource_path;
-	bool									is_aliased;
-	bool									is_redirect;
-	std::string								aliased_location;
-	// std::vector<std::string, std::string>&	allowed_methods;
-}				t_request_location_info;
 
 /*! \brief Class for handling HTTP responses.
 *       
@@ -119,8 +108,8 @@ class	Response {
 
 		/* PUBLIC METHODS */
 
-		void			createResponsePhase1( Request* request ); // call in client ? 
-		void			clear( void ); /*reset for next use*/
+		void			createResponsePhase1( Request* request );
+		void			clear( void );
 		std::string&	buildAndGetResponsePhase2( void );
 		std::string&	buildAndGetResponsePhase2( const std::string& body );
 
@@ -136,9 +125,3 @@ class	Response {
 };
 
 #endif
-
-/*
-- verify path to cgi script before handing over to cgi
-- check access/ permissions to the resource
-
-*/ 
