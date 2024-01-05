@@ -24,7 +24,7 @@
 // (they flood the terminal/logs, but useful in some cases)
 # if GET_DEBUG_LOG
 #  ifndef GET_SELECT_POLL_LOOP_FD_INFO
-#   define GET_SELECT_POLL_LOOP_FD_INFO false
+#   define GET_SELECT_POLL_LOOP_FD_INFO true
 #  endif
 # endif
 
