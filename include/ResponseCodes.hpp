@@ -5,6 +5,7 @@
 # include <string>
 
 typedef	enum	e_StatusCode {
+	E_UNSET = 0,
 	// Information responses
 	E_CONTINUE = 100,
 	E_SWITCHING_PROTOCOLS = 101,

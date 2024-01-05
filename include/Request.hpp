@@ -8,6 +8,7 @@
 # include "utility.hpp"
 # include "Logger.hpp"
 # include "MimeTypes.hpp"
+# include "ResponseCodes.hpp"
 
 # define CRLF "\r\n" //make this project wide?
 

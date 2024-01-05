@@ -25,7 +25,7 @@ file_name_(""),
 body_vector_(),
 file_upload_(false),
 file_mime_(""),
-status_code_(0) {
+status_code_(E_UNSET) {
 
 	/* default constructor */
 }
@@ -123,7 +123,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 		if (!ss.eof()) {
 			std::streampos	body_start = ss.tellg();
 			if (static_cast<int>(body_start) == -1) {
-				this->status_code_ = 500;
+				this->status_code_ = E_INTERNAL_SERVER_ERROR;
 			}
 			else {
 				if (static_cast<int>(body_start) != static_cast<int>(bytes_read))
@@ -138,7 +138,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 	}
 	catch (const std::exception& e) {
 		Logger::log(E_ERROR, COLOR_RED, "Request::add caught exception: %s", e.what());
-		this->status_code_ = 500;
+		this->status_code_ = E_INTERNAL_SERVER_ERROR;
 	}
 	std::cout << "*** BODY LEN VS RECEIVED [add] : " << this->body_size_ << " vs. " << this->body_len_received_ << std::endl;
 	// printRequest();//debugging
@@ -165,7 +165,7 @@ void	Request::clear( void ) {
 	this->complete_ = false;
 	this->file_upload_ = false;
 	this->file_mime_ = "";
-	this->status_code_ = 0;
+	this->status_code_ = E_UNSET;
 	this->file_content_ = "";
 	this->file_name_ = "";
 }
@@ -454,7 +454,7 @@ void	Request::setBodySize( void ) {
 		}
 		catch (std::exception& e){
 			Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on conversion.");
-			this->status_code_ = 413;//413 content too large
+			this->status_code_ = E_PAYLOAD_TOO_LARGE;//413 content too large
 		}
 	}
 }
@@ -517,7 +517,7 @@ void	Request::setHostNameAndPort( void ) {
 
 	std::string	host_header = getHeaderValueByKey("Host");
 	if (host_header.empty()) {
-		this->status_code_ = 400; //invalid request
+		this->status_code_ = E_BAD_REQUEST; //invalid request
 		return ;
 	}
 	std::string	request_host_name;
@@ -563,7 +563,7 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		this->request_line_["method"] = part;
 	}
 	else {
-		this->status_code_ = 501; //not implemented 
+		this->status_code_ = E_NOT_IMPLEMENTED;
 		return ;
 	}
 	ss >> part;
@@ -571,7 +571,7 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 	this->request_line_["uri"] = urlDecode(part);
 	ss >> part;
 	if (part != "HTTP/1.1") {
-		this->status_code_ = 505; //HTTP version not supported
+		this->status_code_ = E_HTTP_VERSION_NOT_SUPPORTED;
 		return ;
 	}
 	this->request_line_["version"] = part;
@@ -624,7 +624,7 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 			this->body_vector_.push_back(to_add[body_index]);
 		}
 		if (body_length != body_index - body_start) {
-			this->status_code_ = 400;
+			this->status_code_ = E_BAD_REQUEST;
 			return ;
 		}
 		this->raw_body_.append(this->body_vector_.begin(), this->body_vector_.end());
@@ -669,7 +669,7 @@ void	Request::parseBody_( void ) {
 	else if (is_multipart_form) {
 		std::string	boundry = parseBoundry(content_type_header);
 		if (boundry.empty()) {
-			this->status_code_ = 400; //no boundry provided, invalid request
+			this->status_code_ = E_BAD_REQUEST; //no boundry provided, invalid request
 			return ;
 		}
 		parseMultipartForm_(boundry);
@@ -701,7 +701,7 @@ void	Request::parseChunkedBody_( void ) {
 			body_index++;
 		}
 		if ((parse_buffer.size() > 1 && parse_buffer[parse_buffer.size() - 2] != '\r') || !isxdigit(parse_buffer[0])) {
-			this->status_code_ = 400; //bad request, incorrect format
+			this->status_code_ = E_BAD_REQUEST; //bad request, incorrect format
 			return ;
 		}
 		else if (parse_buffer == "0\r\n") { //end of chunks
@@ -712,7 +712,7 @@ void	Request::parseChunkedBody_( void ) {
 			//convert hex number to decimal
 			std::istringstream	converter(parse_buffer);
 			if (!(converter >> std::hex >> convertedLength)) {
-				this->status_code_ = 500; //conversion error
+				this->status_code_ = E_INTERNAL_SERVER_ERROR;
 				return ;
 			}
 			parse_buffer.clear();
@@ -722,7 +722,7 @@ void	Request::parseChunkedBody_( void ) {
 				convertedLength--;
 			}
 			if (convertedLength != 0) {
-				this->status_code_ = 400; //bad request, chunk not length indicated
+				this->status_code_ = E_BAD_REQUEST;
 				return ;
 			}
 			else {
