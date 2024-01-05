@@ -52,7 +52,6 @@ std::string Response::buildHtmlList(const std::string& path)
     int cut_size = 0;
     std::string location_path = "";
     std::vector<std::string> directoryVec;
-    std::cout << "path: " << path << std::endl;
     if (this->resource_location_ == "/"){
         listFiles(path.substr(0, path.size() - 1), directoryVec);
         cut_size = path.size();
@@ -70,7 +69,6 @@ std::string Response::buildHtmlList(const std::string& path)
         for (size_t i = 0; i < directoryVec.size(); ++i)
         {
             htmlString += "\t\t\t<li><a href=\"" + location_path + directoryVec[i].substr(cut_size) +  "\">" + directoryVec[i].substr(cut_size) + "</a></li>\n";
-            std::cout << "directoryVec[i]: " << directoryVec[i] << std::endl;
         }
     }
     htmlString += "\n\t\t</ul>\n\t</body>\n</html>";

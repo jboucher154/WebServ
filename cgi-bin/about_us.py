@@ -1,5 +1,9 @@
 import sys
+import os
+from datetime import datetime , timezone
+from email.utils import formatdate
 
+working_dir = os.getcwd()
 html_content = """
 <!DOCTYPE html>
 <html lang="en">
@@ -87,8 +91,12 @@ html_content = """
 		<ul>
     </section>
 </body>
-</html>
+</html>\r\n\r\n
 """
+html_content = f"<h2>{working_dir}</h2>"
+current_datetime = datetime.now(timezone.utc)
+formatted_date = formatdate(timeval=current_datetime.timestamp(), localtime=False, usegmt=True)
+http_version = os.environ.get('SERVER_PROTOCOL')
+header=f"{http_version} 200 OK\r\nDate: {formatted_date}\r\nContent-Length: {len(html_content)}\r\nContent-Location: /cgi-bin\r\nContent-Type: text/html\r\n\r\n"
 
-sys.stdout.write(html_content)
-
+sys.stdout.write(header + html_content)

@@ -7,7 +7,7 @@ INC_DIR = include/
 TARGET_DIR = ./
 CXX = c++
 C98FLAG = -std=c++98
-EXTRA = -Wall -Wextra -Werror
+EXTRA = #-Wall -Wextra -Werror
 DEP = -MP -MMD
 
 # Colors
