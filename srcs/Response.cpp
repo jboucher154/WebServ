@@ -864,6 +864,7 @@ void	Response::headMethod_( void ) {
 *
 *	If no cgi present, calls remove() on resource path to delete file, otherwise sets
 *	query string to processed body. In case of failure 500, server error is set.
+*	The query string will be url encoded if the query_encode_ from the request is true.
 *
 */
 void	Response::deleteMethod_( void ) {
@@ -912,7 +913,7 @@ void	Response::saveBodyToFile( void ) {
 /*! \brief	post method will create resource or set query string for cgi script
 *
 *
-*
+*	The query string will be url encoded if the query_encode_ from the request is true.
 *
 */
 void	Response::postMethod_( void ) {
