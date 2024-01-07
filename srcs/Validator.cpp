@@ -261,7 +261,7 @@ bool Validator::clientMaxBodySize( std::string value ) {
 			return false;
 	}
 	//push back to its serve
-	servers[servers.size() - 1].setClientMaxBodySize(std::stold(value));
+	servers[servers.size() - 1].setClientMaxBodySize(std::stod(value));
 	return true;
 }
 
