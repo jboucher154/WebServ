@@ -6,6 +6,7 @@ OBJ_DIR = obj/
 INC_DIR = include/
 TARGET_DIR = ./
 CXX = c++
+C14FLAG = -std=c++14
 EXTRA = -Wall -Wextra -Werror
 DEP = -MP -MMD
 
@@ -87,4 +88,4 @@ $(OBJ_DIR) $(TARGET_DIR):
 .PHONY: all clean fclean re debug debugsan
 
 vpath %.cpp $(SRC_DIR)
-override FLAGS += $(EXTRA) $(DEP) $(INC_DIR:%=-I%)
+override FLAGS += $(C14FLAG) $(EXTRA) $(DEP) $(INC_DIR:%=-I%)
