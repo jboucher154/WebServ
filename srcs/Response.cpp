@@ -878,15 +878,27 @@ void	Response::deleteMethod_( void ) {
 *	Creates file for request based on multipart/form-data information parsed in request.
 *	File is created based on the uri location. If a file already exists by that name
 *	it will be overwritten.
+*	If the filename is not given, no resource wil be created and a bad request will be flagged.
+*	if a save directory was set in the config file, the resource will be saved there.
 *	If successful, the 201 created status code is set.
 *	TODO: check if mime types is allowed (could be gotten around by users with cgi script)
 *  
 */
-void	Response::saveBodyToFile( void ) {
+void	Response::saveBodyToFile( bool is_save_dir ) {
 
 	const std::string& filename = this->request_->getUploadName();
-	//if fname is empty then reject
-	std::string file_path = this->server_->getLocationValue(this->resource_location_, "root")->front() + "/" + filename;
+	std::string file_path;
+
+	if (filename.empty()) {
+		this->status_code_ =  E_BAD_REQUEST;
+		return;
+	}
+	if (is_save_dir) {
+		file_path = this->server_->getLocationValue(this->resource_location_, "save_dir")->front() + "/" + filename;
+	}
+	else {
+		file_path = this->server_->getLocationValue(this->resource_location_, "root")->front() + "/" + filename;
+	}
 	std::ofstream	new_file(file_path, std::ostream::binary); //check mime for open mode?
 	if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
 		this->status_code_ = E_INTERNAL_SERVER_ERROR;
@@ -913,7 +925,7 @@ void	Response::postMethod_( void ) {
 		return ;
 	}
 	if (!cgi_flag) {
-		this->saveBodyToFile();
+		this->saveBodyToFile(this->server_->isKeyInLocation(this->resource_location_, "save_dir"));
 	}
 	else {
 		setMimeType();
