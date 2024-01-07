@@ -6,7 +6,7 @@
 # include "Server.hpp"
 # include "CgiHandler.hpp"
 
-// forward declaration, because of this have to use pointer inside Client class
+
 class CgiHandler;
 
 /*! \brief Brief description.

@@ -1,4 +1,6 @@
 #include "Validator.hpp"
+
+/******************** CLASS STATIC VARIABLE INTIALIZATION **********************/
 std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
 		"client_max_body_size", "index", "error_page_400", "error_page_401", "error_page_402",
 		"error_page_403", "error_page_404", "error_page_405", "error_page_406", "error_page_407",
@@ -9,10 +11,13 @@ std::string valid_main_keys_array[] = {"listen", "server_name", "host", "root",
 		"error_page_451", "error_page_500", "error_page_501", "error_page_502", "error_page_503",
 		"error_page_504", "error_page_505", "error_page_506", "error_page_507", "error_page_508",
 		"error_page_510", "error_page_511"};
+
 std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_array
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
+
 std::string valid_location_keys_array[] = {"save_dir", "autoindex", "return",
 		 "alias", "index", "client_body_size", "allow_methods", "root", "cgi_ext", "cgi_path", "script"};
+
 std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_location_keys_array
 	+ sizeof(valid_location_keys_array) / sizeof(valid_location_keys_array[0]));
 
@@ -29,7 +34,7 @@ std::string											Validator::mainRootPath = "";
 *  Doesn't do anything just constructs an instance of the class. 
 *  This constructor is private.
 */
-Validator::Validator(){
+Validator::Validator() {
 	
 }
 
@@ -38,7 +43,7 @@ Validator::Validator(){
 *  Doesn't do anything just destructs an instance of the class. 
 *  This destructor is private.
 */
-Validator::~Validator(){
+Validator::~Validator() {
 
 }
 
@@ -47,7 +52,7 @@ Validator::~Validator(){
 *  This copy constructor calls on the operator overload to copy the instance. 
 *  This copy constructor is private.
 */
-Validator::Validator( const Validator& src ){
+Validator::Validator( const Validator& src ) {
 
 	*this = src;
 }
@@ -57,7 +62,7 @@ Validator::Validator( const Validator& src ){
 *  Returns a pointer to the current instance. 
 *  This assignment operator overload is private.
 */
-Validator& Validator::operator=( const Validator& rhs ){
+Validator& Validator::operator=( const Validator& rhs ) {
 	
 	(void)rhs;
 	return *this;
@@ -70,7 +75,8 @@ Validator& Validator::operator=( const Validator& rhs ){
 *  Then gets host name and it ip from the system and adds the 
 *  to the map.
 */
-bool Validator::validIpHostBuilder(){
+bool Validator::validIpHostBuilder() {
+
 	std::string key;
 	std::string value;
     // Read the /etc/hosts file
@@ -86,13 +92,13 @@ bool Validator::validIpHostBuilder(){
         }
         hostsFile.close();
     }
-	else{
+	else {
         Logger::log(E_ERROR, COLOR_RED,"Error opening /etc/hosts file.");
 		return false;
 	}
     // Get the host name
     char hostname[256];
-    if (gethostname(hostname, sizeof(hostname)) != 0){
+    if (gethostname(hostname, sizeof(hostname)) != 0) {
         Logger::log(E_ERROR, COLOR_RED, "Error getting host name.");
 		return false;
 	}
@@ -122,7 +128,6 @@ bool Validator::validIpHostBuilder(){
 		inet_ntop(rp->ai_family, addr, ipstr, sizeof(ipstr));
 		validIpHostMap.insert(std::make_pair(std::string(ipstr), hostname));
 	}
-    // Free allocated memory
     freeaddrinfo(result);
     return true;
 }
@@ -133,25 +138,25 @@ bool Validator::validIpHostBuilder(){
 *  a number and that number is an int and that it is within the valid range.
 *  when listening port is checkd its value is pushed back to its server.
 */
-bool Validator::listen( std::string value ){
+bool Validator::listen( std::string value ) {
 
-	if ( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for listening port value can not be empty!");
 		return false;
 	}
-	if (!isAllDigit(value)){
+	if (!isAllDigit(value)) {
 		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number!");
 		return false;
 	}
 	try{
-		if (ft_stoi(value) < 1024 || ft_stoi(value) > 65535 ){
+		if (ft_stoi(value) < 1024 || ft_stoi(value) > 65535 ) {
 			Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
 			return false;
 		}
 	}
-	catch(std::exception &e){
+	catch(std::exception &e) {
 		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
-			return false;
+		return false;
 	}
 	//push back to its serve
 	servers[servers.size() - 1].setListeningPort(ft_stoi(value));
@@ -167,7 +172,7 @@ bool Validator::listen( std::string value ){
 */
 bool Validator::serverName( std::string value ){
 
-	if ( value.empty() ){
+	if (value.empty()){
 		Logger::log(E_ERROR, COLOR_RED, "The field for server name value can not be empty!");
 		return false;
 	}
@@ -190,17 +195,17 @@ bool Validator::serverName( std::string value ){
 *  to check if the value is a valid ip address.
 *  when host is checkd its value is pushed back to its server.
 */
-bool Validator::host( std::string value ){
+bool Validator::host( std::string value ) {
 
-	if ( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for host value can not be empty!");
 		return false;
 	}
-	if (!isValidIpAddress(value.c_str())){
+	if (!isValidIpAddress(value.c_str())) {
 		Logger::log(E_ERROR, COLOR_RED, "Host has to have a valid IP as it's value!");
 		return false;
 	}
-	if (validIpHostMap.find(value) == validIpHostMap.end()){
+	if (validIpHostMap.find(value) == validIpHostMap.end()) {
 		Logger::log(E_ERROR, COLOR_RED, "Host is not a valid ip address for this system!");
 		return false;
 	}
@@ -214,13 +219,13 @@ bool Validator::host( std::string value ){
 *  Checks if root has a value and that it is a directory
 *  when root is checkd its value is pushed back to its server.
 */
-bool Validator::root( std::string value ){
+bool Validator::root( std::string value ) {
 
-	if ( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for root value can not be empty!");
 		return false;
 	}
-	if (!isDirectory(value)){
+	if (!isDirectory(value)) {
 		Logger::log(E_ERROR, COLOR_RED, "Root has to be an existing directory!");
 		return false;
 	}
@@ -235,23 +240,23 @@ bool Validator::root( std::string value ){
 *  a number and that number is an int and that it is within the valid range.
 *  when client max body size is checkd its value is pushed back to its server.
 */
-bool Validator::clientMaxBodySize( std::string value ){
+bool Validator::clientMaxBodySize( std::string value ) {
 
-	if ( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for client max body size value can not be empty!");
 		return false;
 	}
-	if (!isAllDigit(value)){
+	if (!isAllDigit(value)) {
 		Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a number!");
 		return false;
 	}
-	try{
-		if (ft_stoi(value) < 0 || ft_stoi(value) > INT_MAX ){ 
+	try {
+		if (ft_stoi(value) < 0 || ft_stoi(value) > INT_MAX ) { 
 			Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max int!");
 			return false;
 		}
 	}
-	catch(std::exception &e){
+	catch(std::exception &e) {
 		Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max int!");
 			return false;
 	}
@@ -267,9 +272,9 @@ bool Validator::clientMaxBodySize( std::string value ){
 *  Opens the file and checks if openning permission is there.
 *  when index is checkd its value is pushed back to its server.
 */
-bool Validator::index( std::string value ){
+bool Validator::index( std::string value ) {
 
-	if ( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
 		return false;
 	}
@@ -279,11 +284,11 @@ bool Validator::index( std::string value ){
 	temp.append(value);
 	innerBlock.find("index")->second[0] = temp;
 
-	if (!isFile(temp)){
+	if (!isFile(temp)) {
 		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
 	}
-	if (!canOpen(temp) ){
+	if (!canOpen(temp)) {
 		Logger::log(E_ERROR, COLOR_RED, "index has to be a file with opening permission!");
 		return false;
 	}
@@ -299,8 +304,8 @@ bool Validator::index( std::string value ){
 *  Opens the file and checks if openning permission is there.
 *  when index is checkd its value is pushed back to its server.
 */
-bool Validator::errorPage( std::string value, std::string key ){
-	if ( value.empty() ){
+bool Validator::errorPage( std::string value, std::string key ) {
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for index value can not be empty!");
 		return false;
 	}
@@ -309,11 +314,11 @@ bool Validator::errorPage( std::string value, std::string key ){
 	temp.append("/");
 	temp.append(value);
 	innerBlock.find(key)->second[0] = temp;
-	if (!isFile(temp)){
+	if (!isFile(temp)) {
 		Logger::log(E_ERROR, COLOR_RED, "%s has to be an existing file!", key.c_str());
 		return false;
 	}
-	if (!canOpen(temp) ){
+	if (!canOpen(temp) ) {
 		Logger::log(E_ERROR, COLOR_RED, "%s has to be a file with opening permission!", key.c_str());
 		return false;
 	}
@@ -328,13 +333,13 @@ bool Validator::errorPage( std::string value, std::string key ){
 *  validates if it is, rejecting if it is not.     
 * 
 */
-bool Validator::saveDir( std::string value ){
+bool Validator::saveDir( std::string value ) {
 
-	if( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for save_dir value can not be empty!");
 		return false;
 	}
-	if (!isDirectory(value)){
+	if (!isDirectory(value)) {
 		Logger::log(E_ERROR, COLOR_RED, "saving directory has to be an existing directory!");
 		return false;
 	}
@@ -347,13 +352,13 @@ bool Validator::saveDir( std::string value ){
 *  if the value passed is not on the list, and true if it is. 
 *  
 */
-bool Validator::allowedMethods( std::string value ){
+bool Validator::allowedMethods( std::string value ) {
 
-	if( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for allowed methods value can not be empty!");
 		return false;
 	}
-	if(value.compare("GET") == 0 || value.compare("POST") == 0 ||
+	if (value.compare("GET") == 0 || value.compare("POST") == 0 ||
 		value.compare("HEAD") == 0 || value.compare("DELETE") == 0)
 		return true;
 	else
@@ -366,13 +371,13 @@ bool Validator::allowedMethods( std::string value ){
 *  Returns true if value is either one of these and false otherwise. 
 *  
 */
-bool Validator::autoIndex( std::string value ){
+bool Validator::autoIndex( std::string value ) {
 
-	if( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for autoindex value can not be empty!");
 		return false;
 	}
-	if(value.compare("on") == 0 || value.compare("off") == 0)
+	if (value.compare("on") == 0 || value.compare("off") == 0)
 		return true;
 	else
 		return false;
@@ -387,13 +392,13 @@ bool Validator::autoIndex( std::string value ){
 *  to be returned and if it is found returns true and false otherwise.
 *  
 */
-bool Validator::returnKey( std::string value ){
+bool Validator::returnKey( std::string value ) {
 
-	if( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for return value can not be empty!");
 		return false;
 	}
-	if(servers[servers.size() - 1].isLocationInServer(value))
+	if (servers[servers.size() - 1].isLocationInServer(value))
 		return true;
 	else
 		return false;
@@ -409,14 +414,14 @@ bool Validator::returnKey( std::string value ){
 *  aliasing and returns false if it finds nested aliases and true otherwise.
 *  
 */
-bool Validator::alias( std::string value ){
+bool Validator::alias( std::string value ) {
 
-	if( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for alias value can not be empty!");
 		return false;
 	}
-	if(servers[servers.size() - 1].isLocationInServer(value)){
-		if(servers[servers.size() - 1].isKeyInLocation(value, "alias")){
+	if (servers[servers.size() - 1].isLocationInServer(value)) {
+		if (servers[servers.size() - 1].isKeyInLocation(value, "alias")) {
 			Logger::log(E_ERROR, COLOR_RED, "Nested Alias is not allowed %s location is aliasing %s itself!!", value.c_str(), (*(servers[servers.size() - 1].getLocationValue(value, "alias")))[0].c_str());
 			return false;
 		}
@@ -434,13 +439,13 @@ bool Validator::alias( std::string value ){
 *  true, and otherwise it returns false. 
 *  
 */
-bool Validator::cgiExt( std::string value ){
+bool Validator::cgiExt( std::string value ) {
 
-	if( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for cgi extentions value can not be empty!");
 		return false;
 	}
-	if(value.compare(".sh") == 0 || value.compare(".py") == 0)
+	if (value.compare(".sh") == 0 || value.compare(".py") == 0)
 		return true;
 	else
 		return false;
@@ -454,17 +459,16 @@ bool Validator::cgiExt( std::string value ){
 *  accordingly.
 *  
 */
-bool Validator::cgiPath( std::string value ){
+bool Validator::cgiPath( std::string value ) {
 
-	if ( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for root value can not be empty!");
 		return false;
 	}
-	if (access (value.c_str(), X_OK) != 0){
+	if (access (value.c_str(), X_OK) != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "cgi path has to be an existing directory!");
 		return false;	
 	}
-
 	return true;
 }
 
@@ -475,13 +479,13 @@ bool Validator::cgiPath( std::string value ){
 *  checks for that.
 *  
 */
-bool Validator::locationRoot( std::string value ){
+bool Validator::locationRoot( std::string value ) {
 
-	if ( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for location root value can not be empty!");
 		return false;
 	}
-	if (!isDirectory(value)){
+	if (!isDirectory(value)) {
 		Logger::log(E_ERROR, COLOR_RED, "location root has to be an existing directory!");
 		return false;
 	}
@@ -495,9 +499,9 @@ bool Validator::locationRoot( std::string value ){
 *  thr index file and opening access right.
 *  
 */
-bool Validator::locationIndex( std::string value ){
+bool Validator::locationIndex( std::string value ) {
 
-	if( value.empty() ){
+	if(value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for location index value can not be empty!");
 		return false;
 	}
@@ -510,11 +514,11 @@ bool Validator::locationIndex( std::string value ){
     std::vector<std::string>::iterator vecIt = std::find(outerIt->second.begin(), outerIt->second.end(), value);
     *vecIt = temp;
 
-	if (!isFile(temp)){
+	if (!isFile(temp)) {
 		Logger::log(E_ERROR, COLOR_RED, "Index has to be an existing file!");
 		return false;
 	}
-	if (!canOpen(temp) ){
+	if (!canOpen(temp)) {
 		Logger::log(E_ERROR, COLOR_RED, "index has to be a file with opening permission!");
 		return false;
 	}
@@ -528,9 +532,9 @@ bool Validator::locationIndex( std::string value ){
 *  thr script file and opening access right.
 *  
 */
-bool Validator::cgiScript( std::string value ){
+bool Validator::cgiScript( std::string value ) {
 
-	if( value.empty() ){
+	if (value.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The field for location index value can not be empty!");
 		return false;
 	}
@@ -542,11 +546,11 @@ bool Validator::cgiScript( std::string value ){
     std::vector<std::string>::iterator vecIt = std::find(outerIt->second.begin(), outerIt->second.end(), value);
     *vecIt = temp;
 
-	if (!isFile(temp)){
+	if (!isFile(temp)) {
 		Logger::log(E_ERROR, COLOR_RED, "Script has to be an existing file!");
 		return false;
 	}
-	if (!canOpen(temp) ){
+	if (!canOpen(temp) ) {
 		Logger::log(E_ERROR, COLOR_RED, "script has to be a file with opening permission!");
 		return false;
 	}
@@ -559,10 +563,10 @@ bool Validator::cgiScript( std::string value ){
 *  counts how many lines there are in this server block up until the
 *  next server block or the end. 
 */
-size_t Validator::countServerLines(std::vector<std::string>*	lines){
+size_t Validator::countServerLines(std::vector<std::string>* lines) {
 
 	serverLines = 1;
-	while ( (*lines).size() > serverLines && (*lines)[serverLines].compare("server") != 0 ){
+	while ( (*lines).size() > serverLines && (*lines)[serverLines].compare("server") != 0 ) {
 		serverLines++;
 	}
 	return serverLines;
@@ -575,32 +579,32 @@ size_t Validator::countServerLines(std::vector<std::string>*	lines){
 *  checks that the open braces are closed. checks that no more than 2 braces are
 *  left open at any point. and checks that there are not more close braces than open ones.
 */
-bool Validator::checkBraces(std::vector<std::string>*	lines){
+bool Validator::checkBraces(std::vector<std::string>* lines) {
 	size_t i = 1;
 	int openBraces = 1;
-	while (++i < serverLines ){
-		if ((*lines)[i].compare("{") == 0){
+	while (++i < serverLines) {
+		if ((*lines)[i].compare("{") == 0) {
 			openBraces++;
 		}
-		else if ((*lines)[i].compare("}") == 0){
+		else if ((*lines)[i].compare("}") == 0) {
 			openBraces--;
 		}
-		if (openBraces < 0){
+		if (openBraces < 0) {
 			Logger::log(E_ERROR, COLOR_RED, "Opening curly braces don't match closing ones!");
 		return false;
 		}
-		if (openBraces > 2){
+		if (openBraces > 2) {
 			Logger::log(E_ERROR, COLOR_RED, "There could only be 2 layers of blocks in config file, the server block and the main/location block");
 		return false;
 		}
 		if (openBraces == 0)
 			break;
 	}
-	if (openBraces != 0){
+	if (openBraces != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Opening curly braces don't match closing ones!");
 		return false;
 	}
-	if (i != serverLines - 1){
+	if (i != serverLines - 1) {
 		Logger::log(E_ERROR, COLOR_RED, "There could not be anything in between servr blocks!");
 		return false;
 	}
@@ -617,7 +621,7 @@ bool Validator::checkBraces(std::vector<std::string>*	lines){
 *  lines into the mainBlock map. 
 *  When innerBlock is saved in inner block map, removes the coresponding lines from lines
 */
-bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
+bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i) {
 	//if innerBlock is not empty loop through and earases all 
 	while (!innerBlock.empty())
 		innerBlock.erase(innerBlock.begin());
@@ -626,41 +630,41 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
     std::string value;
 	std::string	temp = "";
 
-	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines - 1){
+	while ((*lines)[i] != lines->back() && (*lines)[i].compare("}") != 0 && i != serverLines - 1) {
 			//first checks that line ends in semicolon and has key and value seperated by a space 
-			if( (*lines)[i].find_last_of(';') != (*lines)[i].size() - 1){
+			if ( (*lines)[i].find_last_of(';') != (*lines)[i].size() - 1) {
 				Logger::log(E_ERROR, COLOR_RED, "Ending of each line of the main block should be marked by a semicolon!");
 				return false;
 			}
-			if( (*lines)[i].find(' ') == std::string::npos){
+			if ( (*lines)[i].find(' ') == std::string::npos) {
 				Logger::log(E_ERROR, COLOR_RED, "Each line of the main block should have a key and values seperated by a space");
 				return false;
 			}
 			std::vector<std::string>							values;
 			std::stringstream    line((*lines)[i]);
-       		if ((std::getline(line, key, ' ') && std::getline(line, value, ';'))){
+       		if ((std::getline(line, key, ' ') && std::getline(line, value, ';'))) {
 				std::stringstream    valuesVec(value);
 				while ( std::getline(valuesVec, value, ' ' )){
 					values.push_back(value);
 				}
-				if (key.compare("root") == 0 && values.size() >= 1){
+				if (key.compare("root") == 0 && values.size() >= 1) {
 					rootPath = values[0];
 				} 
 				if ( innerBlock.find(key) == innerBlock.end() )
 					innerBlock[key] = values;
-				else{
+				else {
 					Logger::log(E_ERROR, COLOR_RED, "repetative keys are not allowed in inner Blocks of the server!");
 					return false;
 				}
 			}
-			else{
+			else {
 				Logger::log(E_ERROR, COLOR_RED, "Each line of the main block should have a key and values seperated by a space.");
 				return false;
 			}
 			i++;
 	}
 	//when innerBlock is saved in inner block map removes the coresponding lines from lines 
-	while (i >= 0){
+	while (i >= 0) {
 		lines->erase(lines->begin());
 		serverLines--;
 		if (i == 0)
@@ -683,19 +687,20 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i){
 *  and that this is the only cgi block in this server. If all checks
 *  are passed cgi block is added to the server.
 */
-bool Validator::checkCgiBlockKeyValues(){
-	if (lines[1] == lines.back() || lines[1].compare("{") != 0){
+bool Validator::checkCgiBlockKeyValues( void ) {
+
+	if (lines[1] == lines.back() || lines[1].compare("{") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block has to be enclosed in curly braces!");
 		return false;
 	}
-	if (!storeInnerBlock(&lines, 2)){
+	if (!storeInnerBlock(&lines, 2)) {
 		return false;
 	}
 	if (innerBlock.empty()) { //?
 		Logger::log(E_ERROR, COLOR_RED, "Cgi location block can not be empty!");
 		return false;
 	}
-	if (innerBlock.find("root") == innerBlock.end()){
+	if (innerBlock.find("root") == innerBlock.end()) {
 			//add the location root to main root for compelete path
 			std::string	temp = "./cgi-bin";
 			rootPath = temp;
@@ -706,28 +711,28 @@ bool Validator::checkCgiBlockKeyValues(){
 	t_location_block_functs  locationFunct[] = { &Validator::allowedMethods, &Validator::locationRoot, &Validator::cgiExt, &Validator::cgiPath, &Validator::cgiScript};
 	//validate key values till the closing
 	std::vector<int> keys;
-	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
+	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++) {
 		int i = 0;
 		while (i < 5 && valid_location_keys[i + 6].compare(outerIt->first))
 			i++ ;
-		if (i == 5){
+		if (i == 5) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for Cgi location.", (*outerIt).first.c_str());
 			return false;
 		}
 		keys.push_back(i);
-		if ( outerIt->first == "root" && outerIt->second.size() > 1 ){
+		if ( outerIt->first == "root" && outerIt->second.size() > 1 ) {
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
 		}
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
-			if (!locationFunct[i](*innerIt)){
+			if (!locationFunct[i](*innerIt)) {
 				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
 				return false;
 			}
 		}
 	}
-	for (int i = 0; i < 5; i++){
-		if (std::find(keys.begin(), keys.end(), i) == keys.end()){
+	for (int i = 0; i < 5; i++) {
+		if (std::find(keys.begin(), keys.end(), i) == keys.end()) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_main_keys[i].c_str());
 			return false;
 		}
@@ -735,17 +740,17 @@ bool Validator::checkCgiBlockKeyValues(){
 	//if inner block allowed method has post or delete and not get reject
 	if (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "GET") == innerBlock["allow_methods"].end()
 		&& (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "PUT") != innerBlock["allow_methods"].end()
-		|| std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "DELETE") != innerBlock["allow_methods"].end())){
+		|| std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "DELETE") != innerBlock["allow_methods"].end())) {
 			Logger::log(E_ERROR, COLOR_RED, "post or delete can not be allowed without get being allowed on cgi block!");
 			return false;
 	}
 	//check for no deplication
 	//add to server vector
-	if ( servers[servers.size() - 1].isLocationInServer("/cgi-bin")){
+	if (servers[servers.size() - 1].isLocationInServer("/cgi-bin")) {
 		Logger::log(E_ERROR, COLOR_RED, "Ambiguity warning: Cgi block dublication is not allowed in the server!");
 		return false;
 	}
-	else{
+	else {
 		servers[servers.size() - 1].setLocation(innerBlock, "/cgi-bin");
 	}
 	return true;
@@ -758,11 +763,11 @@ bool Validator::checkCgiBlockKeyValues(){
 *  OtherWise location key will be added to root.
 *  Default root is the location specific key, and default index is index.html.
 */
-void Validator::setUpLocationRootAndIndex(std::string	locationKey){
+void Validator::setUpLocationRootAndIndex(std::string	locationKey) {
 
-	if (innerBlock.find("return") == innerBlock.end() && innerBlock.find("alias") == innerBlock.end()){
+	if (innerBlock.find("return") == innerBlock.end() && innerBlock.find("alias") == innerBlock.end()) {
 		//add default root value if no root value is specified
-		if (innerBlock.find("root") == innerBlock.end()){
+		if (innerBlock.find("root") == innerBlock.end()) {
 			//add the location root to main root for compelete path
 			std::string	temp = mainRootPath;
 			temp.append(locationKey);
@@ -771,7 +776,7 @@ void Validator::setUpLocationRootAndIndex(std::string	locationKey){
 			rootValue.push_back(rootPath);
 			innerBlock["root"] = rootValue;
 		}
-		else{
+		else {
 			std::string	temp = innerBlock["root"][0];
 			temp.append(locationKey);
 			rootPath = temp;
@@ -780,7 +785,7 @@ void Validator::setUpLocationRootAndIndex(std::string	locationKey){
 			innerBlock["root"] = rootValue;
 		}
 		//add index default value if no index is specified
-		if (innerBlock.find("index") == innerBlock.end()){
+		if (innerBlock.find("index") == innerBlock.end()) {
 			std::vector<std::string> indexValue;
 			indexValue.push_back("index.html");
 			innerBlock["index"] = indexValue;
@@ -803,21 +808,21 @@ void Validator::setUpLocationRootAndIndex(std::string	locationKey){
 *  location specift key in this server. If all checks
 *  are passed cgi block is added to the server.
 */
-bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
+bool Validator::checkLocationBlockKeyValues(std::string	locationKey) {
 
-	if(locationKey.compare("/cgi-bin") == 0){
-		return(checkCgiBlockKeyValues());
+	if (locationKey.compare("/cgi-bin") == 0) {
+		return checkCgiBlockKeyValues();
 	}
 
-	if (locationKey.empty() || locationKey.find_first_of(" #") != std::string::npos){
+	if (locationKey.empty() || locationKey.find_first_of(" #") != std::string::npos) {
 		Logger::log(E_ERROR, COLOR_RED, "here %s is not a valid location block!", locationKey.c_str());
 		return false;
 	}
-	if (lines[1] == lines.back() || lines[1].compare("{") != 0){
+	if (lines[1] == lines.back() || lines[1].compare("{") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "%s Location block has to be enclosed in curly braces!", locationKey.c_str());
 		return false;
 	}
-	if (!storeInnerBlock(&lines, 2)){
+	if (!storeInnerBlock(&lines, 2)) {
 		return false;
 	}
 	if (innerBlock.empty()) { //?
@@ -828,21 +833,21 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 	t_location_block_functs  locationFunct[] = {&Validator::saveDir, &Validator::autoIndex, &Validator::returnKey,
 				&Validator::alias, &Validator::locationIndex, &Validator::clientMaxBodySize, &Validator::allowedMethods,
 				&Validator::locationRoot};
-	//validate key values till the closing }
-	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
+	//validate key values till the closing `}'
+	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++) {
 		int i = 0;
 		while (i < 8 && valid_location_keys[i].compare(outerIt->first))
 			i++ ;
-		if (i == 8){
+		if (i == 8) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for %s location.", (*outerIt).first.c_str(), locationKey.c_str());
 			return false;
 		}
-		if ( outerIt->first != "allow_methods" && outerIt->second.size() > 1 ){
+		if (outerIt->first != "allow_methods" && outerIt->second.size() > 1) {
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
 		}
 		for (std::vector<std::string>::iterator innerIt = outerIt->second.begin(); innerIt != outerIt->second.end(); ++innerIt) {
-			if (!locationFunct[i](*innerIt)){
+			if (!locationFunct[i](*innerIt)) {
 				Logger::log(E_ERROR, COLOR_RED, "%s is not a valid value.", (*innerIt).c_str());
 				return false;
 			}
@@ -851,13 +856,13 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 	//if inner block allowed method has post or delete and not get reject
 	if (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "GET") == innerBlock["allow_methods"].end()
 		&& (std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "PUT") != innerBlock["allow_methods"].end()
-		|| std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "DELETE") != innerBlock["allow_methods"].end())){
+		|| std::find(innerBlock["allow_methods"].begin(), innerBlock["allow_methods"].end(), "DELETE") != innerBlock["allow_methods"].end())) {
 			Logger::log(E_ERROR, COLOR_RED, "post or delete can not be allowed without get being allowed on %s!", locationKey.c_str());
 			return false;
 	}	
 	//check for no deplication
 	//add to server vector
-	if ( servers[servers.size() - 1].isLocationInServer(locationKey)){
+	if ( servers[servers.size() - 1].isLocationInServer(locationKey)) {
 		Logger::log(E_ERROR, COLOR_RED, "Ambiguity warning: %s location block dublication is not allowed in the server!", locationKey.c_str());
 		return false;
 	}
@@ -874,20 +879,21 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey){
 *  has to be the root, after that as long as there are locations
 *  in this server they have to be validated by checkLocationBlockKeyValues.
 */
-bool Validator::checkLocationBlock(std::vector<std::string>*	lines){	
-	if ((*lines)[0] == lines->back() || (*lines)[0].compare(0, 10,"location /") != 0){
+bool Validator::checkLocationBlock(std::vector<std::string>* lines) {
+
+	if ((*lines)[0] == lines->back() || (*lines)[0].compare(0, 10,"location /") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to at least have a location block for root!");
 		return false;
 	}
-	if (!checkLocationBlockKeyValues("/")){
+	if (!checkLocationBlockKeyValues("/")) {
 		return false;
 	}
-	while ((*lines)[0] != lines->back()){
-		if((*lines)[0].compare(0, 10, "location /") != 0){
+	while ((*lines)[0] != lines->back()) {
+		if((*lines)[0].compare(0, 10, "location /") != 0) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid location block!", (*lines)[0].c_str());
 			return false;
 		}
-		if(!checkLocationBlockKeyValues((*lines)[0].substr(9))){
+		if(!checkLocationBlockKeyValues((*lines)[0].substr(9))) {
 			return false;
 		}
 	}
@@ -901,23 +907,23 @@ bool Validator::checkLocationBlock(std::vector<std::string>*	lines){
 *  Then calls the coresponding validator for the key if it is a valid one.
 *  returns true if all the values for all the keys are valid and false otherwise.
 */
-bool Validator::checkMainBlockKeyValues(void){
+bool Validator::checkMainBlockKeyValues(void) {
 
 	t_main_block_functs  mainFunct[] = { &Validator::listen, &Validator::serverName, &Validator::host, &Validator::root,
-				&Validator::clientMaxBodySize, &Validator::index};
+				&Validator::clientMaxBodySize, &Validator::index };
 	std::vector<int> keys;
 	Server	server;
 	servers.push_back(server);
-	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++){
+	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++) {
 		int i = 0;
 		while (i < 46 && valid_main_keys[i].compare(outerIt->first))
 			i++ ;
-		if (i == 46){
+		if (i == 46) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key.", (*outerIt).first.c_str());
 			return false;
 		}
 		keys.push_back(i);
-		if ( outerIt->second.size() > 1 ){
+		if (outerIt->second.size() > 1) {
 			Logger::log(E_ERROR, COLOR_RED, "%s can not have more than one value.", (outerIt->first).c_str());
 			return false;
 		}
@@ -930,8 +936,8 @@ bool Validator::checkMainBlockKeyValues(void){
 			}
 		}
 	}
-	for (int i = 0; i < 6; i++){
-		if (std::find(keys.begin(), keys.end(), i) == keys.end()){
+	for (int i = 0; i < 6; i++) {
+		if (std::find(keys.begin(), keys.end(), i) == keys.end()) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_main_keys[i].c_str());
 			return false;
 		}
@@ -951,24 +957,22 @@ bool Validator::checkMainBlockKeyValues(void){
 *  
 *   
 */
-bool Validator::checkMainBlock(std::vector<std::string>*	lines){
+bool Validator::checkMainBlock(std::vector<std::string>* lines) {
 
-	if ((*lines)[2] == lines->back() || (*lines)[2].compare("main") != 0){
+	if ((*lines)[2] == lines->back() || (*lines)[2].compare("main") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to begin with a main block!");
 		return false;
 	}
-
-	if ((*lines)[3] == lines->back() || (*lines)[3].compare("{") != 0){
+	if ((*lines)[3] == lines->back() || (*lines)[3].compare("{") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Main block should be enclosed in curly braces!");
 		return false;
 	}
 	if (!storeInnerBlock(lines, 4))
 		return false;
-
 	if (!innerBlock.empty()) {
-		return (checkMainBlockKeyValues());
+		return checkMainBlockKeyValues();
 	}
-	else{
+	else {
 		Logger::log(E_ERROR, COLOR_RED, "Main block can not be empty!");
 		return false;
 	}
@@ -982,9 +986,9 @@ bool Validator::checkMainBlock(std::vector<std::string>*	lines){
 *  main block validator and then location block validators if they
 *  return true then this server block is valid, otherwise it' not. 
 */
-bool Validator::validate_server(std::vector<std::string>*	lines){
+bool Validator::validate_server(std::vector<std::string>* lines) {
 
-	if (!checkBraces(lines)){
+	if (!checkBraces(lines)) {
 		Logger::log(E_ERROR, COLOR_RED, "Please also note that lines with braces can not be followed by any charachters, even whitespace!");
 		return false;
 	}
@@ -1005,9 +1009,9 @@ bool Validator::validate_server(std::vector<std::string>*	lines){
 *  elements from lines vector. If this block is valid and there are more 
 *  elements left in lines it calls itself to validate the rest of the config file. 
 */
-bool Validator::validate_lines(std::vector<std::string>*	lines){
+bool Validator::validate_lines(std::vector<std::string>* lines) {
 
-	if ( lines->front().compare("server") != 0){
+	if ( lines->front().compare("server") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Config file should start with a server block!");
 		return false;
 	}
@@ -1015,33 +1019,33 @@ bool Validator::validate_lines(std::vector<std::string>*	lines){
 	if (!validate_server(lines))
 		return false;
 	if (!(*lines).empty())
-		return (validate_lines(lines));
+		return validate_lines(lines);
 	return true;
 }
 
 /*! \brief reads and stores the config file
 *       
-*
 *  reads and stores the config file into a sring and a vector of strings
+*
 */
-bool Validator::store_lines(std::string	input){
+bool Validator::store_lines(std::string	input) {
 
 	std::ifstream				infile;
 	std::string					line;
 	std::istringstream 			ss;
 
-	if ( input.substr(input.length() - 5) != ".conf"){
+	if ( input.substr(input.length() - 5) != ".conf") {
 		Logger::log(E_ERROR, COLOR_RED, "Config file has to have .conf extension!");
 		return false;
 	}
 	infile.open(input);
-	if(infile.fail() == true || infile.bad() == true){
+	if (infile.fail() == true || infile.bad() == true) {
 		Logger::log(E_ERROR, COLOR_RED, "Failed to open config file!");
 		return false;
 	}
 	
 	while (getline(infile, line)) { 
-		if (infile.eof() && line.empty()){
+		if (infile.eof() && line.empty()) {
 			Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 			return false;
 		}
@@ -1051,11 +1055,11 @@ bool Validator::store_lines(std::string	input){
     	if (startPos != std::string::npos) {
         	line = line.substr(startPos);
     	}
-		if( line.empty() || startPos == std::string::npos)
+		if ( line.empty() || startPos == std::string::npos)
 			continue ;
-		if(line[0] == '#')
+		if (line[0] == '#')
 			continue;
-		if (line.find_first_of("#") != std::string::npos){
+		if (line.find_first_of("#") != std::string::npos) {
 			size_t endPos =line.find_first_of("#");
 			line = line.substr(0, endPos);
 		}
@@ -1075,23 +1079,24 @@ bool Validator::store_lines(std::string	input){
 *  it is just similar and not identical. Identical servers are 
 *  rejected.
 */
-bool Validator::checkListenServernameUniqueness(){
+bool Validator::checkListenServernameUniqueness( void ) {
 
 	std::map<int, std::string> listenServerNameMap;
 	std::vector<std::string> similars;
 	std::string temp;
-	for (std::vector<Server>::iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt){
-		if (listenServerNameMap.find((*serverIt).getListeningPortInt()) == (listenServerNameMap).end()){
+
+	for (std::vector<Server>::iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
+		if (listenServerNameMap.find((*serverIt).getListeningPortInt()) == (listenServerNameMap).end()) {
 			listenServerNameMap[(*serverIt).getListeningPortInt()] = (*serverIt).getServerName();
 		}
 		else{
-			if (listenServerNameMap.find((*serverIt).getListeningPortInt())->second == (*serverIt).getServerName()){
+			if (listenServerNameMap.find((*serverIt).getListeningPortInt())->second == (*serverIt).getServerName()) {
 				Logger::log(E_ERROR, COLOR_RED, "Same severnames can not be listening on same listening ports!");
 				return false;
 			}
 			temp.append(intToString((*serverIt).getListeningPortInt()));
 			temp.append(listenServerNameMap.find((*serverIt).getListeningPortInt())->second);
-			if (std::find(similars.begin(), similars.end(), temp) != similars.end()){
+			if (std::find(similars.begin(), similars.end(), temp) != similars.end()) {
 				Logger::log(E_ERROR, COLOR_RED, "Same severnames can not be listening on same listening ports!");
 				return false;
 			}
@@ -1107,16 +1112,16 @@ bool Validator::checkListenServernameUniqueness(){
 *  stores the config file, if it is empty returns false
 *  if not 
 */
-bool Validator::validate(std::string	input){
+bool Validator::validate(std::string	input) {
 
-	if (!validIpHostBuilder()){
+	if (!validIpHostBuilder()) {
 		Logger::log(E_ERROR, COLOR_RED, "Server failed to read host name and/or ip addresses from the system!");
 		return false;
 	}
-	if ( !store_lines(input)){
+	if (!store_lines(input)) {
 		return false;
 	}
-	if (lines.empty()){
+	if (lines.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 		return false;
 	}

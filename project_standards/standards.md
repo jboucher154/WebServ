@@ -19,7 +19,7 @@
 
 ## General
 
-- The project must comply with the C++ 98 standard. Then, it should still compile if you add the flag -std=c++98.
+- The project may use any CPP feature.
 
 - Try to always develop using the most C++ features you can (for example, choose <cstring> over <string.h>). You are allowed to use C functions, but always prefer their C++ versions if possible.
 
@@ -35,7 +35,7 @@
 
 | __Date__        | __Changes__   |
 | -------------  |:-------------:|
-|                |  |
+| 05 JAN 2024    | Guideline to follow c++98 standard removed following Hive's policy change |
 |                |       |
 |                |     |
 |                |     |

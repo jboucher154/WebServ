@@ -4,6 +4,8 @@
 #include "Logger.hpp"
 #include "Color.hpp"
 
+# include <ctime>
+# include <time.h>
 # include <iostream>
 # include <string>
 # include <vector>
@@ -22,5 +24,6 @@ std::string	urlEncode( std::string to_encode );
 bool 		isAllDigit(const std::string& s);
 bool 		canOpen( std::string& path );
 std::string urlDecode(const std::string& input);
+std::string	getTimestampString( void );
 
 #endif

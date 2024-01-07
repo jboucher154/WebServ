@@ -1,13 +1,13 @@
 
-NAME = WebServ
+NAME = webserv
 
 SRC_DIR = $(sort $(dir $(wildcard srcs/*/))) srcs/
 OBJ_DIR = obj/
 INC_DIR = include/
 TARGET_DIR = ./
 CXX = c++
-C98FLAG = -std=c++98
-EXTRA = #-Wall -Wextra -Werror
+C98FLAG = -std=c++14
+EXTRA = -Wall -Wextra -Werror
 DEP = -MP -MMD
 
 # Colors
@@ -26,10 +26,10 @@ SRCS = \
 	Response.cpp \
 	Request.cpp \
 	Logger.cpp			\
-	TimeUtils.cpp		\
+	time_utils.cpp		\
 	Server.cpp			\
 	ft_stoi.cpp			\
-	int_to_string.cpp		\
+	int_to_string.cpp	\
 	ServerManager.cpp	\
 	Client.cpp			\
 	Validator.cpp		\
@@ -38,8 +38,8 @@ SRCS = \
 	url_encoder.cpp \
 	is_all_digit.cpp \
 	CgiHandler.cpp			\
-	copyCStringArray.cpp	\
-	deleteAllocatedCStringArray.cpp	\
+	copy_c_string_array.cpp	\
+	delete_allocated_c_string_array.cpp	\
 	ft_strdup.cpp				\
 	Response_directory_listing.cpp \
 	MimeTypes.cpp \
@@ -88,4 +88,4 @@ $(OBJ_DIR) $(TARGET_DIR):
 .PHONY: all clean fclean re debug debugsan
 
 vpath %.cpp $(SRC_DIR)
-override FLAGS += $(C98FLAG) $(EXTRA) $(DEP) $(INC_DIR:%=-I%)
+override FLAGS += $(EXTRA) $(DEP) $(INC_DIR:%=-I%)
