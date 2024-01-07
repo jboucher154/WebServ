@@ -3,7 +3,6 @@ import os
 from datetime import datetime , timezone
 from email.utils import formatdate
 
-working_dir = os.getcwd()
 html_content = """
 <!DOCTYPE html>
 <html lang="en">
