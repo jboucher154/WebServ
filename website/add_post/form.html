@@ -18,7 +18,13 @@
 				</ul>
 			</nav>
 		</header>
-
+		<form id="photoForm" action="../../cgi-bin/add_file.py" method="POST" enctype="multipart/form-data">
+			<div>
+				<label for="photo">Upload photo</label>
+				<input type="file" required="required" name="photo" id="photo">
+				<input type="submit" value="Upload">
+			</div>
+		</form>
 		<!-- <form id="mainForm" action="../../cgi-bin/add_post.py" method="POST" enctype="multipart/form-data">
 			<div>
 				<label for="name">pet's name</label>
@@ -53,13 +59,7 @@
 			</div>
 		</form> -->
 
-		<form id="photoForm" action="../../cgi-bin/add_file.py" method="POST" enctype="multipart/form-data">
-			<div>
-				<label for="photo">Upload photo</label>
-				<input type="file" required="required" name="photo" id="photo">
-				<input type="submit" value="Upload">
-			</div>
-		</form>
+		
 
 	</body>
 	<script src="../pet.js" type="text/javascript"></script>

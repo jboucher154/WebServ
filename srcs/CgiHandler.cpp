@@ -387,26 +387,6 @@ int	CgiHandler::setUpCgiPipes_( void ) {
 int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 	// Logger::log(E_DEBUG, COLOR_GREEN, "BEFOR FORKING executeCgi!!!");
-	ssize_t		chunk_size = 16384;
-	ssize_t 	byte_sent = 0;
-	ssize_t 	total_bytes_sent = 0;
-	ssize_t		msg_length = body_string.empty() ? 1 : body_string.size();
-	const char*	body = body_string.c_str();
-
-	if (body_string.empty())
-		total_bytes_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], "\0", 1);
-	else{
-		while (total_bytes_sent <= body_string.size()){
-			std::cerr << "byte sent:" << total_bytes_sent << " msg_length:" << msg_length << std::endl;
-			body += byte_sent;
-			byte_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], body, chunk_size);
-			total_bytes_sent +=byte_sent;
-			if(byte_sent < 0){
-				std::cerr << "breaking because or write fail byte sent:" << total_bytes_sent << " msg_length:" << msg_length << std::endl;
-				break;
-			}
-		}
-	}
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
 		this->forking_successful_ = false;
@@ -416,10 +396,16 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 	if (this->pid_ == 0) { // child process
 		this->forking_successful_ = true;
 
-		dup2(this->pipe_into_cgi_[E_PIPE_END_WRITE], STDIN_FILENO);
+		dup2(this->pipe_into_cgi_[E_PIPE_END_READ], STDIN_FILENO);
 		dup2(this->pipe_from_cgi_[E_PIPE_END_WRITE], STDOUT_FILENO);
-		// else
-		// 	 write(STDIN_FILENO, body, chunk_size);
+
+		ssize_t 	total_bytes_sent = 0;
+		ssize_t		msg_length = body_string.empty() ? 1 : body_string.size();
+
+		if (body_string.empty())
+			total_bytes_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], "\0", 1);
+		else
+			total_bytes_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], body_string.c_str(), body_string.size());
 		
 		this->closeCgiPipes();
 
