@@ -1,6 +1,6 @@
 #include "ServerManager.hpp"
 #include "Logger.hpp"
-#include "TimeUtils.hpp"
+#include "utility.hpp"
 #include "Color.hpp"
 
 #include <fcntl.h>

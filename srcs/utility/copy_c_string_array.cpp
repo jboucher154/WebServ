@@ -3,7 +3,10 @@
 
 /*! \brief Create an allocated copy of a NULL-terminating array of c-style strings.
 *       
+*	Create an allocated copy of a NULL-terminating array of c-style strings.
 *	Use only with NULL terminating array, otherwise will cause an error!
+*
+*
 */
 char**		copyCStringArray(char** array) {
 
@@ -12,10 +15,8 @@ char**		copyCStringArray(char** array) {
 
 	if (array == NULL)
 		return NULL;
-
 	while (array[i])
 		i++;
-
 	try {
 		copy_array = new char*[i + 1];
 
@@ -31,5 +32,4 @@ char**		copyCStringArray(char** array) {
 		deleteAllocatedCStringArray(copy_array);
 		return NULL;
 	}
-
 }

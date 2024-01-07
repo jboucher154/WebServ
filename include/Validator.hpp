@@ -37,6 +37,7 @@ private:
 	static bool root( std::string value );
 	static bool clientMaxBodySize( std::string value );
 	static bool index( std::string value );
+	static bool saveDir( std::string value );
 	static bool errorPage( std::string value, std::string key );
 	static bool allowedMethods( std::string value );
 	static bool autoIndex( std::string value );
@@ -46,26 +47,26 @@ private:
 	static bool locationIndex( std::string value );
 	static bool locationRoot( std::string value );
 	static bool cgiPath( std::string value );
-	static bool store_lines(std::string	input);
-	static bool checkMainBlock(std::vector<std::string>*	lines);
-	static bool validate_lines(std::vector<std::string>*	lines);
-	static bool validate_server(std::vector<std::string>*	lines);
-	static bool storeInnerBlock(std::vector<std::string>*	lines, size_t i);
+	static bool store_lines( std::string	input );
+	static bool checkMainBlock( std::vector<std::string>*	lines );
+	static bool validate_lines( std::vector<std::string>*	lines );
+	static bool validate_server( std::vector<std::string>*	lines );
+	static bool storeInnerBlock( std::vector<std::string>*	lines, size_t i );
 	static bool checkMainBlockKeyValues(void);
-	static bool checkLocationBlock(std::vector<std::string>*	lines);
-	static bool checkBraces(std::vector<std::string>*	lines);
-	static size_t countServerLines(std::vector<std::string>*	lines);
-	static bool checkLocationBlockKeyValues(std::string	locationKey);
-	static bool checkCgiBlockKeyValues();
-	static bool validIpHostBuilder();
-	static bool checkListenServernameUniqueness();
+	static bool checkLocationBlock( std::vector<std::string>*	lines );
+	static bool checkBraces( std::vector<std::string>*	lines);
+	static size_t countServerLines( std::vector<std::string>*	lines );
+	static bool checkLocationBlockKeyValues( std::string	locationKey );
+	static bool checkCgiBlockKeyValues( void );
+	static bool validIpHostBuilder( void );
+	static bool checkListenServernameUniqueness( void );
 	static bool cgiScript( std::string value );
-	static void setUpLocationRootAndIndex(std::string	locationKey);
+	static void setUpLocationRootAndIndex( std::string	locationKey );
 
-	Validator();
+	Validator( void );
 	Validator( const Validator& src );
 	Validator& operator=( const Validator& rhs );
-	~Validator();
+	~Validator( void );
 	
 public:
 

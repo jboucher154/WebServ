@@ -8,6 +8,7 @@
 # include "utility.hpp"
 # include "Logger.hpp"
 # include "MimeTypes.hpp"
+# include "ResponseCodes.hpp"
 
 # define CRLF "\r\n" //make this project wide?
 # define REQUEST_TIMEOUT_SEC 10
@@ -29,14 +30,14 @@ class	Request {
 		std::map<std::string, std::string>	headers_;
 		std::string							raw_body_;
 		std::string							processed_body_;
-		std::string							file_content_; //could make vector for multiple....
+		std::string							file_content_;
 		std::string							file_name_;
 		std::vector<u_int8_t>				body_vector_;
-		bool								file_upload_;//to tell if there is file data to save
+		bool								file_upload_;
 		std::string							file_mime_;
 		unsigned int						status_code_;
 		time_t								request_start_time_;
-		//no footers for now
+		bool								query_encode_;
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
@@ -78,6 +79,7 @@ class	Request {
 		bool				getCgiFlag( void ) const;
 		const std::string&	getRequestHostName( void ) const;
 		int					getRequestPort( void ) const;
+		bool				getQueryEncode( void ) const;
 
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
@@ -92,7 +94,7 @@ class	Request {
 		bool					checkRequestTimeout( void ) const;
 
 		/* SETTERS */
-		void	setCgiFlag( bool flag);//public overload
+		void	setCgiFlag( bool flag);
 };
 
 #endif
