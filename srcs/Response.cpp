@@ -19,8 +19,7 @@ Response::Response( void ) {}
 */
 Response::Response( Server* server )
 : response_(""), 
-body_(""), 
-binary_data_(), 
+body_(""),  
 response_mime_(""), 
 resource_path_(""),
 alias_location_(""), 
@@ -30,7 +29,10 @@ server_(server),
 request_(NULL),
 redirect_(false),
 alias_(false),
-directory_listing_(false) {
+directory_listing_(false),
+query_string_(""),
+temp_filepath_(""), 
+temp_file_(false) {
 
 }
 
@@ -68,18 +70,20 @@ Response&	Response::operator=( const Response& rhs ) {
 	if (this != &rhs) {
 
 		this->response_ = rhs.response_;
-		this->status_code_ = rhs.status_code_;
 		this->body_ = rhs.body_;
-		this->binary_data_ = rhs.binary_data_;
+		this->response_mime_ = rhs.response_mime_;
+		this->resource_path_ = rhs.resource_path_;
+		this->alias_location_ = rhs.alias_location_;
+		this->resource_location_ = rhs.resource_location_;
+		this->status_code_ = rhs.status_code_;
 		this->server_ = rhs.server_;
 		this->request_ = rhs.request_;
-		this->response_mime_ = rhs.response_mime_;
-		this->resource_location_ = rhs.resource_location_;
-		this->alias_location_ = rhs.alias_location_;
-		this->resource_path_ = rhs.resource_path_;
 		this->redirect_ = rhs.redirect_;
 		this->alias_ = rhs.alias_;
 		this->directory_listing_ = rhs.directory_listing_;
+		this->query_string_ = rhs.query_string_;
+		this->temp_filepath_ = rhs.temp_filepath_;
+		this->temp_file_ = rhs.temp_file_;
 	}
 	return *this;
 }
@@ -114,7 +118,7 @@ void	Response::createResponsePhase1( Request* request ) {
 	}
 	if (this->request_ == NULL || !this->request_->getComplete()) {
 		if (this->request_->checkRequestTimeout() == true) {
-			this->status_code_ = E_REQUEST_TIMEOUT;//request timout
+			this->status_code_ = E_REQUEST_TIMEOUT;
 		}
 		else if (this->request_ != NULL && this->request_->getChunked()) {
 			this->status_code_ = E_CONTINUE;
@@ -130,7 +134,7 @@ void	Response::createResponsePhase1( Request* request ) {
 		}
 		return ;
 	}
-	if (setResourceLocationAndName(this->request_->getRequestLineValue("uri")) >= 400 || (this->status_code_ / 100 == 3 && this->request_->getRequestLineValue("method") != "POST")) {
+	if (setResourceLocationAndName_(this->request_->getRequestLineValue("uri")) >= 400 || (this->status_code_ / 100 == 3 && this->request_->getRequestLineValue("method") != "POST")) {
 		return ;
 	}
 	if (!methodAllowed_(this->request_->getRequestLineValue("method"))) {
@@ -189,10 +193,12 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
 	this->body_ = body;
 
-	if (this->status_code_ == E_ACCEPTED) { //don't send anything if not ready yet
+	if (this->status_code_ == E_ACCEPTED) {
 		return this->response_;
 	}
 	if (this->status_code_ < 400) {
+		if (this->temp_file_)
+			deleteTempFile_();
 		return this->body_;
 	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
@@ -217,15 +223,18 @@ void	Response::clear( void ) { 	/* reset for next use */
 
 	this->response_ = "";
 	this->body_ = "";
-	this->binary_data_.clear();
 	this->response_mime_ = "";
 	this->resource_path_ = "";
 	this->resource_location_ = "";
+	this->alias_location_ = "";
 	this->status_code_ = E_UNSET;
 	this->request_ = NULL;
 	this->redirect_ = false;
 	this->alias_ = false;
 	this->directory_listing_ = false;
+	this->query_string_ = "";
+	this->temp_filepath_ = "";
+	this->temp_file_ = false;
 }
 
 /******************************* SETTERS ******************************/
@@ -519,7 +528,7 @@ void	Response::createErrorBody_( void ) {
 *		must send a request for each.
 *  
 */
-bool	Response::handleRedirection( void ) {
+bool	Response::handleRedirection_( void ) {
 
 	if (this->server_->isKeyInLocation(this->resource_location_, "return")) {
 	    this->resource_location_ = this->server_->getLocationValue(this->resource_location_, "return")->front();
@@ -538,7 +547,7 @@ bool	Response::handleRedirection( void ) {
 *	to the /cgi-bin location, if so then sets flag in request.
 *  
 */
-void	Response::handelAlias( void ) {
+void	Response::handelAlias_( void ) {
 
 	if (this->server_->isKeyInLocation(this->resource_location_, "alias")) {
 	    this->alias_location_ = this->server_->getLocationValue(this->resource_location_, "alias")->front();
@@ -551,7 +560,7 @@ void	Response::handelAlias( void ) {
 
 /*! \brief sets the location name in the server that relates to the request uri
 *	
-*    setResourceLocation:
+*    setResourceLocation_:
 *		-  checks if the request if for cgi, rejects as invalid for not specifying a specific script
 *		-  check if location is valid
 *		-  calls `handlRedirection' to change location as needed
@@ -560,7 +569,7 @@ void	Response::handelAlias( void ) {
 *		400 - Invalid Request if no cgi script is defined
 *  
 */
-void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos ) {
+void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
 	if (is_dir) {
 		this->resource_location_ = uri; //won't have root applied
@@ -580,8 +589,8 @@ void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_s
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found while setting location and name for resource: `%s'", uri.c_str());
 		return ;
 	}
-	if (!handleRedirection())
-		handelAlias();
+	if (!handleRedirection_())
+		handelAlias_();
 }
 
 
@@ -589,7 +598,7 @@ void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_s
 //only incase of no index will we assume index.html -> //TODO !!!this should be set when searching for the index not here. 
 /*! \brief sets resource path based on verified location from the uri
 *	
-*    setResourcePath:
+*    setResourcePath_:
 *		-  sets resource path as path to index of this page
 *		-  verifies that a cgi script is listed in the server config
 *       -  checks for autoindex and sets directory-listing `true` if found
@@ -598,7 +607,7 @@ void	Response::setResourceLocation( std::string& uri, bool is_dir, size_t last_s
 *		400 - Invalid Request if no cgi script is defined
 *  
 */
-void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos ) {
+void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
 	if (is_dir) {
 		//check for directory listing here
@@ -649,7 +658,7 @@ void	Response::setResourcePath( std::string& uri, bool is_dir, size_t last_slash
 *	404 - Not Found will be set if location does not exist
 *  
 */
-int	Response::setResourceLocationAndName( std::string uri ) {
+int	Response::setResourceLocationAndName_( std::string uri ) {
 	
 	size_t	last_slash_pos = uri.find_last_of('/');
 
@@ -659,9 +668,9 @@ int	Response::setResourceLocationAndName( std::string uri ) {
 
 		uri == "/" ? path = this->server_->getRoot() : path = this->server_->getRoot() + uri;
 		is_dir = isDirectory(path) || this->server_->isLocationInServer(uri);
-		setResourceLocation(uri, is_dir, last_slash_pos);
+		setResourceLocation_(uri, is_dir, last_slash_pos);
 		if (this->status_code_ < 400)
-			setResourcePath(uri, is_dir, last_slash_pos);
+			setResourcePath_(uri, is_dir, last_slash_pos);
 	}
 	else {
 		this->status_code_ = E_BAD_REQUEST;
@@ -716,7 +725,7 @@ bool	Response::methodAllowed_( std::string method ) {
 *	Return: vector of strings with the mimetypes of the accepted formats
 *
 */
-std::vector<std::string>	Response::getAcceptedFormats( void ) {
+std::vector<std::string>	Response::getAcceptedFormats_( void ) {
 
 	std::vector<std::string>	accepted_formats;
 	std::string 				accepted_formats_from_header = this->request_->getHeaderValueByKey("Accept");
@@ -743,7 +752,7 @@ std::vector<std::string>	Response::getAcceptedFormats( void ) {
 *		set to error code of 415 - no supported media type
 *
 */
-void	Response::setMimeType( void ) {
+void	Response::setMimeType_( void ) {
 
 	size_t	extension_start = this->resource_path_.find_last_of('.');
 
@@ -772,9 +781,9 @@ void	Response::setMimeType( void ) {
 */
 void	Response::getMethod_( void ) {
 
-	std::vector<std::string>	accepted_formats = getAcceptedFormats();
+	std::vector<std::string>	accepted_formats = getAcceptedFormats_();
 
-	setMimeType();
+	setMimeType_();
 	if (this->status_code_ >= 400) {
 		return ;
 	}
@@ -847,9 +856,9 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 */
 void	Response::headMethod_( void ) {
 
-	std::vector<std::string>	accepted_formats = getAcceptedFormats();
+	std::vector<std::string>	accepted_formats = getAcceptedFormats_();
 
-	setMimeType();
+	setMimeType_();
 	if (this->status_code_ >= 400) {
 		return ;
 	}
@@ -904,7 +913,7 @@ void	Response::deleteMethod_( void ) {
 *	TODO: check if mime types is allowed (could be gotten around by users with cgi script)
 *  
 */
-void	Response::saveBodyToFile( bool is_save_dir ) {
+void	Response::saveBodyToFile_( bool is_save_dir ) {
 
 	const std::string& filename = this->request_->getUploadName();
 	std::string file_path;
@@ -929,6 +938,37 @@ void	Response::saveBodyToFile( bool is_save_dir ) {
 	this->status_code_ = E_CREATED;
 }
 
+/*! \brief	creates a temporary file in the server upload_store ad saves upload data there.
+*
+*
+*	
+*
+*/
+void	Response::saveBodyToTempFile_( void ) {
+
+	const std::string& filename = this->request_->getUploadName();
+	std::string file_path;
+
+	if (filename.empty()) {
+		this->status_code_ =  E_BAD_REQUEST;
+		return;
+	}
+	else {
+		file_path = this->server_->getUploadStore() + "/" + filename;
+	}
+	std::ofstream	new_file(file_path, std::ostream::binary);
+	if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
+		this->status_code_ = E_INTERNAL_SERVER_ERROR;
+		Logger::log(E_ERROR, COLOR_RED, "Temporary file creation failed : %s", file_path.c_str());
+		return ;
+	}
+	new_file << this->request_->getUploadContent();
+	new_file.close();
+	this->request_->clearUploadContent();
+	this->temp_file_ = true;
+	this->temp_filepath_ = file_path;
+}
+
 /*! \brief	post method will create resource or set query string for cgi script
 *
 *
@@ -938,25 +978,38 @@ void	Response::saveBodyToFile( bool is_save_dir ) {
 void	Response::postMethod_( void ) {
 
 	std::string	content_type_values = this->request_->getHeaderValueByKey("Content-Type");
-	bool						cgi_flag = this->request_->getCgiFlag();
+	bool		cgi_flag = this->request_->getCgiFlag();
 	
-	if (content_type_values.empty()) {
-		this->status_code_ = E_NOT_ACCEPTABLE; //not acceptable???
+	if (content_type_values.empty() || content_type_values.find("form") == std::string::npos) {
+		this->status_code_ = E_NOT_ACCEPTABLE;
 		return ;
 	}
-	if (!cgi_flag) {
-		this->saveBodyToFile(this->server_->isKeyInLocation(this->resource_location_, "save_dir"));
+	else if (!cgi_flag) {
+		this->saveBodyToFile_(this->server_->isKeyInLocation(this->resource_location_, "save_dir"));
 	}
 	else {
-		setMimeType();
+		setMimeType_();
+		if (this->request_->isFileUpload()) {
+			if (this->request_->getUploadContent().size() > FILE_SIZE_LIMIT_FOR_PIPE)
+				this->saveBodyToTempFile_();
+		}
+		this->query_string_ = this->request_->getProcessedBody();
+		if (this->temp_file_)
+			this->query_string_ += "temp_filepath=" + this->temp_filepath_;
 		if (this->request_->getQueryEncode())
-			this->query_string_ = urlEncode(this->request_->getProcessedBody());
-		else
-			this->query_string_ = this->request_->getProcessedBody();
+			this->query_string_ = urlEncode(this->query_string_) ;
 	}
-	// else {
-	// 	//unsupported
-	// 	this->status_code_ = 403; //Forbidden - couldn't find a better one to reply with unsported..., will keep looking
-	// 	Logger::log(E_DEBUG, COLOR_BRIGHT_MAGENTA, "POST request without form-data detected, not currently processed, 403 Forbidden reply will send");
-	// }
+}
+
+/*! \brief	deletes temporary file used for cgi file uploads
+*
+*
+*	deletes temporary file used for cgi file uploads.
+*
+*/
+void	Response::deleteTempFile_( void ) {
+
+	if (std::remove(this->temp_filepath_.c_str()) != 0 ) {
+		Logger::log(E_ERROR, COLOR_RED, "Removal of temporary file failed : `%s'", this->temp_filepath_.c_str());
+	}
 }

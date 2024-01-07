@@ -95,6 +95,7 @@ class	Request {
 
 		/* SETTERS */
 		void	setCgiFlag( bool flag);
+		void	clearUploadContent( void );
 };
 
 #endif

@@ -251,17 +251,17 @@ bool Validator::clientMaxBodySize( std::string value ) {
 		return false;
 	}
 	try {
-		if (ft_stoi(value) < 0 || ft_stoi(value) > INT_MAX ) { 
-			Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max int!");
+		if (std::stod(value) < 0 || std::stold(value) > std::numeric_limits<double>::max() ) { 
+			Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max double!");
 			return false;
 		}
 	}
 	catch(std::exception &e) {
-		Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max int!");
+		Logger::log(E_ERROR, COLOR_RED, "Client max body size value has to be a less than max double!");
 			return false;
 	}
 	//push back to its serve
-	servers[servers.size() - 1].setClientMaxBodySize(ft_stoi(value));
+	servers[servers.size() - 1].setClientMaxBodySize(std::stod(value));
 	return true;
 }
 

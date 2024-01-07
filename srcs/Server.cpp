@@ -18,42 +18,6 @@
 */
 Server::Server() {}
 
-/*! \brief Server class public constructor
-*       
-*  Server class constructor. Constructs an instance and initializes the required values with passed values.
-*
-*/
-Server::Server( std::string serverName, int port,  std::string host, std::string root,
-	 std::string index, std::string client_max_body_size ) {
-
-	this->setServerName(serverName);
-	this->setHost(host);
-	this->setRoot(root);
-	this->setIndex(index);
-	this->setClientMaxBodySize(ft_stoi(client_max_body_size));
-	this->setListeningPort(port);
-	// std::string innerValues[] = {"HEAD", "GET", "POST", "DELETE"};//
-	// size_t numValues = sizeof(innerValues) / sizeof(innerValues[0]);
-	// std::vector<std::string> values(innerValues, innerValues + numValues);
-	// this->setKeyValueInLocation( "/blue", "allow_methods", values );
-	// this->setKeyValueInLocation( "/", "allow_methods", values );
-	// //for cgi testing
-	// this->setKeyValueInLocation("/cgi-bin/", "allow_methods", values);
-	// std::string innerValues2[] = {".sh"};
-	// size_t numValues2 = sizeof(innerValues2) / sizeof(innerValues2[0]);
-	// std::vector<std::string> values2(innerValues2, innerValues2 + numValues2);
-	// this->setKeyValueInLocation("/cgi-bin/", "cgi_ext", values2); //
-	// std::string innerValues3[] = {"test.sh"};
-	// size_t numValues3 = sizeof(innerValues3) / sizeof(innerValues3[0]);
-	// std::vector<std::string> values3(innerValues3, innerValues3 + numValues3);
-	// this->setKeyValueInLocation("/cgi-bin/", "index", values3);
-	
-	// std::string innerValues4[] = {"/bin/bash"};
-	// size_t numValues4 = sizeof(innerValues4) / sizeof(innerValues4[0]);
-	// std::vector<std::string> values4(innerValues4, innerValues4 + numValues4);
-	// this->setKeyValueInLocation("/cgi-bin/", "cgi_path", values4);
-}
-
 /*! \brief Server class copy constructor
 *       
 *  Server class copy constructor, calls on assignment operator to asign the instance.
@@ -81,6 +45,7 @@ Server& Server::operator=( const Server& rhs ) {
 		this->index_ = rhs.getIndex();
 		this->error_pages = rhs.error_pages;
 		this->location = rhs.location;
+		this->upload_store_ = rhs.upload_store_;
 	}
 	return *this;
 }
@@ -137,7 +102,7 @@ void	Server::setHost( std::string host ) {
 *  sets a vlaue for the client max body size.
 *
 */
-void	Server::setClientMaxBodySize( int clientMaxBodySize ) {
+void	Server::setClientMaxBodySize( double clientMaxBodySize ) {
 
 	this->client_max_body_size_ = clientMaxBodySize;
 }
@@ -254,6 +219,27 @@ int	Server::setupServer( void ) {
 	return listener_fd;
 }
 
+/*! \brief sets the upload store directory
+*       
+*  Creats a directory with the string passed to it,
+*  and sets the private upload_store variable.
+*
+*/
+bool	Server::setUploadStore( std::string upload_dir) {
+	std::string upload_store = this->getRoot() + "/." + this->getServerName() + this->getListeningPortString() + upload_dir;
+	if (access(upload_store.c_str(), F_OK) == 0){
+		Logger::log(E_ERROR, COLOR_RED, "server failed to create temprary upload directory. They already exist. Please remove or rename.");
+		return false;
+	}
+	if (mkdir(upload_store.c_str(), 0777) != 0){
+		Logger::log(E_ERROR, COLOR_RED, "server failed to create temprary upload directory");
+		return false;
+	}
+	this->upload_store_ = upload_store;
+	return true;
+
+}
+
 /*! \brief returns the listening port as an int
 *       
 *  Returns the listening port as an int.
@@ -343,7 +329,7 @@ in_addr_t	Server::getHostInAddr_t( void ) const {
 *  Returns the lient max body size.
 *
 */
-int	Server::getClientMaxBodySize( void ) const {
+double	Server::getClientMaxBodySize( void ) const {
 
 	return this->client_max_body_size_;
 }
@@ -368,6 +354,16 @@ bool	Server::isErrorPage( std::string error_code ) const {
 	if (this->error_pages.find(error_code) != error_pages.end())
 		return true;
 	return false;
+}
+
+/*! \brief returns upload_store_ variable
+*       
+*  Returns upload_store_ variable.
+*
+*/
+const std::string&	Server::getUploadStore( void ) const {
+
+	return this->upload_store_;
 }
 
 /*! \brief returns the html page for the given error code
