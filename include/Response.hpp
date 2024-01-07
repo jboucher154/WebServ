@@ -78,7 +78,7 @@ class	Response {
 		std::vector<std::string>	getAcceptedFormats( void );
 
 		/* UTILITIES FOR POST */
-		void	saveBodyToFile( void );
+		void	saveBodyToFile( bool is_save_dir );
 		
 		/* RESOURCE AND LOCATION IDENTIFICATION */
 		int		setResourceLocationAndName( std::string uri );
