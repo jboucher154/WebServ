@@ -1060,11 +1060,6 @@ bool Validator::store_lines(std::string	input){
 			line = line.substr(0, endPos);
 		}
 		lines.push_back(line);
-		std::string temp;
-		while (ss >> temp) {
-			if (!ss.eof()){
-			}
-		}
 		ss.str("");
 	}
 	return true;

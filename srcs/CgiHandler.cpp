@@ -119,7 +119,8 @@ int	CgiHandler::initializeCgi( Client& client ) {
 
 	std::string uri = client.getRequest().getRequestLineValue("uri");
 
-	this->path_ = const_cast<char*>(client.getResponse().getResourcePath().c_str());
+	std::string temp = client.getResponse().getResourcePath();
+	this->path_ = const_cast<char*>(temp.erase(2, 8).c_str());
 
 	int 	result;
 
@@ -386,6 +387,26 @@ int	CgiHandler::setUpCgiPipes_( void ) {
 int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 	// Logger::log(E_DEBUG, COLOR_GREEN, "BEFOR FORKING executeCgi!!!");
+	ssize_t		chunk_size = 16384;
+	ssize_t 	byte_sent = 0;
+	ssize_t 	total_bytes_sent = 0;
+	ssize_t		msg_length = body_string.empty() ? 1 : body_string.size();
+	const char*	body = body_string.c_str();
+
+	if (body_string.empty())
+		total_bytes_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], "\0", 1);
+	else{
+		while (total_bytes_sent <= body_string.size()){
+			std::cerr << "byte sent:" << total_bytes_sent << " msg_length:" << msg_length << std::endl;
+			body += byte_sent;
+			byte_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], body, chunk_size);
+			total_bytes_sent +=byte_sent;
+			if(byte_sent < 0){
+				std::cerr << "breaking because or write fail byte sent:" << total_bytes_sent << " msg_length:" << msg_length << std::endl;
+				break;
+			}
+		}
+	}
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
 		this->forking_successful_ = false;
@@ -397,43 +418,18 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 		dup2(this->pipe_into_cgi_[E_PIPE_END_WRITE], STDIN_FILENO);
 		dup2(this->pipe_from_cgi_[E_PIPE_END_WRITE], STDOUT_FILENO);
-		//std::cout << "this->path_: " << this->path_ << std::endl;
-		// ssize_t		chunk_size = 1048576;
-		// ssize_t 	chunk_sent = 0;
-		ssize_t 	bytes_sent = 0;
-		ssize_t		msg_length = body_string.empty() ? 1 : body_string.size();
-		//std::cout << "this->path_: " << this->path_ << std::endl;
-		//const char*	body = body_string.c_str();
-
-		if (body_string.empty())
-			bytes_sent = write(STDIN_FILENO, "\0", 1);
-		// else{
-		// 	std::cout << "this->path_: " << this->path_ << std::endl;
-		// 	while (bytes_sent < body_string.size()){
-		// 		std::cout << "this->path_: " << this->path_ << std::endl;
-		// 		body += bytes_sent;
-		// 		std::cout << "this->path_: " << this->path_ << std::endl;
-		// 		chunk_sent = write(STDIN_FILENO, body, chunk_size);
-		// 		std::cout << "this->path_: " << this->path_ << std::endl;
-		// 		bytes_sent +=chunk_sent;
-		// 		std::cout << "this->path_: " << this->path_ << std::endl;
-		// 		if(chunk_sent < 0)
-		// 			break;
-		// 	}
-		// }
-		else
-			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.size());
+		// else
+		// 	 write(STDIN_FILENO, body, chunk_size);
 		
 		this->closeCgiPipes();
 
-		if (bytes_sent != msg_length) {
+		if (total_bytes_sent != msg_length) {
 			Logger::log(E_ERROR, COLOR_RED, "not all body_string bytes were sent; aborting cgi process");	// if we get here there was an error in execve!
 			deleteAllocatedCStringArray(this->args_);
 			deleteAllocatedCStringArray(this->metavariables_);
 			std::exit(EXIT_FAILURE);
 		}
-		//std::cout << "this->path_: " << this->path_ << std::endl;
-		//chdir(this->path_);
+		chdir("./cgi-bin");
 		execve(this->args_[0], this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
