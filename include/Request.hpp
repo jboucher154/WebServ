@@ -35,6 +35,7 @@ class	Request {
 		bool								file_upload_;
 		std::string							file_mime_;
 		unsigned int						status_code_;
+		bool								query_encode_;
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
@@ -76,6 +77,7 @@ class	Request {
 		bool				getCgiFlag( void ) const;
 		const std::string&	getRequestHostName( void ) const;
 		int					getRequestPort( void ) const;
+		bool				getQueryEncode( void ) const;
 
 		std::string											getRequestLineValue( std::string key ) const;
 		std::map<std::string, std::string>::const_iterator	getHeaderBegin( void ) const;
