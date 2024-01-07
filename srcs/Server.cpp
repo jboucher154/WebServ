@@ -45,6 +45,7 @@ Server& Server::operator=( const Server& rhs ) {
 		this->index_ = rhs.getIndex();
 		this->error_pages = rhs.error_pages;
 		this->location = rhs.location;
+		this->upload_store_ = rhs.upload_store_;
 	}
 	return *this;
 }
@@ -361,7 +362,9 @@ bool	Server::isErrorPage( std::string error_code ) const {
 *  Returns upload_store_ variable.
 *
 */
-std::string	Server::getUploadStore() const {
+const std::string&	Server::getUploadStore( void ) const {
+
+	std::cout << "this->upload_store_: " << this->upload_store_ << std::endl;
 	return this->upload_store_;
 }
 

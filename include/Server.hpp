@@ -57,7 +57,7 @@ public:
 	std::string						getIndex( void ) const;
 	std::string						getErrorPage( std::string error_code ) const;
 	bool							isErrorPage( std::string error_code ) const;
-	std::string						getUploadStore() const;
+	const std::string&				getUploadStore( void ) const;
 	struct sockaddr_in				getAddress( void ) const;
 	int								getLocationBlockCount( void ) const;
 	int								getLocationBlockCount( std::string locationBlockKey ) const;
