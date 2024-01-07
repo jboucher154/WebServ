@@ -236,7 +236,6 @@ bool	Server::setUploadStore( std::string upload_dir) {
 		return false;
 	}
 	this->upload_store_ = upload_store;
-	std::cout << "this->upload_store_: " << this->upload_store_ << std::endl;
 	return true;
 
 }
@@ -364,7 +363,6 @@ bool	Server::isErrorPage( std::string error_code ) const {
 */
 const std::string&	Server::getUploadStore( void ) const {
 
-	std::cout << "this->upload_store_: " << this->upload_store_ << std::endl;
 	return this->upload_store_;
 }
 
