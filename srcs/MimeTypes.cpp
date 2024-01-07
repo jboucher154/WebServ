@@ -73,6 +73,7 @@ void	MimeTypes::intializeMimeTypes( void ) {
 	MimeTypes::mime_types_["pdf"] = "application/pdf";
 	MimeTypes::mime_types_["msword"] = "application/msword";//?
 	MimeTypes::mime_types_["zip"] = "application/zip";
+	MimeTypes::mime_types_["x-www-form-urlencoded"] ="application/x-www-form-urlencoded";
 
 	//audio
 	// MimeTypes::mime_types_["mp4"] = {"mp4", "audio/mp4";

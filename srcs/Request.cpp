@@ -675,7 +675,7 @@ void	Request::parseBody_( void ) {
 		parseMultipartForm_(boundry);
 	}
 	else {
-		this->processed_body_.append(this->raw_body_, this->raw_body_.size());
+		this->processed_body_.append(this->raw_body_);
 	}
 }
 

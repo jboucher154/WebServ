@@ -67,8 +67,20 @@ function addComments(event) {
 }
 
 function deletePost(postId) {
-  fetch(`../cgi-bin/delete_post.sh?id=${postId}`, {
-      method: 'DELETE',})
-      .then(() => console.log('Delete successful'))
-			.catch(error => console.error('Error:', error));
+  // Get the src attribute value from the image tag
+  console.log('in delete,')
+  const imgSrc = document.getElementById(postId).querySelector('img').getAttribute('src');
+  const imgId = document.getElementById(postId).querySelector('img').getAttribute('id');
+  console.log('in delete, imageSrc: ' + imgSrc)
+
+  // Send the DELETE request with the post ID and image source
+  fetch(`../cgi-bin/delete_post.sh`, {
+      method: 'DELETE',
+      headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: JSON.stringify({ id: postId, imgSrc: imgSrc , imgId: imgId}),
+  })
+  .then(() => console.log('Delete successful'))
+  .catch(error => console.error('Error:', error));
 }
