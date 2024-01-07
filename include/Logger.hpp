@@ -10,12 +10,10 @@
 #include <sys/stat.h>
 # include "WebServ.hpp"
 # include "Color.hpp"
+#include "utility.hpp"
 
-enum	e_log_msg_type {
-	E_ERROR,
-	E_INFO,
-	E_DEBUG
-};
+# define LOG_BUFF_SIZE 1024
+
 
 enum	e_where_to_log {
 	E_LOG_ONLY_TO_CONSOLE,
@@ -23,7 +21,13 @@ enum	e_where_to_log {
 	E_LOG_TO_BOTH_CONSOLE_AND_FILES
 };
 
-# define LOG_LOCATION	E_LOG_ONLY_TO_CONSOLE
+enum	e_log_msg_type {
+	E_ERROR,
+	E_INFO,
+	E_DEBUG
+};
+
+# define LOG_LOCATION	E_LOG_TO_BOTH_CONSOLE_AND_FILES
 # define LOG_DIR		"webserv_log"
 # define LOG_ALL		"log_all.txt"
 # define LOG_ERROR		"log_error.txt"
@@ -35,7 +39,6 @@ enum	e_where_to_log {
 *
 *  Detailed description starts here.
 */
-
 class	Logger {
 
 	private:
@@ -58,8 +61,9 @@ class	Logger {
 		static bool	openLogFiles( void );
 
 	public:
+
 		static void	initLogger( void );
-		static void	log( int msg_type, const char *msg_color, const char *msg, ... );
+		static void	log( e_log_msg_type msg_type, const char *msg_color, const char *msg, ... );
 		static void	closeLogFiles( void );
 
 };

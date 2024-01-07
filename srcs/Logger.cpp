@@ -1,7 +1,5 @@
 
 #include "Logger.hpp"
-#include "TimeUtils.hpp"
-#include "Color.hpp"
 
 bool	Logger::log_to_console_ = true;
 bool	Logger::log_to_files_ = true;
@@ -11,8 +9,18 @@ std::ofstream	Logger::error_log_file_;
 std::ofstream	Logger::info_log_file_;
 std::ofstream	Logger::debug_log_file_;
 
+/*! \brief Default constructor, not used for static class
+*       
+*  	Default constructor, not used for static class
+*
+*/
 Logger::Logger( void ) {}
 
+/*! \brief Copy constructor, not used for static class
+*       
+*  	Copy constructor, not used for static class
+*
+*/
 Logger::Logger( const Logger& to_copy ) {
 
 	*this = to_copy;
@@ -20,10 +28,20 @@ Logger::Logger( const Logger& to_copy ) {
 
 /* DESTRUCTOR */
 
+/*! \brief Defalut destructor, not used for static class
+*       
+*  	Defalut destructor, not used for static class
+*
+*/
 Logger::~Logger( void ) {} 
 
 /* OPERATOR OVERLOADS */
 
+/*! \brief Assignment operator overload , not used for static class
+*       
+*  	Assignment operator overload , not used for static class
+*
+*/
 Logger&	Logger::operator=( const Logger& rhs ) {
 
 	(void)rhs;
@@ -31,6 +49,15 @@ Logger&	Logger::operator=( const Logger& rhs ) {
 }
 
 /* CLASS PUBLIC METHODS */
+
+/*! \brief initializes the log to console and log to files varaibles based on 
+*				macros set at compile time.
+*       
+*  	Initializes the log to console and log to files varaibles based on 
+*	macros set at compile time. If logging to files is set true, the log files
+*	will be intialized.
+*
+*/
 void	Logger::initLogger( void ) {
 
 	if (LOG_LOCATION == E_LOG_ONLY_TO_FILES)
@@ -43,21 +70,24 @@ void	Logger::initLogger( void ) {
 	}
 }
 
-void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
+/*! \brief will write log message to designated logfile based on params
+*       
+*  	Will write log message to designated logfile (E_ERROR, E_INFO, E_DEBUG) 
+*	indicated by msg_type in the color given by msg_color. The message will be
+*	written to the std_out or std_err  and the appropriate logfile if file
+*	logging is enabled.
+*
+*/
+void	Logger::log( e_log_msg_type msg_type, const char *msg_color, const char *msg, ... ) {
 
 	std::string	timestamp = getTimestampString();
 
 	va_list	args;
 	va_start(args, msg);
 
-	char	buffer[1024];
+	char	buffer[LOG_BUFF_SIZE];
 
-	// hive desktops allow deprecated vsprintf (which is also needed because vsnprintf is c++11)
-	#if HIVE_DESKTOP_OR_MACBOOK
-		vsprintf(buffer, msg, args); //change back for shcool computers
-	#else
-		vsnprintf(buffer, 1024, msg, args); //change back for shcool computers
-	#endif
+	vsnprintf(buffer, LOG_BUFF_SIZE, msg, args);
 
 	va_end(args);
 
@@ -90,6 +120,11 @@ void	Logger::log( int msg_type, const char *msg_color, const char *msg, ... ) {
 	}
 }
 
+/*! \brief closes all logfiles if they are open
+*       
+*  	Closes all logfiles if they are open.
+*
+*/
 void	Logger::closeLogFiles( void ) {
 
 	if (Logger::all_log_file_.is_open()) {
@@ -107,6 +142,13 @@ void	Logger::closeLogFiles( void ) {
 }
 
 /* CLASS PRIVATE METHODS */
+
+/*! \brief checks if directory for logfiles exists already and gives option to overwrite if it does exist.
+*       
+*  	Checks if directory for logfiles exists already and gives option to overwrite if it does exist.
+*	if overwrite is not requested, not logging to files will occur.
+*
+*/
 bool	Logger::checkIfToLogInFiles( void ) {
 
 	struct stat info;
@@ -120,11 +162,11 @@ bool	Logger::checkIfToLogInFiles( void ) {
 		while (true) {
 			std::cout << "answer y/n: ";
 			std::getline(std::cin, input);
-			if (input == "n" || input == "y")
+			if (std::cin.eof() || input == "n" || input == "y")
 				break;
 			std::cout << std::endl;
 		}
-		if (input == "n") {
+		if (std::cin.eof() || input == "n") {
 			std::cout << "Webserv will not save log data into files!" << std::endl;
 			if (LOG_LOCATION == E_LOG_ONLY_TO_FILES) {
 				std::cout << "Will print log to console instead!" << std::endl;
@@ -138,6 +180,12 @@ bool	Logger::checkIfToLogInFiles( void ) {
 	return true;
 }
 
+/*! \brief creates logfile directory if needed and calls to open the logfiles.
+*       
+*  	Creates logfile directory if needed and calls to open the logfiles. If error occurs
+*	logging will be to console only.
+*
+*/
 void	Logger::initLogFiles( void ) {
 
 	if (!Logger::log_dir_already_exists_) {
@@ -159,6 +207,12 @@ void	Logger::initLogFiles( void ) {
 	return;
 }
 
+/*! \brief opens three logfiles, all_log.txt, log_error.txt, and log_info.txt
+*       
+*  	Opens three logfiles, all_log.txt, log_error.txt, and log_info.txt in the logfile 
+*	directory configured. Will return false if any of the openings fail.
+*
+*/
 bool	Logger::openLogFiles( void ) {
 	
 	bool opening_success = true;
@@ -174,7 +228,6 @@ bool	Logger::openLogFiles( void ) {
 			opening_success = false;
 		}
 	}
-
 	if (Logger::all_log_file_.fail()) {
 		std::cerr << "Error opening " << LOG_ALL << " for writing." << std::endl;
 		opening_success = false;

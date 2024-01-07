@@ -25,7 +25,7 @@ file_name_(""),
 body_vector_(),
 file_upload_(false),
 file_mime_(""),
-status_code_(0),
+status_code_(E_UNSET),
 query_encode_(false) {
 
 	/* default constructor */
@@ -84,7 +84,7 @@ Request&	Request::operator=( const Request& rhs ) {
 		this->file_name_ = rhs.file_name_;
 		this->query_encode_ = rhs.query_encode_;
 	}
-	return (*this);
+	return *this;
 }
 
 /************** CLASS PUBLIC METHODS **************/
@@ -119,13 +119,12 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 				this->parseHeader_(line);
 			}
 			if (this->status_code_ > 0)
-				return ; //stop processing if error found
+				return ;
 		}
-		//process body
 		if (!ss.eof()) {
 			std::streampos	body_start = ss.tellg();
 			if (static_cast<int>(body_start) == -1) {
-				this->status_code_ = 500;
+				this->status_code_ = E_INTERNAL_SERVER_ERROR;
 			}
 			else {
 				if (static_cast<int>(body_start) != static_cast<int>(bytes_read))
@@ -140,10 +139,8 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 	}
 	catch (const std::exception& e) {
 		Logger::log(E_ERROR, COLOR_RED, "Request::add caught exception: %s", e.what());
-		this->status_code_ = 500;
+		this->status_code_ = E_INTERNAL_SERVER_ERROR;
 	}
-	std::cout << "*** BODY LEN VS RECEIVED [add] : " << this->body_size_ << " vs. " << this->body_len_received_ << std::endl;
-	// printRequest();//debugging
 }
 
 /*! \brief clears all containers and resets all values to intial state
@@ -167,7 +164,7 @@ void	Request::clear( void ) {
 	this->complete_ = false;
 	this->file_upload_ = false;
 	this->file_mime_ = "";
-	this->status_code_ = 0;
+	this->status_code_ = E_UNSET;
 	this->file_content_ = "";
 	this->file_name_ = "";
 	this->query_encode_ = false;
@@ -256,7 +253,7 @@ int	Request::getRequestPort( void ) const {
 */
 bool	Request::getCgiFlag( void ) const {
 
-	return (this->cgi_flag_);
+	return this->cgi_flag_;
 }
 
 /*! \brief returns size_t of the body size indicated by the request header
@@ -266,7 +263,7 @@ bool	Request::getCgiFlag( void ) const {
 */
 size_t		Request::getBodySize( void ) const {
 	
-	return (this->body_size_);
+	return this->body_size_;
 }
 
 /*! \brief returns size_t of the body size actually received
@@ -276,7 +273,7 @@ size_t		Request::getBodySize( void ) const {
 */
 size_t		Request::getBodyLengthReceived( void ) const {
 
-	return (this->body_len_received_);
+	return this->body_len_received_;
 }
 
 /*! \brief returns bool indicating if the Transfer-Encoding = chunked
@@ -287,7 +284,7 @@ size_t		Request::getBodyLengthReceived( void ) const {
 */
 bool	Request::getChunked( void ) const {
 
-	return (this->chunked_);
+	return this->chunked_;
 }
 
 /*! \brief returns bool indicating requests Connetion header value for keep alive.
@@ -297,7 +294,7 @@ bool	Request::getChunked( void ) const {
 */
 bool	Request::getKeepAlive( void ) const {
 
-	return (this->keep_alive_);
+	return this->keep_alive_;
 }
 
 /*! \brief returns bool indicating if request is completed
@@ -308,7 +305,7 @@ bool	Request::getKeepAlive( void ) const {
 */
 bool	Request::getComplete( void ) const {
 
-	return (this->complete_);
+	return this->complete_;
 }
 
 /*! \brief returns the request line value for the key passed
@@ -321,10 +318,10 @@ std::string	Request::getRequestLineValue( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->request_line_.find(key);
 	if (value ==  this->request_line_.end()) {
-		return ("");
+		return "";
 	}
 	else {
-		return (value->second);
+		return value->second;
 	}
 }
 
@@ -335,7 +332,7 @@ std::string	Request::getRequestLineValue( std::string key ) const {
 */
 std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void ) const {
 
-	return (this->headers_.begin());
+	return this->headers_.begin();
 }
 
 /*! \brief returns a const_iterator to the end of the request headers map
@@ -345,7 +342,7 @@ std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void
 */
 std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void ) const {
 
-	return (this->headers_.end());
+	return this->headers_.end();
 }
 
 /*! \brief returns header value as std::string for header name passed as key
@@ -358,10 +355,10 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 
 	std::map<std::string, std::string>::const_iterator value = this->headers_.find(key);
 	if (value ==  this->headers_.end()) {
-		return ("");
+		return "";
 	}
 	else {
-		return (value->second);
+		return value->second;
 	}
 }
 
@@ -468,7 +465,7 @@ void	Request::setBodySize( void ) {
 		}
 		catch (std::exception& e){
 			Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on conversion.");
-			this->status_code_ = 413;//413 content too large
+			this->status_code_ = E_PAYLOAD_TOO_LARGE;//413 content too large
 		}
 	}
 }
@@ -531,13 +528,12 @@ void	Request::setHostNameAndPort( void ) {
 
 	std::string	host_header = getHeaderValueByKey("Host");
 	if (host_header.empty()) {
-		this->status_code_ = 400; //invalid request
+		this->status_code_ = E_BAD_REQUEST; //invalid request
 		return ;
 	}
 	std::string	request_host_name;
 	std::string request_port;
 	int	last_colon_pos = host_header.find_last_of(':');
-
 	this->host_name_ = host_header.substr(0, last_colon_pos);
 	this->port_ = ft_stoi(host_header.substr(last_colon_pos + 1));
 	Logger::log(E_DEBUG, COLOR_BRIGHT_BLUE, "Request Host Name: %s, Request Port: %d", this->host_name_.c_str(), this->port_);
@@ -577,7 +573,7 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 		this->request_line_["method"] = part;
 	}
 	else {
-		this->status_code_ = 501; //not implemented 
+		this->status_code_ = E_NOT_IMPLEMENTED;
 		return ;
 	}
 	ss >> part;
@@ -585,7 +581,7 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 	this->request_line_["uri"] = urlDecode(part);
 	ss >> part;
 	if (part != "HTTP/1.1") {
-		this->status_code_ = 505; //HTTP version not supported
+		this->status_code_ = E_HTTP_VERSION_NOT_SUPPORTED;
 		return ;
 	}
 	this->request_line_["version"] = part;
@@ -638,7 +634,7 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 			this->body_vector_.push_back(to_add[body_index]);
 		}
 		if (body_length != body_index - body_start) {
-			this->status_code_ = 400;
+			this->status_code_ = E_BAD_REQUEST;
 			return ;
 		}
 		this->raw_body_.append(this->body_vector_.begin(), this->body_vector_.end());
@@ -683,7 +679,7 @@ void	Request::parseBody_( void ) {
 	else if (is_multipart_form) {
 		std::string	boundry = parseBoundry(content_type_header);
 		if (boundry.empty()) {
-			this->status_code_ = 400; //no boundry provided, invalid request
+			this->status_code_ = E_BAD_REQUEST; //no boundry provided, invalid request
 			return ;
 		}
 		parseMultipartForm_(boundry);
@@ -716,7 +712,7 @@ void	Request::parseChunkedBody_( void ) {
 			body_index++;
 		}
 		if ((parse_buffer.size() > 1 && parse_buffer[parse_buffer.size() - 2] != '\r') || !isxdigit(parse_buffer[0])) {
-			this->status_code_ = 400; //bad request, incorrect format
+			this->status_code_ = E_BAD_REQUEST; //bad request, incorrect format
 			return ;
 		}
 		else if (parse_buffer == "0\r\n") { //end of chunks
@@ -727,7 +723,7 @@ void	Request::parseChunkedBody_( void ) {
 			//convert hex number to decimal
 			std::istringstream	converter(parse_buffer);
 			if (!(converter >> std::hex >> convertedLength)) {
-				this->status_code_ = 500; //conversion error
+				this->status_code_ = E_INTERNAL_SERVER_ERROR;
 				return ;
 			}
 			parse_buffer.clear();
@@ -737,7 +733,7 @@ void	Request::parseChunkedBody_( void ) {
 				convertedLength--;
 			}
 			if (convertedLength != 0) {
-				this->status_code_ = 400; //bad request, chunk not length indicated
+				this->status_code_ = E_BAD_REQUEST;
 				return ;
 			}
 			else {
@@ -767,7 +763,7 @@ void	Request::storeFileContents_( const std::string& section_bound, const std::s
 			body_index++;
 		}
 		if (parse_buffer == section_bound || parse_buffer == last_bound) {
-			this->file_content_.erase(this->file_content_.end() - 2, this->file_content_.end());//remove the last CRLF
+			this->file_content_.erase(this->file_content_.end() - 2, this->file_content_.end());
 			break ;
 		}
 		else {

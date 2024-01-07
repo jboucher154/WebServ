@@ -2,6 +2,11 @@
 #include <sstream>
 #include <iomanip>
 
+/*! \brief returns url encoded string of the to_encode argument
+*       
+*	Returns url encoded string of the to_encode argument.
+*
+*/
 std::string	urlEncode( std::string to_encode ) {
 
 	std::ostringstream	encoded_stream;

@@ -1,7 +1,14 @@
 #include "utility.hpp"
 
-int ft_stoi(const std::string& str)
-{
+/*! \brief converts a string to an integer. May throw exception for over/ under 
+*               flow or if empty string is passed
+*       
+*	Converts a string to an integer. May throw invalid_argument exception for over/ under 
+*   flow or if empty string is passed.
+*
+*/
+int ft_stoi(const std::string& str) {
+
     int num = 0;
     std::istringstream ss(str);
 
