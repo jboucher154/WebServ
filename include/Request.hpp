@@ -11,6 +11,7 @@
 # include "ResponseCodes.hpp"
 
 # define CRLF "\r\n" //make this project wide?
+# define REQUEST_TIMEOUT_SEC 10
 
 class	Request {
 
@@ -35,6 +36,7 @@ class	Request {
 		bool								file_upload_;
 		std::string							file_mime_;
 		unsigned int						status_code_;
+		time_t								request_start_time_;
 		bool								query_encode_;
 
 		void	parseRequestLine_( std::string& to_parse );
@@ -89,6 +91,7 @@ class	Request {
 		bool					isFileUpload( void ) const;
 		unsigned int			getStatusCode( void ) const;
 		const std::string&		getUploadMime( void ) const;
+		bool					checkRequestTimeout( void ) const;
 
 		/* SETTERS */
 		void	setCgiFlag( bool flag);

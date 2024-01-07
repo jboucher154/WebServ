@@ -96,6 +96,7 @@ Request&	Request::operator=( const Request& rhs ) {
 *	based on headers then body is saved and parsed nusing the total bytes read from the 
 *	recv() call to guide the parsing. If exception for string conversions occur they are 
 *	caught and the error printed.
+*	After the headers are complete the timer for the request is started.
 *    
 */
 void	Request::add( char* to_add, size_t bytes_read ) {
@@ -114,6 +115,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 			else if (line.compare("\r") == 0) {
 				this->headers_complete = true;
 				this->setRequestAttributes();
+				time(&this->request_start_time_);
 			}
 			else {
 				this->parseHeader_(line);
@@ -129,7 +131,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 			else {
 				if (static_cast<int>(body_start) != static_cast<int>(bytes_read))
 					saveBody_(string_add, static_cast<int>(body_start), bytes_read);
-				if (this->status_code_ < 400 && !this->raw_body_.empty() && this->body_size_ == this->body_len_received_)
+				if (this->status_code_ < 400 && !this->raw_body_.empty())
 					parseBody_();
 			}
 		}
@@ -430,6 +432,24 @@ const std::string&		Request::getUploadMime( void ) const {
 	return this->file_mime_;
 }
 
+/*! \brief returns bool if request timed out based on REQUEST_TIMEOUT_SEC macro
+*
+*	Returns bool if request timed out based on REQUEST_TIMEOUT_SEC macro  calculating
+*	from current time and time response	processing started.
+*  
+*/
+bool	Request::checkRequestTimeout( void ) const {
+
+	time_t	current_time = time(NULL);
+	double	time_since_latest_action = difftime(current_time, this->request_start_time_);
+	
+	if (time_since_latest_action >= REQUEST_TIMEOUT_SEC) {
+		Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "request for uri: %s timed out!", getHeaderValueByKey("uri").c_str());
+		return true;
+	}
+	return false;
+}
+
 /************** PUBLIC SETTERS **************/
 
 /*! \brief public setter for the cgi flag take new bool value
@@ -676,6 +696,9 @@ void	Request::parseBody_( void ) {
 	if (this->chunked_) {
 		parseChunkedBody_();
 	}
+	else if (this->body_size_ != this->body_len_received_) {
+		return ;
+	}
 	else if (is_multipart_form) {
 		std::string	boundry = parseBoundry(content_type_header);
 		if (boundry.empty()) {
@@ -696,6 +719,9 @@ void	Request::parseBody_( void ) {
 *	loop process one chunk and may process multiple chunks if they are present in the same message.
 *	If invalid formatting is found the status code is set to 400/Bad Request. If an conversion for
 *	the hexadecimal to decimal fails 500/Internal Server Error is set.
+*	When end of chunked data is found, the chunked flag is dropped and the bodysize is set to 
+*	the size of the total body recieved as the Content-Size header is not present for 
+*	chunked encoding.
 *  
 */
 void	Request::parseChunkedBody_( void ) {
@@ -706,21 +732,21 @@ void	Request::parseChunkedBody_( void ) {
 	
 
 	while (body_index < this->raw_body_.size()) {
-		//get first line that will have hex number followed by CRLF
 		while (parse_buffer.back() != '\n') {
 			parse_buffer += this->raw_body_[body_index];
 			body_index++;
 		}
 		if ((parse_buffer.size() > 1 && parse_buffer[parse_buffer.size() - 2] != '\r') || !isxdigit(parse_buffer[0])) {
-			this->status_code_ = E_BAD_REQUEST; //bad request, incorrect format
+			this->status_code_ = E_BAD_REQUEST;
 			return ;
 		}
-		else if (parse_buffer == "0\r\n") { //end of chunks
-			this->chunked_ = false; //? or set another value to see that all chunks processed?
+		else if (parse_buffer == "0\r\n") {
+			this->chunked_ = false;
+			this->body_size_ = this->body_len_received_;
+			this->raw_body_.clear();
 			break ;
 		}
 		else {
-			//convert hex number to decimal
 			std::istringstream	converter(parse_buffer);
 			if (!(converter >> std::hex >> convertedLength)) {
 				this->status_code_ = E_INTERNAL_SERVER_ERROR;
@@ -739,7 +765,7 @@ void	Request::parseChunkedBody_( void ) {
 			else {
 				this->processed_body_.append(parse_buffer);
 				parse_buffer.clear();
-				body_index += 2; //move past CRLF
+				body_index += 2;
 			}
 		}
 	}

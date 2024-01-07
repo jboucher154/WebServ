@@ -64,6 +64,7 @@ class	Response {
 		std::string		contentLocationHeader_( void ) const;
 		std::string		locationHeader_( void ) const;
 		std::string		retryAfterHeader_( void ) const;
+		std::string		connectionHeader_( bool connection_continue ) const;
 
 		/* METHODS */
 		void	getMethod_( void );
