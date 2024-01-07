@@ -243,6 +243,9 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		client->resetResponse();
 		client->resetRequest();
 	}
+	if (response.getStatusCode() == E_REQUEST_TIMEOUT) {
+		return (false);
+	}
 	return keep_alive;
 }
 
