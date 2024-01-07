@@ -119,7 +119,8 @@ int	CgiHandler::initializeCgi( Client& client ) {
 
 	std::string uri = client.getRequest().getRequestLineValue("uri");
 
-	this->path_ = const_cast<char*>(client.getResponse().getResourcePath().c_str());
+	std::string temp = client.getResponse().getResourcePath();
+	this->path_ = const_cast<char*>(temp.erase(2, 8).c_str());
 
 	int 	result;
 
@@ -395,26 +396,26 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 	if (this->pid_ == 0) { // child process
 		this->forking_successful_ = true;
 
-		dup2(this->pipe_into_cgi_[E_PIPE_END_WRITE], STDIN_FILENO);
+		dup2(this->pipe_into_cgi_[E_PIPE_END_READ], STDIN_FILENO);
 		dup2(this->pipe_from_cgi_[E_PIPE_END_WRITE], STDOUT_FILENO);
 
-		ssize_t 	bytes_sent = 0;
+		ssize_t 	total_bytes_sent = 0;
 		ssize_t		msg_length = body_string.empty() ? 1 : body_string.size();
 
 		if (body_string.empty())
-			bytes_sent = write(STDIN_FILENO, "\0", 1);
+			total_bytes_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], "\0", 1);
 		else
-			bytes_sent = write(STDIN_FILENO, body_string.c_str(), body_string.size());
-	
+			total_bytes_sent = write(this->pipe_into_cgi_[E_PIPE_END_WRITE], body_string.c_str(), body_string.size());
+		
 		this->closeCgiPipes();
 
-		if (bytes_sent != msg_length) {
+		if (total_bytes_sent != msg_length) {
 			Logger::log(E_ERROR, COLOR_RED, "not all body_string bytes were sent; aborting cgi process");	// if we get here there was an error in execve!
 			deleteAllocatedCStringArray(this->args_);
 			deleteAllocatedCStringArray(this->metavariables_);
 			std::exit(EXIT_FAILURE);
 		}
-
+		chdir("./cgi-bin");
 		execve(this->args_[0], this->args_, this->metavariables_);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));	// if we get here there was an error in execve!
