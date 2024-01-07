@@ -463,6 +463,16 @@ void	Request::setCgiFlag( bool flag) {
 	this->cgi_flag_ = flag;
 }
 
+/*! \brief public function to clear upload content
+*
+*	Clears the upload content. Intended to be used after a temp file has been created.
+*  
+*/
+void	Request::clearUploadContent( void ) {
+
+	this->file_content_ = "";	
+}
+
 /************** CLASS PRIVATE METHODS **************/
 
 /************** PRIVATE SETTERS **************/

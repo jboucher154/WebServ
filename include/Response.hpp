@@ -22,6 +22,8 @@
 #  define CRLF "\r\n"
 # endif
 
+# define FILE_SIZE_LIMIT_FOR_PIPE 64000
+
 /*! \brief Class for handling HTTP responses.
 *       
 *
@@ -41,7 +43,6 @@ class	Response {
 		/* PRIVATE METHODS AND MEMBERS */
 		std::string			response_;
 		std::string			body_;
-		std::vector<char>	binary_data_;
 		std::string			response_mime_;
 		std::string			resource_path_; //path for opening/ manipulating etc
 		std::string			alias_location_;
@@ -53,8 +54,8 @@ class	Response {
 		bool				alias_;
 		bool				directory_listing_;
 		std::string			query_string_;
-		std::vector<char>	file_data_;
-		//maybe add map of headers, create them as I go?
+		std::string			temp_filepath_;
+		bool				temp_file_;
 
 		/* HEADER GENERATORS */
 		std::string&	addHeaders_( std::string& response) const;
@@ -76,19 +77,21 @@ class	Response {
 
 		/* UTILITIES FOR GET */
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
-		std::vector<std::string>	getAcceptedFormats( void );
+		std::vector<std::string>	getAcceptedFormats_( void );
 
 		/* UTILITIES FOR POST */
-		void	saveBodyToFile( bool is_save_dir );
+		void	saveBodyToFile_( bool is_save_dir );
+		void	saveBodyToTempFile_( void );
+		void	deleteTempFile_( void );
 		
 		/* RESOURCE AND LOCATION IDENTIFICATION */
-		int		setResourceLocationAndName( std::string uri );
-		void	setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos );
-		void	setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos );
-		bool	handleRedirection( void );
-		void	handelAlias( void );
+		int		setResourceLocationAndName_( std::string uri );
+		void	setResourceLocation_( std::string& uri, bool is_dir, size_t last_slash_pos );
+		void	setResourcePath_( std::string& uri, bool is_dir, size_t last_slash_pos );
+		bool	handleRedirection_( void );
+		void	handelAlias_( void );
 
-		void	setMimeType( void );
+		void	setMimeType_( void );
 		bool	validateResource_( void );
 		void	createErrorBody_( void );
 
