@@ -93,7 +93,6 @@ html_content = """
 </body>
 </html>\r\n\r\n
 """
-html_content = f"<h2>{working_dir}</h2>"
 current_datetime = datetime.now(timezone.utc)
 formatted_date = formatdate(timeval=current_datetime.timestamp(), localtime=False, usegmt=True)
 http_version = os.environ.get('SERVER_PROTOCOL')
