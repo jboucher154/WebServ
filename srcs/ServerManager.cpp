@@ -354,9 +354,13 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	 * 
 	 *	First we set the start time as the latest_server_time_.
 	 *	Then we enter an infinity loop that will only break when we reach the server shutdown time.
-	 *	In the beginning of every loop the printData function will be called if GET_SELECT_POLL_LOOP_FD_INFO is true.
-	 *	Then we call poll with all of the fds we want to handle.
-	 * 
+	 *	in the loop:
+	 *	0.5	In the beginning of every loop the printData function will be called if GET_SELECT_POLL_LOOP_FD_INFO is true.
+	 *	1.	Then we call poll with all of the fds we want to handle and check if error.
+	 *	2.	Then we store the size of the pollfd vector (we need this so that when we remove a client connection we don't iterate over the vector).
+	 *	3.	We iterate through the pollfd vector and check if the pollfd has an revent and if so we call handleEvent.
+	 *	4.	if the pollfd is a client we check if the client has timed out.
+	 *	5.	after iterating the pollfd vector we check if the servers have timed out and if so, break out.
 	 * 
 	 * @return true if a successful end (ie. the checkServersTimeout returned true)
 	 * @return false if there was an error with the poll function (running of servers will be restarted).
@@ -382,11 +386,6 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 				return false;
 			}
 
-			
-			/*	The i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
-				the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
-				make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
-				a problem because of the looping. */
 			this->pollfds_size_ = this->pollfds_.size();
 			int	i = 0;
 
@@ -408,7 +407,21 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		return true;
 	}
 
+	/*! \brief Handle a file descriptor event.
+	 * 
+	 *	if the revent is POLLIN. we check if the fd is a server or client:
+	 *	if server, we accept a new connection and create a client
+	 *	if client, we receive from the client
+	 *	If the revent is POLLOUT, we check if the fd is a client:
+	 *	if client, we send a response to the client.
+	 *	But if the fd IS NOT a client, we know it is a cgi pipe fd and we
+	 *	find out which client it belongs to and then call handleClientCgi.
+	 * 
+	 * @param it the pollfd vector iterator.
+	 */
 	void	ServerManager::POLL_handleEvent( std::vector<pollfd>::iterator& it ) {
+
+		int client_fd;
 
 		if (it->revents & POLLIN) {
 			if (this->server_map_.count(it->fd)) {
@@ -419,13 +432,24 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		} else if (it->revents & POLLOUT) {
 			if (this->client_map_.count(it->fd)) {
 				this->POLL_sendResponseToClient(it->fd);
-			} else {	//cgi pipe activity
-				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
-				this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
+			} else {
+				client_fd = this->getClientFdByItsCgiPipeFd(it->fd);
+				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, client_fd);
+				this->POLL_handleClientCgi_(client_fd);
 			}
 		}
 	}
 
+	/*! \brief Accept a new client connection.
+	 *		Creates a client which is stored into the client map.
+	 *	
+	 *	First the we accept the client and that is succesful we fcntl that fd to make it non-blocking.
+	 *	Then we create the client object which we save into the client_map_ (copies the client object).
+	 *	Then we create a pollfd which will represent the client in runServers.
+	 *	If there is an error we simply log it and don't add a new client.
+	 * 
+	 * @param server_fd the file descriptor of the server.
+	 */
 	void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
 
 		int			client_fd;

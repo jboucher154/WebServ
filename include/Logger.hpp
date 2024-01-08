@@ -27,7 +27,7 @@ enum	e_log_msg_type {
 	E_DEBUG
 };
 
-# define LOG_LOCATION	E_LOG_TO_BOTH_CONSOLE_AND_FILES
+# define LOG_LOCATION	E_LOG_ONLY_TO_CONSOLE
 # define LOG_DIR		"webserv_log"
 # define LOG_ALL		"log_all.txt"
 # define LOG_ERROR		"log_error.txt"

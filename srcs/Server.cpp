@@ -228,8 +228,7 @@ int	Server::setupServer( void ) {
 bool	Server::setUploadStore( std::string upload_dir) {
 	std::string upload_store = this->getRoot() + "/." + this->getServerName() + this->getListeningPortString() + upload_dir;
 	if (access(upload_store.c_str(), F_OK) == 0){
-		Logger::log(E_ERROR, COLOR_RED, "server failed to create temprary upload directory. They already exist. Please remove or rename.");
-		return false;
+		return true;
 	}
 	if (mkdir(upload_store.c_str(), 0777) != 0){
 		Logger::log(E_ERROR, COLOR_RED, "server failed to create temprary upload directory");
