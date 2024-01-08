@@ -240,6 +240,17 @@ bool	Server::setUploadStore( std::string upload_dir) {
 
 }
 
+/*! \brief set the latest server activity.
+ * 
+ * @param time the time of the latest activity.
+ */
+void	Server::setLatestServerTime( void ) {
+
+	this->latest_server_activity_time_ = time(NULL);
+}
+
+/**************************/
+
 /*! \brief returns the listening port as an int
 *       
 *  Returns the listening port as an int.
@@ -258,8 +269,6 @@ std::string	Server::getServerIdforLog( void ) const {
 	id += "]"; 
 	return id;
 }
-
-/**************************/
 
 /*! \brief returns the listening port as an int
 *       
@@ -478,6 +487,15 @@ std::string	Server::getCgiExecutor( std::string extension ) const{
 		pathtIt++;
 	}
 	return *pathtIt;
+}
+
+/*! \brief return the time of the latest server activity.
+ * 
+ * @return time_t the server's latest activity
+ */
+time_t	Server::getLatestServerActivity( void ) {
+
+	return this->latest_server_activity_time_;
 }
 
 /*! \brief checks if a certain key exists in a certain location

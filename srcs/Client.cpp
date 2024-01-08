@@ -140,7 +140,7 @@ bool	Client::startCgiResponse( void ) {
 
 void	Client::finishCgiResponse( void ) {
 
-	this->setLatestTime();
+	this->setLatestTimeForClientAndServer();
 	int	result = this->cgi_handler_->cgiFinish(this->response_);
 	std::string method = this->request_.getRequestLineValue("method");
 
@@ -164,10 +164,10 @@ void	Client::finishCgiResponse( void ) {
 /******************************** end of CGI methods ********************************/
 
 // setters
-void	Client::setLatestTime( void ) {
+void	Client::setLatestTimeForClientAndServer( void ) {
 	
-	// this->latest_time_ = time(0);
 	time(&this->latest_time_);
+	this->getServer()->setLatestServerTime();
 }
 
 void	Client::setServerAndFd( Server* new_server, int new_server_fd ) {
