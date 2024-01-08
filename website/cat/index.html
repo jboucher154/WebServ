@@ -11,16 +11,17 @@
 			<nav>
 				<ul id="navBar">
 					<li><a href="../index.html">Home</a></li>
-					<li><a href="cats.html">Cat</a></li>
+					<li><a href="index.html">Cat</a></li>
 					<li><a href="../dog/index.html">Dog</a></li>
 					<li><a href="../add_post/form.html">Add your post</a></li>
 					<li><a href="../../cgi-bin/about_us.py">About us</a></li>
 				</ul>
 			</nav>
 		</header>
-		<div class="container default post">
+		<div class="container default post" id="0">
+			<button class="delete_button" onclick="deletePost(0)">×</button>
 			<aside class="image">
-				<img src="./midnight.jpg" alt="test png" alt="cute pishoo photo"/>
+				<img id="cat" src="midnight.jpg" alt="test png" alt="cute pishoo photo"/>
 			</aside>
 			<div class="description">
 				<div class="name">pishoo's name: midnight</div>

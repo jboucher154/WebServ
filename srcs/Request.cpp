@@ -719,7 +719,7 @@ void	Request::parseBody_( void ) {
 		query_encode_ = true;
 	}
 	else {
-		this->processed_body_.append(this->raw_body_, this->raw_body_.size());
+		this->processed_body_.append(this->raw_body_);
 	}
 }
 
