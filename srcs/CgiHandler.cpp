@@ -30,7 +30,6 @@ CgiHandler::CgiHandler( const CgiHandler& to_copy )
 		path_(NULL),
 		pid_(-1)
 {
-
 	*this = to_copy;
 } 
 
@@ -59,25 +58,30 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 	if (this != &rhs) {
 		this->metavariables_map_ = rhs.metavariables_map_;
 		// this->cgi_map_ = rhs.cgi_map_;
-
+		if (this->metavariables_)
+			deleteAllocatedCStringArray(this->metavariables_);
 		if (rhs.metavariables_ != NULL)
 			this->metavariables_ = copyCStringArray(rhs.metavariables_);
 		else
 			this->metavariables_ = NULL;
-
+		if (this->args_)
+			deleteAllocatedCStringArray(this->args_);
 		if (rhs.args_ != NULL)
 			this->args_ = copyCStringArray(rhs.args_);
 		else
 			this->args_ = NULL;
+		if (this->path_)
+			delete this->path_;
 		if (rhs.path_ != NULL)
 			this->path_ = ft_strdup(rhs.path_);
+		else
+			this->path_ = NULL;
 		for (int i = 0; i < 2; ++i) {
 			this->pipe_into_cgi_[i] = rhs.pipe_into_cgi_[i];
 			this->pipe_from_cgi_[i] = rhs.pipe_from_cgi_[i];
 		}
 		this->pid_ = rhs.pid_;
 	}
-
 	return *this;
 }
 
