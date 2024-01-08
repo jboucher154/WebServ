@@ -108,30 +108,17 @@ void	Response::createResponsePhase1( Request* request ) {
 	if (this->status_code_ >= 400)
 		return ;
 	if (this->server_ == NULL) {
-		Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Response server is NULL");
+		Logger::log(E_ERROR, COLOR_RED, "Response has no server");
 		this->status_code_ = E_INTERNAL_SERVER_ERROR;
 		return ;
 	}
-	if (this->server_->getClientMaxBodySize() < static_cast<int>(request->getBodySize())) {
-		this->status_code_ = E_PAYLOAD_TOO_LARGE;
+	if (this->request_ == NULL) {
+		Logger::log(E_ERROR, COLOR_RED, "Response has does not have a valid request");
+		this->status_code_ = E_INTERNAL_SERVER_ERROR;
 		return ;
 	}
-	if (this->request_ == NULL || !this->request_->getComplete()) {
-		if (this->request_->checkRequestTimeout() == true) {
-			this->status_code_ = E_REQUEST_TIMEOUT;
-		}
-		else if (this->request_ != NULL && this->request_->getChunked()) {
-			this->status_code_ = E_CONTINUE;
-			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
-		}
-		else if (this->request_ != NULL && !this->request_->getComplete()) {
-			this->status_code_ = E_ACCEPTED;
-			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is not complete. 202 Accepted set!");
-		}
-		else {
-			this->status_code_ = E_BAD_REQUEST;
-			Logger::log(E_DEBUG, COLOR_CYAN, "Bad request, Response Generated before request complete.");
-		}
+	if (this->server_->getClientMaxBodySize() < static_cast<double>(request->getBodySize())) {
+		this->status_code_ = E_PAYLOAD_TOO_LARGE;
 		return ;
 	}
 	if (setResourceLocationAndName_(this->request_->getRequestLineValue("uri")) >= 400 || (this->status_code_ / 100 == 3 && this->request_->getRequestLineValue("method") != "POST")) {
@@ -140,6 +127,24 @@ void	Response::createResponsePhase1( Request* request ) {
 	if (!methodAllowed_(this->request_->getRequestLineValue("method"))) {
 		this->status_code_ = E_METHOD_NOT_ALLOWED;
 		Logger::log(E_DEBUG, COLOR_CYAN, "405 Method not allowed, %s, on server %s for uri: `%s'", this->request_->getRequestLineValue("method").c_str(), this->server_->getServerName().c_str() , this->request_->getRequestLineValue("uri").c_str());
+		return ;
+	}
+	if (!this->request_->getComplete()) {
+		if (this->request_->checkRequestTimeout() == true) {
+			this->status_code_ = E_REQUEST_TIMEOUT;
+		}
+		else if (this->request_->getChunked()) {
+			this->status_code_ = E_CONTINUE;
+			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is chunked and is not finished. 100 OK set!");
+		}
+		else if (!this->request_->getHeaderValueByKey("Expect").empty()) {
+			this->status_code_ = E_CONTINUE;
+			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is not complete. Expect Header found!");
+		}
+		else {
+			this->status_code_ = E_ACCEPTED;
+			Logger::log(E_DEBUG, COLOR_CYAN, "Response Generated before request complete. 202 Accepted set.");
+		}
 		return ;
 	}
 	validateResource_();
@@ -197,8 +202,8 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 		return this->response_;
 	}
 	if (this->status_code_ < 400) {
-		if (this->temp_file_)
-			deleteTempFile_();
+		// if (this->temp_file_)
+		// 	deleteTempFile_();
 		return this->body_;
 	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
