@@ -2,7 +2,6 @@
 # define RESPONSE_HPP
 
 # include <string>
-# include "ResponseCodes.hpp"
 # include <ctime>
 # include <time.h>
 # include <ostream>
@@ -10,9 +9,9 @@
 # include <unistd.h>
 # include <cstdio>
 # include <fstream>
-
 # include <vector>
 
+# include "ResponseCodes.hpp"
 # include "utility.hpp"
 # include "Server.hpp"
 # include "Request.hpp"
@@ -23,15 +22,7 @@
 #  define CRLF "\r\n"
 # endif
 
-/* auto index overideable? max client_body_size? */
-typedef struct	s_request_location_info {
-	std::string								resource_location;
-	std::string								resource_path;
-	bool									is_aliased;
-	bool									is_redirect;
-	std::string								aliased_location;
-	// std::vector<std::string, std::string>&	allowed_methods;
-}				t_request_location_info;
+# define FILE_SIZE_LIMIT_FOR_PIPE 64000
 
 /*! \brief Class for handling HTTP responses.
 *       
@@ -52,7 +43,6 @@ class	Response {
 		/* PRIVATE METHODS AND MEMBERS */
 		std::string			response_;
 		std::string			body_;
-		std::vector<char>	binary_data_;
 		std::string			response_mime_;
 		std::string			resource_path_; //path for opening/ manipulating etc
 		std::string			alias_location_;
@@ -64,8 +54,8 @@ class	Response {
 		bool				alias_;
 		bool				directory_listing_;
 		std::string			query_string_;
-		std::vector<char>	file_data_;
-		//maybe add map of headers, create them as I go?
+		std::string			temp_filepath_;
+		bool				temp_file_;
 
 		/* HEADER GENERATORS */
 		std::string&	addHeaders_( std::string& response) const;
@@ -75,6 +65,7 @@ class	Response {
 		std::string		contentLocationHeader_( void ) const;
 		std::string		locationHeader_( void ) const;
 		std::string		retryAfterHeader_( void ) const;
+		std::string		connectionHeader_( bool connection_continue ) const;
 
 		/* METHODS */
 		void	getMethod_( void );
@@ -86,19 +77,21 @@ class	Response {
 
 		/* UTILITIES FOR GET */
 		void	buildBody_( std::string& path, std::ios_base::openmode mode );
-		std::vector<std::string>	getAcceptedFormats( void );
+		std::vector<std::string>	getAcceptedFormats_( void );
 
 		/* UTILITIES FOR POST */
-		void	saveBodyToFile( void );
+		void	saveBodyToFile_( bool is_save_dir );
+		void	saveBodyToTempFile_( void );
+		void	deleteTempFile_( void );
 		
 		/* RESOURCE AND LOCATION IDENTIFICATION */
-		int		setResourceLocationAndName( std::string uri );
-		void	setResourceLocation( std::string& uri, bool is_dir, size_t last_slash_pos );
-		void	setResourcePath( std::string& uri, bool is_dir, size_t last_slash_pos );
-		bool	handleRedirection( void );
-		void	handelAlias( void );
+		int		setResourceLocationAndName_( std::string uri );
+		void	setResourceLocation_( std::string& uri, bool is_dir, size_t last_slash_pos );
+		void	setResourcePath_( std::string& uri, bool is_dir, size_t last_slash_pos );
+		bool	handleRedirection_( void );
+		void	handelAlias_( void );
 
-		void	setMimeType( void );
+		void	setMimeType_( void );
 		bool	validateResource_( void );
 		void	createErrorBody_( void );
 
@@ -119,8 +112,8 @@ class	Response {
 
 		/* PUBLIC METHODS */
 
-		void			createResponsePhase1( Request* request ); // call in client ? 
-		void			clear( void ); /*reset for next use*/
+		void			createResponsePhase1( Request* request );
+		void			clear( void );
 		std::string&	buildAndGetResponsePhase2( void );
 		std::string&	buildAndGetResponsePhase2( const std::string& body );
 
@@ -136,9 +129,3 @@ class	Response {
 };
 
 #endif
-
-/*
-- verify path to cgi script before handing over to cgi
-- check access/ permissions to the resource
-
-*/ 

@@ -1,6 +1,13 @@
 #include "utility.hpp"
 
+/*! \brief returns url decoded inut string, leaving '/' undecoded
+*       
+*	Returns url decoded input string leaving '/' undecoded. Used to decode
+*   uri from client.
+*
+*/
 std::string urlDecode(const std::string& input) {
+
     std::ostringstream decoded;
     decoded.fill('0');
 
@@ -19,6 +26,5 @@ std::string urlDecode(const std::string& input) {
             decoded << ch;
         }
     }
-
     return decoded.str();
 }

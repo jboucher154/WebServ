@@ -6,7 +6,6 @@
 #include "Validator.hpp"
 #include <iostream>
 #include <vector>
-
 #include <string>
 
 int	main( int argc, char *argv[]) {
@@ -28,6 +27,10 @@ int	main( int argc, char *argv[]) {
 	    	Logger::closeLogFiles();
 	    	return 1;
 		}
+	}
+	for (size_t i = 0; i < Validator::servers.size(); i++){
+		if (!Validator::servers[i].setUploadStore(".temp_files"))
+			return 1;
 	}
 	#if POLL_TRUE_SELECT_FALSE
 		// POLL VERSION

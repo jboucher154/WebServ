@@ -3,7 +3,6 @@ import os
 from datetime import datetime , timezone
 from email.utils import formatdate
 
-
 html_content = """
 <!DOCTYPE html>
 <html lang="en">
@@ -99,4 +98,3 @@ http_version = os.environ.get('SERVER_PROTOCOL')
 header=f"{http_version} 200 OK\r\nDate: {formatted_date}\r\nContent-Length: {len(html_content)}\r\nContent-Location: /cgi-bin\r\nContent-Type: text/html\r\n\r\n"
 
 sys.stdout.write(header + html_content)
-

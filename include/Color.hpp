@@ -6,14 +6,14 @@
 /*   By: jebouche <jebouche@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/07/05 15:46:45 by jebouche          #+#    #+#             */
-/*   Updated: 2023/09/13 14:15:41 by jebouche         ###   ########.fr       */
+/*   Updated: 2024/01/05 15:47:49 by jebouche         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef COLOR_HPP
 # define COLOR_HPP
 
-// Define color escape sequences
+/* Define color escape sequences*/
 # define COLOR_RESET "\033[0m"
 # define COLOR_BLACK "\033[30m"
 # define COLOR_RED "\033[31m"
@@ -31,7 +31,7 @@
 # define COLOR_BRIGHT_MAGENTA "\033[95m"
 # define COLOR_BRIGHT_CYAN "\033[96m"
 # define COLOR_BRIGHT_WHITE "\033[97m"
-
+//include background color
 # define BGCOLOR_WHITE_RED "\033[31;47m"
 # define BGCOLOR_WHITE_PURPLE "\033[1;35;47m"
 # define BGCOLOR_BLUE_GREEN "\033[32;44m"

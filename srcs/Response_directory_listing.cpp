@@ -3,9 +3,12 @@
 #include <cstdlib>
 #include <dirent.h>
 
-
-void Response::listFiles(const std::string& path, std::vector<std::string>& directoryVec)
-{
+/*! \brief helper function to list the files in a directory
+*  
+*  This function take a vector to fill with files that exist
+*  within a path. hidden file are not added to the list.
+*/
+void Response::listFiles(const std::string& path, std::vector<std::string>& directoryVec) {
   
     DIR                         *dir;
     struct dirent               *ent;
@@ -37,13 +40,16 @@ void Response::listFiles(const std::string& path, std::vector<std::string>& dire
     }
 }
 
-std::string Response::buildHtmlList(const std::string& path)
-{
+/*! \brief bulids an html content out of files in a directory
+*  
+*  This function takes a path, calls its helper to save the files
+*  in a vector, then makes an html complient string listing the files.
+*/
+std::string Response::buildHtmlList(const std::string& path) {
 
     int cut_size = 0;
     std::string location_path = "";
     std::vector<std::string> directoryVec;
-    std::cout << "path: " << path << std::endl;
     if (this->resource_location_ == "/"){
         listFiles(path.substr(0, path.size() - 1), directoryVec);
         cut_size = path.size();
@@ -61,7 +67,6 @@ std::string Response::buildHtmlList(const std::string& path)
         for (size_t i = 0; i < directoryVec.size(); ++i)
         {
             htmlString += "\t\t\t<li><a href=\"" + location_path + directoryVec[i].substr(cut_size) +  "\">" + directoryVec[i].substr(cut_size) + "</a></li>\n";
-            std::cout << "directoryVec[i]: " << directoryVec[i] << std::endl;
         }
     }
     htmlString += "\n\t\t</ul>\n\t</body>\n</html>";

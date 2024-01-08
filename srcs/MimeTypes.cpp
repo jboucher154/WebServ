@@ -1,41 +1,58 @@
 
 #include "MimeTypes.hpp"
 
+/************ CLASS STATIC ATTRIBUTE INTIALIZATION **************/
 std::map<std::string, std::string>	MimeTypes::mime_types_;
 
 /* CONSTRUCTORS */
 
-// MimeTypes::MimeTypes( void ) {
+/*! \brief default constructor, private for static class
+*       
+*	Default constructor, private for static class.
+*
+*/
+MimeTypes::MimeTypes( void ) {}
 
-// 	/* default constructor */
-// }
+/*! \brief copy constructor, private for static class
+*       
+*	Copy constructor, private for static class.
+*
+*/
+MimeTypes::MimeTypes( const MimeTypes& to_copy ) {
 
-// MimeTypes::MimeTypes( /*add parameters*/ ) {
+	*this = to_copy;
+} 
 
-// 	/* parameterized constructor */
-// }
+/* DESTRUCTOR */
 
-// MimeTypes::MimeTypes( const MimeTypes& to_copy ) {
-
-// 	/* copy constructor */
-// } 
-
-// /* DESTRUCTOR */
-
-// MimeTypes::~MimeTypes( void ) {
-
-// 	/* destructor */
-// } 
+/*! \brief default destructor, private for static class
+*       
+*	Default destructor, private for static class.
+*
+*/
+MimeTypes::~MimeTypes( void ) {} 
 
 /* OPERATOR OVERLOADS */
 
-// MimeTypes&	MimeTypes::operator=( const MimeTypes& rhs ) {
+/*! \brief copy assignment operator, private for static class
+*       
+*	Copy assignment operator, private for static class.
+*
+*/
+MimeTypes&	MimeTypes::operator=( const MimeTypes& rhs ) {
 
-// 	/* copy assignment operator overload */
-// }
+	(void)rhs;
+	return *this;
+}
 
 /* CLASS PUBLIC METHODS */
 
+/*! \brief returns reference to the mime type belonging to the param extension
+*       
+*	Returns reference to the mime type belonging to the param extension. If mime
+*	type is not stored, an empty string is returned.
+*
+*/
 std::string&	MimeTypes::getMimeTypeByExtension( std::string extension ) {
 
 	if (MimeTypes::mime_types_.empty())
@@ -103,5 +120,3 @@ void	MimeTypes::intializeMimeTypes( void ) {
 	MimeTypes::mime_types_["MPV"] = "video/MPV";
 
 }
-
-//make reverse lookup
