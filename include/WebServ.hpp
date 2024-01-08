@@ -57,6 +57,6 @@
 # define CGI_TIMEOUT 5
 
 // macro for buffer for cgi output reading
-# define CGI_OUTPUT_BUFFER 102400
+# define CGI_OUTPUT_BUFFER 64000
 
 #endif

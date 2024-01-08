@@ -17,14 +17,6 @@ class Client;
 // macro for size of the buffer used in storeCgiOutput_
 # define BUFFER_SIZE 4096
 
-enum	e_cgi_results {
-	E_CGI_OK,
-	E_CGI_SERVERERROR,
-	E_CGI_NOTFOUND,
-	E_CGI_NOPERMISSION,
-	E_CGI_UNKNOWNMETHOD
-};
-
 enum	e_pipe_ends {
 	E_PIPE_END_READ,
 	E_PIPE_END_WRITE
@@ -62,7 +54,7 @@ class	CgiHandler {
 		int		fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
 		int		createCgiArguments_( std::string uri, Client& client );
-		void	cgiTimer_( int& status );
+		int		cgiTimer_( int& status );
 
 		int		setUpCgiPipes_( void );
 		int		executeCgi_( const std::string& body_string );

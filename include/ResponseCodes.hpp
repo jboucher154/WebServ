@@ -6,6 +6,7 @@
 
 typedef	enum	e_StatusCode {
 	E_UNSET = 0,
+	E_SERVER_PROCESSING = 1,
 	// Information responses
 	E_CONTINUE = 100,
 	E_SWITCHING_PROTOCOLS = 101,

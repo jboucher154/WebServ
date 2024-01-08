@@ -11,17 +11,20 @@ char*	ft_strdup(const char* str) {
 	char*	str_copy = NULL;
 	int		i = 0;
 
-	if (str == NULL)
-		return NULL;
-	while (str[i])
-		i++;
-	str_copy = new char[i + 1];
-	if (!str_copy)
-		return NULL;
-	for (int j = 0; j < i; ++j) {
-		str_copy[j] = str[j];
+	try {
+		if (str == NULL)
+			throw std::invalid_argument("argument is NULL");
+		while (str[i])
+			i++;
+		str_copy = new char[i + 1];
+		for (int j = 0; j < i; ++j) {
+			str_copy[j] = str[j];
+		}
+		str_copy[i] = '\0';
+		return str_copy;
 	}
-	str_copy[i] = '\0';
-
-	return str_copy;
+	catch (std::exception& e) {
+		Logger::log(E_ERROR, COLOR_RED, "strdup: %s", e.what());
+		return NULL;
+	}
 }
