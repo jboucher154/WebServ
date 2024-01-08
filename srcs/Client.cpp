@@ -103,39 +103,13 @@ bool	Client::startCgiResponse( void ) {
 		return false;
 	int	cgi_result = this->cgi_handler_->initializeCgi(*this);
 
-	switch (cgi_result)
-	{	
-		case E_CGI_SERVERERROR:
-			// set status as ?
-			this->response_.setStatusCode(500);
-			// error printing?
-			break;
-
-		case E_CGI_UNKNOWNMETHOD:
-			// set status as ?
-			// error printing?
-			break;
-
-		case E_CGI_NOTFOUND:
-			// set status as ?
-			// error printing?
-			break;
-
-		case E_CGI_NOPERMISSION:
-			// set status as ?
-			// error printing?
-			break;
-
-		case E_CGI_OK:
-			return true;
-			break;
-
-		default:
-			// set status as ? (teapot???)
-			// error printing?
-			break;
+	if (cgi_result != EXIT_SUCCESS) {
+		this->response_.setStatusCode(cgi_result);
+		return false ;
 	}
-	return false;
+	else {
+		return true ;
+	}
 }
 
 void	Client::finishCgiResponse( void ) {
@@ -145,14 +119,14 @@ void	Client::finishCgiResponse( void ) {
 	std::string method = this->request_.getRequestLineValue("method");
 
 	switch (result) {
-		case E_CGI_OK :
+		case EXIT_SUCCESS :
 			if (method == "POST")
 			this->response_.setStatusCode(201);
 			else
 				this->response_.setStatusCode(200);
 			break ;
 
-		case E_CGI_SERVERERROR :
+		case EXIT_FAILURE :
 			this->response_.setStatusCode(500);
 			break ;
 		
