@@ -220,7 +220,7 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
 	this->metavariables_map_["SERVER_NAME"] = server.getServerName();
 	this->metavariables_map_["SERVER_PORT"] = server.getListeningPortInt();
-	this->metavariables_map_["SERVER_PROTOCOL"] = "http/1.1";
+	this->metavariables_map_["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->metavariables_map_["SERVER_SOFTWARE"] = "JAS-webserver/0.75";
 
 	this->metavariables_map_["REMOTE_HOST"] = client.getClientHost();
@@ -478,7 +478,7 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 		close(this->pipe_into_cgi_[E_PIPE_END_WRITE]);
 		close(this->pipe_from_cgi_[E_PIPE_END_WRITE]);
 
-		int status;
+		int status = 0;
 		this->cgiTimer_(status);
 		if (WIFSIGNALED(status) > 0 || WEXITSTATUS(status) != 0)
 			return E_CGI_SERVERERROR;
@@ -521,7 +521,6 @@ int		CgiHandler::storeCgiOutput_( void ) {
 	}
 
 	close(this->pipe_from_cgi_[E_PIPE_END_READ]);
-
 	if (ret < 0) {
 		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1 (cannot use errno after read to find reason for failure)");
 		return E_CGI_SERVERERROR;

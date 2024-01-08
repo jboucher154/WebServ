@@ -65,3 +65,20 @@ function addComments(event) {
     //add timestamp
   }
 }
+
+function deletePost(postId) {
+  // Get the src attribute value from the image tag
+  const imgSrc = document.getElementById(postId).querySelector('img').getAttribute('src');
+  const imgId = document.getElementById(postId).querySelector('img').getAttribute('id');
+
+  // Send the DELETE request with the post ID and image source
+  fetch(`../cgi-bin/delete_post.sh`, {
+      method: 'DELETE',
+      headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: "../website/" + imgId + "/" + imgSrc,
+  })
+  .then(() => console.log('Delete successful'))
+  .catch(error => console.error('Error:', error));
+}

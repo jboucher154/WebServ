@@ -197,7 +197,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
 	}
-
+	
 	return true;
 }
 

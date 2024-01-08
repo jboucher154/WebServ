@@ -12,8 +12,8 @@ Client::Client( void ) : response_(NULL), cgi_handler_(NULL) {
 	// this->latest_time_ = time(0);
 	time(&this->latest_time_);
 
-	this->resetRequest();
-	this->resetResponse();
+	// this->resetRequest();
+	// this->resetResponse();
 
 	this->server_ = NULL;
 	this->server_fd_ = -1;
@@ -32,8 +32,8 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 	// this->latest_time_ = time(0);
 	time(&this->latest_time_);
 
-	this->resetRequest();
-	this->resetResponse();
+	// this->resetRequest();
+	// this->resetResponse();
 
 	this->server_ = server;
 	this->server_fd_ = server_fd;

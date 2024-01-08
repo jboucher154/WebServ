@@ -16,7 +16,7 @@ std::vector<std::string> valid_main_keys(valid_main_keys_array, valid_main_keys_
 	+ sizeof(valid_main_keys_array) / sizeof(valid_main_keys_array[0]));
 
 std::string valid_location_keys_array[] = {"save_dir", "autoindex", "return",
-		 "alias", "index", "client_body_size", "allow_methods", "root", "cgi_ext", "cgi_path", "script"};
+		 "alias", "index", "allow_methods", "root", "cgi_ext", "cgi_path", "script"};
 
 std::vector<std::string> valid_location_keys(valid_location_keys_array, valid_location_keys_array
 	+ sizeof(valid_location_keys_array) / sizeof(valid_location_keys_array[0]));
@@ -713,7 +713,7 @@ bool Validator::checkCgiBlockKeyValues( void ) {
 	std::vector<int> keys;
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++) {
 		int i = 0;
-		while (i < 5 && valid_location_keys[i + 6].compare(outerIt->first))
+		while (i < 5 && valid_location_keys[i + 5].compare(outerIt->first))
 			i++ ;
 		if (i == 5) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for Cgi location.", (*outerIt).first.c_str());
@@ -733,7 +733,7 @@ bool Validator::checkCgiBlockKeyValues( void ) {
 	}
 	for (int i = 0; i < 5; i++) {
 		if (std::find(keys.begin(), keys.end(), i) == keys.end()) {
-			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_main_keys[i].c_str());
+			Logger::log(E_ERROR, COLOR_RED, "%s is a required key.", valid_location_keys[i].c_str());
 			return false;
 		}
 	}
@@ -831,14 +831,14 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey) {
 	}
 	setUpLocationRootAndIndex(locationKey);
 	t_location_block_functs  locationFunct[] = {&Validator::saveDir, &Validator::autoIndex, &Validator::returnKey,
-				&Validator::alias, &Validator::locationIndex, &Validator::clientMaxBodySize, &Validator::allowedMethods,
+				&Validator::alias, &Validator::locationIndex, &Validator::allowedMethods,
 				&Validator::locationRoot};
 	//validate key values till the closing `}'
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock.begin(); outerIt != innerBlock.end(); outerIt++) {
 		int i = 0;
-		while (i < 8 && valid_location_keys[i].compare(outerIt->first))
+		while (i < 7 && valid_location_keys[i].compare(outerIt->first))
 			i++ ;
-		if (i == 8) {
+		if (i == 7) {
 			Logger::log(E_ERROR, COLOR_RED, "%s is not a valid key for %s location.", (*outerIt).first.c_str(), locationKey.c_str());
 			return false;
 		}
