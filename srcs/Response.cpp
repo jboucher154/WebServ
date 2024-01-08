@@ -143,7 +143,7 @@ void	Response::createResponsePhase1( Request* request ) {
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is not complete. Expect Header found!");
 		}
 		else {
-			this->status_code_ = E_PROCESSING;
+			this->status_code_ = E_SERVER_PROCESSING;
 			Logger::log(E_DEBUG, COLOR_CYAN, "Response Generated before request complete. 202 Accepted set.");
 		}
 		return ;
@@ -169,7 +169,7 @@ void	Response::createResponsePhase1( Request* request ) {
 */
 std::string&	Response::buildAndGetResponsePhase2( void ) {
 
-	if (this->status_code_ == E_PROCESSING) {
+	if (this->status_code_ == E_SERVER_PROCESSING) {
 		return this->response_;
 	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
@@ -198,7 +198,7 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
 	this->body_ = body;
 
-	if (this->status_code_ == E_PROCESSING) {
+	if (this->status_code_ == E_SERVER_PROCESSING) {
 		return this->response_;
 	}
 	if (this->status_code_ < 400) {

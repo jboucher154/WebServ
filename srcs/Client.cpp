@@ -118,21 +118,8 @@ void	Client::finishCgiResponse( void ) {
 	int	result = this->cgi_handler_->cgiFinish(this->response_);
 	std::string method = this->request_.getRequestLineValue("method");
 
-	switch (result) {
-		case EXIT_SUCCESS :
-			if (method == "POST")
-			this->response_.setStatusCode(201);
-			else
-				this->response_.setStatusCode(200);
-			break ;
-
-		case EXIT_FAILURE :
-			this->response_.setStatusCode(500);
-			break ;
-		
-		default :
-			break;
-	}
+	if (result != EXIT_SUCCESS)
+		this->response_.setStatusCode(result);
 }
 
 /******************************** end of CGI methods ********************************/

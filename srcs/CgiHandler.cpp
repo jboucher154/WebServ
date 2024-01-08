@@ -69,7 +69,8 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 			this->args_ = copyCStringArray(rhs.args_);
 		else
 			this->args_ = NULL;
-		this->path_ = ft_strdup(rhs.path_);
+		if (rhs.path_ != NULL)
+			this->path_ = ft_strdup(rhs.path_);
 		for (int i = 0; i < 2; ++i) {
 			this->pipe_into_cgi_[i] = rhs.pipe_into_cgi_[i];
 			this->pipe_from_cgi_[i] = rhs.pipe_from_cgi_[i];
