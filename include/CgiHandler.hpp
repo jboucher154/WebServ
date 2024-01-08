@@ -14,6 +14,9 @@
 // forward declaration
 class Client;
 
+// macro for size of the buffer used in storeCgiOutput_
+# define BUFFER_SIZE 4096
+
 enum	e_cgi_results {
 	E_CGI_OK,
 	E_CGI_SERVERERROR,
@@ -27,19 +30,30 @@ enum	e_pipe_ends {
 	E_PIPE_END_WRITE
 };
 
+/*! \brief CgiHandler class handles the setting up and execution of cgi scripts in the webserver .
+ *		Every client has a CgiHandler object which it uses to handle cgi requests.
+ *
+ *	The handling of a cgi requests proceeds in the following way:
+ *	1. if the request was valid, the ServerManager::receiveFromClient will call Client::startCgiResponse
+ *	which will initialize the cgi with CgiHandler::initializeCgi.
+ *	2. if this was successful, the pipe ends used to communicate with the cgi process will be added
+ *	to the fds the ServerManager monitors.
+ *	3. the cgi pipe used to read from the cgi process will trigger an event in the ServerManager::runServer function.
+ *	4. the ServerManager::handleEvent function will detect that which client this cgi pipe end belongs to and
+ *	will call that client's Client::cgiFinishCgiResponse function which in turn calls CgiHandler::cgiFinish.
+ *	5. in cgiFinish the cgi script will be executed and its results will be stored.
+ *	6. if this was successful the results will be passed forward to the client.
+ *
+ *	If there are any errors during the cgi handling, the client will be informed of a server error. 
+ */
 class	CgiHandler {
 
 	private:
 		std::map<std::string, std::string>	metavariables_map_;
-		// std::map<std::string, std::string>	cgi_map_;
-
-		std::vector<char>	cgi_output_;
 		std::string			cgi_output_as_string_;
 		char**				metavariables_;
 		char**				args_;
 		char*				path_;
-		bool				piping_successful_;
-		bool				forking_successful_;
 		int					pid_;
 		int					pipe_into_cgi_[2];
 		int					pipe_from_cgi_[2];
@@ -71,15 +85,8 @@ class	CgiHandler {
 		// getters
 		std::vector<std::string, std::string>&	getMetavariablesVector( void ) const;
 		std::vector<std::string, std::string>&	getCgiVector( void ) const;
-	
 		std::string					getExtension( std::string uri );
-		const std::vector<char>&	getCgiOutput( void ) const;
-		const std::string&			getCgiOutputAsString_( void ) const;
-
-		// char**		getMetaVariables( void ) const;
-		char**		getArgs( void ) const;
-		bool		getPipingSuccessful( void ) const;
-		bool		getForkingSuccessful( void ) const;
+		const std::string&			getCgiOutputAsString( void ) const;
 		const int*	getPipeIn( void ) const;
 		const int*	getPipeOut( void ) const;
 };

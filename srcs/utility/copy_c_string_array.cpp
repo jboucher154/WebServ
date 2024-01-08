@@ -2,12 +2,13 @@
 
 
 /*! \brief Create an allocated copy of a NULL-terminating array of c-style strings.
-*       
-*	Create an allocated copy of a NULL-terminating array of c-style strings.
-*	Use only with NULL terminating array, otherwise will cause an error!
-*
-*
-*/
+ *       
+ *	Create an allocated copy of a NULL-terminating array of c-style strings.
+ *	Use only with NULL terminating array, otherwise will cause an error!
+ *
+ *	@param array an array of c-style strings with a NULL pointer in the end.
+ *	@result pointer to a copy of the array.
+ */
 char**		copyCStringArray(char** array) {
 
 	char**	copy_array = NULL;
