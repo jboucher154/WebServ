@@ -202,8 +202,8 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 		return this->response_;
 	}
 	if (this->status_code_ < 400) {
-		// if (this->temp_file_)
-		// 	deleteTempFile_();
+		if (this->temp_file_)
+			deleteTempFile_();
 		return this->body_;
 	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
