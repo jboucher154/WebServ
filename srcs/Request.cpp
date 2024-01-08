@@ -126,6 +126,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 		if (!ss.eof()) {
 			std::streampos	body_start = ss.tellg();
 			if (static_cast<int>(body_start) == -1) {
+				Logger::log(E_ERROR, COLOR_RED, "Request::add error parsing request.");
 				this->status_code_ = E_INTERNAL_SERVER_ERROR;
 			}
 			else {
@@ -491,11 +492,11 @@ void	Request::setBodySize( void ) {
 	}
 	else {
 		try {
-			this->body_size_ = ft_stoi(content_length);
+			this->body_size_ = std::stod(content_length);
 		}
 		catch (std::exception& e){
 			Logger::log(E_ERROR, COLOR_RED, "Request body size overflowed on conversion.");
-			this->status_code_ = E_PAYLOAD_TOO_LARGE;//413 content too large
+			this->status_code_ = E_PAYLOAD_TOO_LARGE;
 		}
 	}
 }
@@ -669,7 +670,6 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 		}
 		this->raw_body_.append(this->body_vector_.begin(), this->body_vector_.end());
 		this->body_len_received_ += body_length;
-		Logger::log(E_DEBUG, COLOR_MAGENTA, "SAVING PART OF BODY: this chunk: %li, total received: %li", body_length, this->body_len_received_);
 	}
 }
 
@@ -712,7 +712,7 @@ void	Request::parseBody_( void ) {
 	else if (is_multipart_form) {
 		std::string	boundry = parseBoundry(content_type_header);
 		if (boundry.empty()) {
-			this->status_code_ = E_BAD_REQUEST; //no boundry provided, invalid request
+			this->status_code_ = E_BAD_REQUEST;
 			return ;
 		}
 		parseMultipartForm_(boundry);
@@ -760,7 +760,7 @@ void	Request::parseChunkedBody_( void ) {
 			std::istringstream	converter(parse_buffer);
 			if (!(converter >> std::hex >> convertedLength)) {
 				this->status_code_ = E_INTERNAL_SERVER_ERROR;
-				return ;
+				throw std::runtime_error("Chunked data: string conversion error:");
 			}
 			parse_buffer.clear();
 			while (convertedLength && body_index < this->raw_body_.size()) {
