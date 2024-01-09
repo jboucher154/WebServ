@@ -6,7 +6,8 @@
 
 /*! \brief MimeTypes is a utility class for handling MIME types within the web server.
  *
- *	@class This static class provides functionality to map file extensions to their corresponding
+ *	@class MimeTypes
+ *	This static class provides functionality to map file extensions to their corresponding
  *	MIME types. It is designed to be used within the web server to accurately identify
  *	the content type of files based on their extensions.
  */
@@ -22,7 +23,7 @@ class	MimeTypes {
 		static void	intializeMimeTypes( void );
 
 		/* MAP of MIME TYPES */
-		static	std::map<std::string, std::string> mime_types_;
+		static	std::map<std::string, std::string> mime_types_; /*!< static map of extensions and their corresponding mime types */
 
 	public:
 		/* PUBLIC METHODS */
