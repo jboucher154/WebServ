@@ -69,16 +69,19 @@ Validator& Validator::operator=( const Validator& rhs ) {
 }
 
 /*! \brief Reterieves host name and ip addresses from the system
-*       
-*  Reads the /etc/hosts file into a line and splits the line
-*  into keys and values that are saved in the validIpHostMap_.
-*  Then gets host name and it ip from the system and adds the 
-*  to the map.
-*/
+ *       
+ *  Reads the /etc/hosts file into a line and splits the line
+ *  into keys and values that are saved in the validIpHostMap_.
+ *  Then gets host name and it ip from the system and adds the 
+ *  to the map.
+ *
+ * @return @b bool - @b true if successful, @b false if not.
+ */
 bool Validator::validIpHostBuilder() {
 
 	std::string key;
 	std::string value;
+
     // Read the /etc/hosts file
     std::ifstream hostsFile("/etc/hosts");
     if (hostsFile.is_open()) {
@@ -102,16 +105,19 @@ bool Validator::validIpHostBuilder() {
         Logger::log(E_ERROR, COLOR_RED, "Error getting host name.");
 		return false;
 	}
+
     // Structure to store address information
     struct addrinfo hints, *result, *rp;
     std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;    // Allow IPv4 or IPv6
     hints.ai_socktype = SOCK_STREAM; // Use a stream socket
+
     // Get address information
     if (getaddrinfo(hostname, NULL, &hints, &result) != 0) {
         Logger::log(E_ERROR, COLOR_RED, "Error getting address information for %s", hostname);
         return false;
     }
+
 	// Iterate through the results and build the IP address
     for (rp = result; rp != NULL; rp = rp->ai_next) {
 		void* addr;
@@ -124,10 +130,12 @@ bool Validator::validIpHostBuilder() {
 			struct sockaddr_in6* ipv6 = reinterpret_cast<struct sockaddr_in6*>(rp->ai_addr);
 			addr = &(ipv6->sin6_addr);
 		}
+
 		// Convert the IP address to a readable format
 		inet_ntop(rp->ai_family, addr, ipstr, sizeof(ipstr));
 		validIpHostMap_.insert(std::make_pair(std::string(ipstr), hostname));
 	}
+
     freeaddrinfo(result);
     return true;
 }
@@ -136,7 +144,9 @@ bool Validator::validIpHostBuilder() {
 *       
 *  Checks if listening port has a value and that it is 
 *  a number and that number is an int and that it is within the valid range.
-*  when listening port is checkd its value is pushed back to its server.
+*  When listening port is checkd its value is pushed back to its server.
+*
+* @return @b bool - @b true if no errors encountered, otherwise @b false.
 */
 bool Validator::listen( std::string value ) {
 
@@ -158,6 +168,7 @@ bool Validator::listen( std::string value ) {
 		Logger::log(E_ERROR, COLOR_RED, "Listening port value has to be a number between 1025 and 65535!");
 		return false;
 	}
+
 	//push back to its serve
 	servers[servers.size() - 1].setListeningPort(ft_stoi(value));
 	return true;
@@ -168,7 +179,9 @@ bool Validator::listen( std::string value ) {
 *       
 *  Checks if listening port has a value and that it is
 *  the hostname asociated with the already validated host ip.
-*  when server name is checkd its value is pushed back to its server.
+*  When server name is checkd its value is pushed back to its server.
+*
+* @return @b bool - @b true if no errors encountered, otherwise @b false.
 */
 bool Validator::serverName( std::string value ){
 
@@ -1025,8 +1038,10 @@ bool Validator::validate_lines(std::vector<std::string>* lines) {
 
 /*! \brief reads and stores the config file
 *       
-*  reads and stores the config file into a sring and a vector of strings
-*
+* 	reads and stores the config file into a string and a vector of strings.
+*	Ignores comments.
+*	
+*	@return @b bool - @b true if no errors encountered, otherwise @b false.
 */
 bool Validator::store_lines(std::string	input) {
 
@@ -1072,12 +1087,14 @@ bool Validator::store_lines(std::string	input) {
 /*! \brief checks that the servername listening port combo is unique
 *       
 *
-*  This methood has a map of listening ports and servernames
-*  if a listening port is already part of the map atleast its
-*  servername has to be unique. The similar servers are added
-*  to a vector and if another similar one is found we check if 
-*  it is just similar and not identical. Identical servers are 
-*  rejected.
+* 	This method has a map of listening ports and servernames
+* 	if a listening port is already part of the map at least its
+* 	servername has to be unique. The similar servers are added
+* 	to a vector and if another similar one is found we check if 
+* 	it is just similar and not identical. Identical servers are 
+* 	rejected.
+*
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::checkListenServernameUniqueness( void ) {
 
@@ -1106,13 +1123,18 @@ bool Validator::checkListenServernameUniqueness( void ) {
 	return true;
 }
 
-/*! \brief validates the config file the config file
+/*! \brief the main validation function which parses and validates the webserver config file
+*		Also gets the IP addresses and their hostnames
 *       
-*
-*  stores the config file, if it is empty returns false
-*  if not 
+*	This function calls several smaller functions which will return @b false if an error
+*	is encountered which will end the function and program.
+*	If the everything went accordingly, the program will proceed to creating the server sockets
+*	and running the servers.
+*  
+*	@param input string of the input file's name.
+*	@return @b bool - @b true if the validation was successful, @b false if not.
 */
-bool Validator::validate(std::string	input) {
+bool Validator::validate(std::string input) {
 
 	if (!validIpHostBuilder()) {
 		Logger::log(E_ERROR, COLOR_RED, "Server failed to read host name and/or ip addresses from the system!");
@@ -1121,6 +1143,7 @@ bool Validator::validate(std::string	input) {
 	if (!store_lines(input)) {
 		return false;
 	}
+	//this if-statement unnecessary because store_lines checks for empty file!
 	if (lines_.empty()) {
 		Logger::log(E_ERROR, COLOR_RED, "The config file is empty!");
 		return false;
