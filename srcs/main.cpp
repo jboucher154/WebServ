@@ -16,9 +16,8 @@
 int	main( int argc, char *argv[]) {
 
 	Logger::initLogger();
-	(void)argv;
 	if (argc > 2) {
-		Logger::log(E_INFO, COLOR_GREEN, "Usage: ./Webserver config.conf or ./Webserver");
+		Logger::log(E_INFO, COLOR_GREEN, "Usage: ./webserv config.conf or ./webserv");
 		Logger::closeLogFiles();
 		return EXIT_FAILURE;
 	}
@@ -27,7 +26,7 @@ int	main( int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 	else if (argc == 1){
-		if (!Validator::validate("config/good/default.conf")){
+		if (!Validator::validate(DEFAULT_CONFIG_PATH)){
 	    	Logger::log(E_INFO, COLOR_RED, "Default config is not valid!");
 	    	Logger::closeLogFiles();
 	    	return EXIT_FAILURE;

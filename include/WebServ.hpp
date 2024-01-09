@@ -1,62 +1,126 @@
-/*  
-    THIS HPP FILE IS FOR ALMOST ALL MACROS IN THE PROJECT
-    THIS IS VERY USEFUL: IF YOU WANT TO CHANGE SOMETHING, YOU CAN JUST EDIT THIS FILE!
-
-    THE FIRST PART ARE BOOL MACROS WHERE YOU CAN ENABLED CERTAIN FEATURES OR NOT
-    THE SECOND PART CONTAINS TIME SETTINGS FOR THE SERVERMANAGER
-    THE THIRD PART CONTAINS TIME SETTINGS FOR CGI
-*/
-
 #ifndef	WEBSERV_HPP
+/*! \brief this header file contains important macros for the server,
+*           varioussettings can be edited from here.
+*
+*   This header file contains important macros for the server various server 
+*   settings can be edited from here.
+*   Especially server timout settings for clients, cgi, response, shutdown timeout
+*   The default path for the config can be set here as well.
+*
+*   
+*/
 # define WEBSERV_HPP
 
-// MACRO FOR SELECTING POLL OR SELECT VERSION OF PROGRAM
+/*! \brief Macro for selecting POLL or SELECT Version of Program
+*
+*   Marco for selecting POLL or SELECT Version of Program. 
+*   true = compile with POLL veresion
+*   false = compile with SELECT version
+*   
+*/
 # ifndef POLL_TRUE_SELECT_FALSE
 #  define POLL_TRUE_SELECT_FALSE true
 # endif
 
-// MACRO FOR GETTING MORE DEBUG LOG (MORE INFO)
+/*! \brief Macro for logging debug statements
+*
+*   Macro for logging debug statements. The output will follow the Logger settings,
+*   (to file, terminal, or both).
+*   true = print debug information
+*   false = no debug output logged
+*/
 # ifndef GET_DEBUG_LOG
 #  define GET_DEBUG_LOG	true
 # endif
 
-// NEW MACRO FOR ENABLING/DISABLING GETTING FD INFO FOR SELECT/POLL LOOP
-// (they flood the terminal/logs, but useful in some cases)
+/*! \brief Macro for enabling/disabling the getting of fd info for main server loop
+*   
+*   Macro for enabling/disabling the getting of fd info for main server loop. 
+*   CAUTION: this can cause a flood the terminal/logs, but useful in some cases
+*   true = print the fd info
+*   false = no printing of fd information
+*   
+*/
 # if GET_DEBUG_LOG
 #  ifndef GET_SELECT_POLL_LOOP_FD_INFO
 #   define GET_SELECT_POLL_LOOP_FD_INFO false
 #  endif
 # endif
 
-// MACRO FOR SWITCHING BETWEEN HIVE COMPUTERS AND MACBOOKS (REMOVE LATER?)
-// (switch between desktop version (default.conf and logger uses vsprintf) and macbook version (default_macbook.conf and logger uses vsnprintf))
-# ifndef HIVE_DESKTOP_OR_MACBOOK
-#  define HIVE_DESKTOP_OR_MACBOOK true
+/*! \brief Macro for the default config file
+*
+*   Macro for the default config file. If no arguments given when `./webserv' is
+*   launched this path will be used for a default config.
+*   path should be relative to the root where the server is launched.
+*
+*/
+# ifndef DEFAULT_CONFIG_PATH
+#  define DEFAULT_CONFIG_PATH "config/good/default.conf"
 # endif
 
 
 /*********************************************** ServerManager macros ***********************************************/
 
-// for timing out select()
+/*! \brief sets timeout for select() in seconds
+*
+*   sets timeout for select() in seconds.
+*
+*/
 # define SELECT_TIMEOUT_SEC 2
+
+/*! \brief sets timeout for select() in microseconds
+*
+*   sets timeout for select() in microseconds.
+*
+*/
 # define SELECT_TIMEOUT_USEC 0
 
-// for timing out poll()
+/*! \brief sets timeout for poll() in milliseconds
+*
+*   sets timeout for poll() in milliseconds.
+*
+*/
 # define POLL_TIMEOUT_MILLISEC 2 * 1000
 
-// time the servers will run for without any client action (in seconds)
+/*! \brief sets time the servers will run without any client action (in seconds)
+*
+*   Time the servers will run for without any client action (in seconds).
+*
+*/
 # define SERVER_SHUTDOWN_TIME_SEC 1000 * 60
 
-// time a client connection is kept open from last client action (in seconds)
+/*! \brief time a client connection is kept open from last client action (in seconds)
+*
+*   Time a client connection is kept open from last client action (in seconds).
+*   Client connection will be terminated if this timeout is reached.
+*
+*  
+*/
 # define CLIENT_TIMEOUT_SEC 1 * 10
 
 
 /*********************************************** CGI macros ***********************************************/
 
-// macro for cgi timeout
+/*! \brief sets timeout for cgi script processing
+*
+*   Sets timeout for cgi script processing. If the timeout is reached a 
+*   504 Gateway Timeout response will be sent.
+*
+*/
 # define CGI_TIMEOUT 5
 
-// macro for buffer for cgi output reading
+/*! \brief sets the max size for cgi output reading
+*
+*   Sets the max size size for cgi output reading. This will vary based on system limitations
+*   with pipes.
+*
+*/
 # define CGI_OUTPUT_BUFFER 64000
 
 #endif
+
+/*********************************************** Request macros ***********************************************/
+
+
+/*********************************************** Response macros ***********************************************/
+
