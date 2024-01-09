@@ -12,7 +12,7 @@
 
 /*! \brief Construct a new Server Manager:: Server Manager object.
  * 
- * @param server_vector a reference to the Validator's vector of servers.
+ * @param server_vector Validator's vector of servers.
  */
 ServerManager::ServerManager( std::vector<Server>& server_vector ) : servers_(server_vector) {
 
@@ -79,7 +79,7 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
  *	In the function we go through the client_cgi_map_ and see which of client has the pipe_fd as one of its values.
  * 
  *	@param pipe_fd the fd of a pipe end which triggered this function to be called.
- *	@return int which is the client fd (or -1 in case of error).
+ *	@return @b int which is the client fd (or -1 in case of error).
  */
 int	ServerManager::getClientFdByItsCgiPipeFd( int pipe_fd ) {
 
@@ -139,8 +139,8 @@ void	ServerManager::closeAllSockets( void ) {
  *	The function iterates through all the servers and checks the latest client event in that server. We get the shortest time
  *	and we compare that to the SERVER_SHUTDOWN_TIME_SEC.
  * 
- *	@return true if the SERVER_SHUTDOWN_TIME_SEC has been passed (the program will be closed).
- *	@return false if the SERVER_SHUtDOWN_TIME_SEC has not been passed.
+ *	@return @b true if the SERVER_SHUTDOWN_TIME_SEC has been passed (the program will be closed).
+ *	@return @b false if the SERVER_SHUtDOWN_TIME_SEC has not been passed.
  */
 bool	ServerManager::CheckServersTimeout( void ) {
 
@@ -161,7 +161,7 @@ bool	ServerManager::CheckServersTimeout( void ) {
 
 /*! \brief remove client.
  * 
- * First close the client socket and then remove client from client_map_.
+ * First closes the client socket and then removes client from client_map_.
  * 
  * @param client_fd client's file descriptor.
  */
@@ -203,8 +203,8 @@ void	ServerManager::checkServerAssignmentBasedOnRequest( Client& client ) {
  *	which server was the request meant to (if there are multiple servers using the same port, that is).
  * 
  * @param client_fd the file descriptor of the client.
- * @return true if we don't want to close the connection.
- * @return false if we want to close the connection.
+ * @return @b true if we don't want to close the connection.
+ * @return @b false if we want to close the connection.
  */
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
@@ -252,8 +252,8 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
  * 
  *
  *	@param client_fd the file descriptor of the client.
- *	@return true if we want to keep the connection alive.
- *	@return false if we want to close the connection.
+ *	@return @b true if we want to keep the connection alive.
+ *	@return @b false if we want to close the connection.
  */
 bool	ServerManager::sendResponseToClient( int client_fd ) {
 
@@ -320,8 +320,8 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	 *	Iterate through server_vector_ and call Server::setupServer function which returns the fd of that server.
 	 *	Then we make a pollfd for that server and add a pair to the server_map_(fd as key and pointer to server as value). 
 	 *
-	 * @return true if initialization of servers was successful.
-	 * @return false if an error was encountered.
+	 * @return @b true if initialization of servers was successful.
+	 * @return @b false if an error was encountered.
 	 */
 	bool	ServerManager::POLL_initializeServers( void ) {
 		
@@ -362,8 +362,8 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	 *	4.	if the pollfd is a client we check if the client has timed out.
 	 *	5.	after iterating the pollfd vector we check if the servers have timed out and if so, break out.
 	 * 
-	 * @return true if a successful end (ie. the checkServersTimeout returned true)
-	 * @return false if there was an error with the poll function (running of servers will be restarted).
+	 * @return @b true if a successful end (ie. the checkServersTimeout returned true)
+	 * @return @b false if there was an error with the poll function (running of servers will be restarted).
 	 */
 	bool	ServerManager::POLL_runServers( void ) {
 
@@ -410,12 +410,12 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	/*! \brief Handle a file descriptor event.
 	 * 
 	 *	if the revent is POLLIN. we check if the fd is a server or client:
-	 *	if server, we accept a new connection and create a client
-	 *	if client, we receive from the client
+	 *		if server, we accept a new connection and create a client
+	 *		if client, we receive from the client
 	 *	If the revent is POLLOUT, we check if the fd is a client:
-	 *	if client, we send a response to the client.
-	 *	But if the fd IS NOT a client, we know it is a cgi pipe fd and we
-	 *	find out which client it belongs to and then call handleClientCgi.
+	 *		if client, we send a response to the client.
+	 *		But if the fd IS NOT a client, we know it is a cgi pipe fd and we
+	 *		find out which client it belongs to and then call handleClientCgi.
 	 * 
 	 * @param it the pollfd vector iterator.
 	 */
@@ -446,6 +446,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	 *	First the we accept the client and that is succesful we fcntl that fd to make it non-blocking.
 	 *	Then we create the client object which we save into the client_map_ (copies the client object).
 	 *	Then we create a pollfd which will represent the client in runServers.
+	 *	We push the new pollfd into the pollfds_ vector (copies the pollfd object).
 	 *	If there is an error we simply log it and don't add a new client.
 	 * 
 	 * @param server_fd the file descriptor of the server.
@@ -482,6 +483,16 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
 	}
 
+	/*! \brief remove the pollfd with the @b fd from the pollfds_ vector
+	 *
+	 *	Iterates through the pollfds_ vector until it finds the pollfd with that @b fd
+	 *	and erases that pollfd.
+	 *	After that the attribute pollfds_size_ is minused by one. The pollfds_size_ is
+	 *	needed so that the in the ServerManager::runServers won't iterate over the
+	 *	the vector if a pollfd happens to be removed.
+	 *
+	 * @param fd the file descriptor to be removed from the pollfds_ vector
+	 */
 	void	ServerManager::POLL_removeFdFromPollfds( int fd ) {
 
 		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
@@ -493,6 +504,16 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		this->pollfds_size_--;
 	}
 
+	/*! \brief remove a client from the webserver.
+	 *
+	 *	First we check if the client has a cgi process ongoing and if so,
+	 *	we call ServerManager::POLL_removeClientCgiFdsFromPollfds_ to remove
+	 *	the pipe ends used for the cgi from the pollfds_ vector.
+	 *	Then we call ServerManager::removeFdFromPollfds to remove the pollfd that
+	 *	represents the client from the pollfds_ vector.
+	 *  
+	 * @param client_fd the file descriptor of the client.
+	 */
 	void	ServerManager::POLL_removeClient( int client_fd ) {
 
 		if (this->client_cgi_map_.count(client_fd)) {
