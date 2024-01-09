@@ -16,7 +16,6 @@ MimeTypes::MimeTypes( void ) {}
 /*! \brief copy constructor, private for static class
  *       
  *	Copy constructor, private for static class.
- *
  */
 MimeTypes::MimeTypes( const MimeTypes& to_copy ) {
 
@@ -28,7 +27,6 @@ MimeTypes::MimeTypes( const MimeTypes& to_copy ) {
 /*! \brief default destructor, private for static class
  *       
  *	Default destructor, private for static class.
- *
  */
 MimeTypes::~MimeTypes( void ) {} 
 
@@ -38,7 +36,7 @@ MimeTypes::~MimeTypes( void ) {}
  *       
  *	Copy assignment operator, private for static class.
  *
- *	@return reference to the left-hand MimeTypes object.
+ *	@return @b MimeTypes& of the left-hand side MimeTypes object.
  */
 MimeTypes&	MimeTypes::operator=( const MimeTypes& rhs ) {
 
@@ -53,7 +51,7 @@ MimeTypes&	MimeTypes::operator=( const MimeTypes& rhs ) {
  *	First time this function MimeTypes::intializeMimeTypes()
  *	is called which will fill the map with mime types the webserver can handle.
  * 
- *	@return reference to the mime type belonging to the param extension.
+ *	@return @b std::string& of the mime type belonging to the param extension.
  *	@warning If mime type is not stored, an empty string is returned.
  */
 std::string&	MimeTypes::getMimeTypeByExtension( std::string extension ) {
