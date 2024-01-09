@@ -40,21 +40,20 @@ enum	e_pipe_ends {
  *	6. if this was successful the results will be passed forward to the client.
  *
  *	If there are any errors during the cgi handling, the client will be informed of a server error.
- *	\ref
+ *	
  */
 class	CgiHandler {
 
 	private:
 
 		std::map<std::string, std::string>	metavariables_map_; /*!< @brief Map of environment variables to create the metavariables_ */
-		std::string			cgi_output_as_string_; /*!< @brief used to store response returned from cgi process */
-		char**				metavariables_; /*!< @brief c-style array of environment varibale to pass to cgi execve() call */
-		char**				args_; /*!< @brief c-style string array for arguments to pass to execve() */
-		std::string			path_; /*!< @brief string for path to cgi-script from the request uri */
-		int					pid_; /*!< @brief for result of fork, used by parent to track child result */
-		int					pipe_into_cgi_[2]; /*!< @brief stores pipe fds for content directed into the cgi process */
-		int					pipe_from_cgi_[2]; /*!< @brief stores pipe fds for content coming from the cgi child process */
-
+		std::string							cgi_output_; /*!< @brief used to store response returned from cgi process */
+		char**								metavariables_; /*!< @brief c-style array of environment variables to pass to cgi execve() call */
+		char**								args_; /*!< @brief c-style string array for arguments to pass to execve() */
+		std::string							path_; /*!< @brief string for path to cgi-script from the request uri */
+		int									pid_; /*!< @brief for result of fork, used by parent to track child result */
+		int									pipe_into_cgi_[2]; /*!< @brief stores pipe fds for content directed into the cgi process */
+		int									pipe_from_cgi_[2]; /*!< @brief stores pipe fds for content coming from the cgi child process */
 
 		void	fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
@@ -66,6 +65,7 @@ class	CgiHandler {
 		int		storeCgiOutput_( void );
 
 	public:
+
 		CgiHandler( void );
 		CgiHandler( const CgiHandler& to_copy );
 

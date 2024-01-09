@@ -5,12 +5,12 @@
  * 
  */
 CgiHandler::CgiHandler( void )
-	:	cgi_output_as_string_(""),
+	:	cgi_output_(""),
 		metavariables_(NULL),
 		args_(NULL),
 		path_(""),
-		pid_(-1)
-{
+		pid_(-1) {
+
 	this->pipe_into_cgi_[0] = -1;
 	this->pipe_into_cgi_[1] = -1;
 	this->pipe_from_cgi_[0] = -1;
@@ -22,12 +22,12 @@ CgiHandler::CgiHandler( void )
  *	@param to_copy CgiHandler object to be copied.
  */
 CgiHandler::CgiHandler( const CgiHandler& to_copy )
-	:	cgi_output_as_string_(""),
+	:	cgi_output_(""),
 		metavariables_(NULL),
 		args_(NULL),
 		path_(""),
-		pid_(-1)
-{
+		pid_(-1) {
+
 	*this = to_copy;
 } 
 
@@ -175,7 +175,7 @@ int	CgiHandler::cgiFinish( Response& response ) {
  */
 void	CgiHandler::clearCgiOutputs( void ) {
 
-	this->cgi_output_as_string_ = "";
+	this->cgi_output_ = "";
 }
 
 /* CLASS PRIVATE METHODS */
@@ -281,7 +281,7 @@ std::string	CgiHandler::getExtension( std::string uri ) {
  */
 const std::string&	CgiHandler::getCgiOutputAsString( void ) const {
 
-	return this->cgi_output_as_string_;
+	return this->cgi_output_;
 }
 
 /*! \brief get the ends of the pipe that leads INTO OF the cgi-process.
@@ -472,13 +472,13 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 /*! \brief Store cgi output into a string that will be sent to the client.
  *
- *	In the beginning of the function we clear the cgi_output_as_string_ attribute.
+ *	In the beginning of the function we clear the cgi_output_ attribute.
  *	Then we will simply keep looping the reading of the pipe end where the results
  *	of the cgi-script until everything has been read or the bytes read are over the CGI_OUTPUT_BUFFER.
  *	After a successful reading of the cgi output we close the pipe and we check that the there was no
  *	error with read (we cannot use errno to find out why it failed because the subject explicitly prohibits doing so).
  * 
- *	@result @b int which tells if the function was successful or not, EXIT_SUCESS or relvant HTTP response code.
+ *	@result @b int which tells if the function was successful or not, EXIT_SUCESS or relevant HTTP response code.
  */
 int		CgiHandler::storeCgiOutput_( void ) {
 
@@ -486,14 +486,14 @@ int		CgiHandler::storeCgiOutput_( void ) {
 	ssize_t	bytesread = 0;
 	char	buffer[BUFFER_SIZE];
 
-	this->cgi_output_as_string_.clear();
+	this->cgi_output_.clear();
 	memset(buffer, 0, BUFFER_SIZE);
 	while (ret > 0) {
 		ret = read(this->pipe_from_cgi_[E_PIPE_END_READ], buffer, BUFFER_SIZE - 1);
 
 		if (ret > 0) {
 			buffer[ret] = '\0';
-			this->cgi_output_as_string_.append(buffer, ret);
+			this->cgi_output_.append(buffer, ret);
 			bytesread += ret;
 		}
 		if (bytesread >= CGI_OUTPUT_BUFFER) {
