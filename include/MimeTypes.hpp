@@ -23,12 +23,11 @@ class	MimeTypes {
 		static void	intializeMimeTypes( void );
 
 		/* MAP of MIME TYPES */
-		static	std::map<std::string, std::string> mime_types_; /*!< static map of extensions and their corresponding mime types */
+		static	std::map<std::string, std::string> mime_types_; /*!< \brief static map of extensions and their corresponding mime types */
 
 	public:
 		/* PUBLIC METHODS */
 		static std::string&	getMimeTypeByExtension( std::string extension );
-		//make reverse lookup?
 };
 
 #endif

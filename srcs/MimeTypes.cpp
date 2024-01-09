@@ -85,9 +85,9 @@ void	MimeTypes::intializeMimeTypes( void ) {
 	MimeTypes::mime_types_["xml"] = "text/xml";
 
 	//application
-	MimeTypes::mime_types_["unknown"] = "application/octet-stream";//unkown binary file
+	MimeTypes::mime_types_["unknown"] = "application/octet-stream";
 	MimeTypes::mime_types_["pdf"] = "application/pdf";
-	MimeTypes::mime_types_["msword"] = "application/msword"; //?
+	MimeTypes::mime_types_["msword"] = "application/msword";
 	MimeTypes::mime_types_["zip"] = "application/zip";
 	MimeTypes::mime_types_["x-www-form-urlencoded"] ="application/x-www-form-urlencoded";
 
