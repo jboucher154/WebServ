@@ -129,7 +129,8 @@ void	Response::createResponsePhase1( Request* request ) {
 		Logger::log(E_DEBUG, COLOR_CYAN, "405 Method not allowed, %s, on server %s for uri: `%s'", this->request_->getRequestLineValue("method").c_str(), this->server_->getServerName().c_str() , this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
-	if (!this->request_->getComplete()) {
+	validateResource_();
+	if (this->status_code_ < 400 && !this->request_->getComplete()) {
 		if (this->request_->checkRequestTimeout() == true) {
 			this->status_code_ = E_REQUEST_TIMEOUT;
 		}
@@ -142,12 +143,11 @@ void	Response::createResponsePhase1( Request* request ) {
 			Logger::log(E_DEBUG, COLOR_BRIGHT_YELLOW, "Request is not complete. Expect Header found!");
 		}
 		else {
-			this->status_code_ = E_ACCEPTED;
+			this->status_code_ = E_SERVER_PROCESSING;
 			Logger::log(E_DEBUG, COLOR_CYAN, "Response Generated before request complete. 202 Accepted set.");
 		}
 		return ;
 	}
-	validateResource_();
 	if (this->status_code_ < 400) {
 		for (unsigned long i = 0; i < (sizeof(possible_methods)/sizeof(std::string)); i++) {
 			if (this->request_->getRequestLineValue("method") == (possible_methods[i])) {
@@ -169,7 +169,7 @@ void	Response::createResponsePhase1( Request* request ) {
 */
 std::string&	Response::buildAndGetResponsePhase2( void ) {
 
-	if (this->status_code_ == E_ACCEPTED) {
+	if (this->status_code_ == E_SERVER_PROCESSING) {
 		return this->response_;
 	}
 	this->response_ = ResponseCodes::getCodeStatusLine(this->status_code_);
@@ -198,7 +198,7 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
 	this->body_ = body;
 
-	if (this->status_code_ == E_ACCEPTED) {
+	if (this->status_code_ == E_SERVER_PROCESSING) {
 		return this->response_;
 	}
 	if (this->status_code_ < 400) {
@@ -364,7 +364,7 @@ std::string&	Response::addHeaders_( std::string& response) const {
 	if (this->status_code_ == E_PAYLOAD_TOO_LARGE) {
 		response += this->retryAfterHeader_() + CRLF;
 	}
-	if (this->status_code_ == 408) {
+	if (this->status_code_ == E_REQUEST_TIMEOUT) {
 		response += this->connectionHeader_(false) + CRLF;
 	}
 	response += CRLF;
@@ -539,7 +539,6 @@ bool	Response::handleRedirection_( void ) {
 	    this->resource_location_ = this->server_->getLocationValue(this->resource_location_, "return")->front();
 		this->redirect_ = true;
 		this->status_code_ = E_FOUND;
-	    Logger::log(E_DEBUG, COLOR_CYAN, "Redirection found for location new location : %s", this->resource_location_.c_str());
 		return true;
 	}
 	return false;
@@ -579,8 +578,8 @@ void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_
 	if (is_dir) {
 		this->resource_location_ = uri; //won't have root applied
 		if (this->request_->getCgiFlag()) {
-			this->status_code_ = E_BAD_REQUEST; // invalid request if we don't allow this?
-			Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script not given by request: `%s'", uri.c_str());
+			this->status_code_ = E_NOT_ACCEPTABLE;
+			Logger::log(E_DEBUG, COLOR_CYAN, "406 CGI script not given by request: `%s'", uri.c_str());
 		}
 	}
 	else {
@@ -615,7 +614,6 @@ void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_
 void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
 	if (is_dir) {
-		//check for directory listing here
 		if ((this->server_->isKeyInLocation(this->resource_location_, "autoindex")
 		&& this->server_->getLocationValue(this->resource_location_, "autoindex")->front() == "on")
 		|| (this->alias_ && this->server_->isKeyInLocation(this->alias_location_, "autoindex")
@@ -630,7 +628,7 @@ void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slas
 			else
 				this->resource_path_ = this->server_->getLocationValue(this->resource_location_, "index")->front();
 			this->redirect_ = true;
-			this->status_code_ = E_MOVED_PERMANENTLY; //permanently moved (chrome should use this in the future)
+			this->status_code_ = E_MOVED_PERMANENTLY;
 		}
 	}
 	else {
@@ -646,7 +644,7 @@ void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slas
 			this->resource_path_ = (this->server_->getLocationValue("/cgi-bin", "root"))->front() + "/" + filename;
 		}
 		else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
-			this->status_code_ = E_NOT_FOUND; //TODO: is this correct code for not allowed script?
+			this->status_code_ = E_NOT_FOUND;
 			Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
 		}
 	}
@@ -679,7 +677,7 @@ int	Response::setResourceLocationAndName_( std::string uri ) {
 	}
 	else {
 		this->status_code_ = E_BAD_REQUEST;
-		Logger::log(E_DEBUG, COLOR_CYAN, "URI seems to be invalid :/ : `%s'", uri.c_str());
+		Logger::log(E_DEBUG, COLOR_CYAN, "URI is invalid : `%s'", uri.c_str());
 	}
 	return this->status_code_;
 }
@@ -812,8 +810,7 @@ void	Response::getMethod_( void ) {
 		}
 	}
 	else {
-		this->status_code_ = 415;
-		Logger::log(E_DEBUG, COLOR_CYAN, "415 MIME type of resource not in client `Accept` list: %s.", this->request_->getRequestLineValue("uri").c_str());
+		this->status_code_ = E_NOT_ACCEPTABLE;
 	}
 }
 
@@ -828,8 +825,8 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 	std::ifstream	resource(path, mode);
 	
 	if (!resource.is_open() || resource.fail() || resource.bad()) {
-		this->status_code_ = E_NOT_FOUND;
-		Logger::log(E_DEBUG, COLOR_CYAN, "404 cannot open resource: %s.", this->request_->getRequestLineValue("uri").c_str());
+		this->status_code_ = E_FAILED_DEPENDENCY;
+		Logger::log(E_DEBUG, COLOR_CYAN, "424 cannot open resource: %s.", this->request_->getRequestLineValue("uri").c_str());
 		return ;
 	}
 	if (mode == std::ios::binary) {
@@ -846,7 +843,6 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 		}
 	}
 	resource.close();
-	//check if body was too large 431 or 424
 }
 
 /****************************************** HEAD ******************************************/
@@ -873,8 +869,8 @@ void	Response::headMethod_( void ) {
 		}
 	}
 	else {
-		this->status_code_ = E_UNSUPPORTED_MEDIA_TYPE;
-		Logger::log(E_DEBUG, COLOR_CYAN, "HEAD: 415 MIME type of resource not in client `Accept` list: %s.", this->request_->getRequestLineValue("uri").c_str());
+		this->status_code_ = E_NOT_ACCEPTABLE;
+		Logger::log(E_DEBUG, COLOR_CYAN, "HEAD: 406 MIME type of resource not in client `Accept` list: %s.", this->request_->getRequestLineValue("uri").c_str());
 	}
 }
 
@@ -898,7 +894,7 @@ void	Response::deleteMethod_( void ) {
 	}
 	else if (std::remove(this->resource_path_.c_str()) != 0 ) {
 		Logger::log(E_ERROR, COLOR_RED, "DELETE: removal of resource failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
-		this->status_code_ = E_INTERNAL_SERVER_ERROR; //change???
+		this->status_code_ = E_FAILED_DEPENDENCY;
 	}
 	else {
 		this->status_code_ = E_OK;
@@ -933,9 +929,10 @@ void	Response::saveBodyToFile_( bool is_save_dir ) {
 	else {
 		file_path = this->server_->getLocationValue(this->resource_location_, "root")->front() + "/" + filename;
 	}
-	std::ofstream	new_file(file_path, std::ostream::binary); //check mime for open mode?
+	std::ofstream	new_file(file_path, std::ostream::binary);
 	if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
-		this->status_code_ = E_INTERNAL_SERVER_ERROR;
+		Logger::log(E_ERROR, COLOR_RED, "POST: opening failed : `%s'", this->request_->getRequestLineValue("uri").c_str());
+		this->status_code_ = E_FAILED_DEPENDENCY;
 		return ;
 	}
 	new_file << this->request_->getUploadContent();
@@ -963,7 +960,7 @@ void	Response::saveBodyToTempFile_( void ) {
 	}
 	std::ofstream	new_file(file_path, std::ostream::binary);
 	if (new_file.bad() || new_file.fail() || !new_file.is_open()) {
-		this->status_code_ = E_INTERNAL_SERVER_ERROR;
+		this->status_code_ = E_FAILED_DEPENDENCY;
 		Logger::log(E_ERROR, COLOR_RED, "Temporary file creation failed : %s", file_path.c_str());
 		return ;
 	}
@@ -986,7 +983,7 @@ void	Response::postMethod_( void ) {
 	bool		cgi_flag = this->request_->getCgiFlag();
 	
 	if (content_type_values.empty() || content_type_values.find("form") == std::string::npos) {
-		this->status_code_ = E_NOT_ACCEPTABLE;
+		this->status_code_ = E_BAD_REQUEST;
 		return ;
 	}
 	else if (!cgi_flag) {

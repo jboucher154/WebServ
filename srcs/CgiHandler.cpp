@@ -30,7 +30,6 @@ CgiHandler::CgiHandler( const CgiHandler& to_copy )
 		path_(NULL),
 		pid_(-1)
 {
-
 	*this = to_copy;
 } 
 
@@ -59,25 +58,30 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 	if (this != &rhs) {
 		this->metavariables_map_ = rhs.metavariables_map_;
 		// this->cgi_map_ = rhs.cgi_map_;
-
+		if (this->metavariables_)
+			deleteAllocatedCStringArray(this->metavariables_);
 		if (rhs.metavariables_ != NULL)
 			this->metavariables_ = copyCStringArray(rhs.metavariables_);
 		else
 			this->metavariables_ = NULL;
-
+		if (this->args_)
+			deleteAllocatedCStringArray(this->args_);
 		if (rhs.args_ != NULL)
 			this->args_ = copyCStringArray(rhs.args_);
 		else
 			this->args_ = NULL;
-		
-		this->path_ = ft_strdup(rhs.path_);
+		if (this->path_)
+			delete this->path_;
+		if (rhs.path_ != NULL)
+			this->path_ = ft_strdup(rhs.path_);
+		else
+			this->path_ = NULL;
 		for (int i = 0; i < 2; ++i) {
 			this->pipe_into_cgi_[i] = rhs.pipe_into_cgi_[i];
 			this->pipe_from_cgi_[i] = rhs.pipe_from_cgi_[i];
 		}
 		this->pid_ = rhs.pid_;
 	}
-
 	return *this;
 }
 
@@ -140,20 +144,20 @@ int	CgiHandler::initializeCgi( Client& client ) {
 
 	int 	result;
 
-	if ((result = this->fillMetavariablesMap_(client)) != E_CGI_OK) {
+	if ((result = this->fillMetavariablesMap_(client)) != EXIT_SUCCESS) {
 		this->ClearCgiHandler();
 		return result;
 	}
 	this->metavariables_ = this->convertMetavariablesMapToCStringArray_();
 	if (this->metavariables_ == NULL) {
 		this->ClearCgiHandler();
-		return E_CGI_SERVERERROR;
+		return E_INSUFFICIENT_STORAGE;
 	}
-	if ((result = this->createCgiArguments_(uri, client)) != E_CGI_OK) {
+	if ((result = this->createCgiArguments_(uri, client)) != EXIT_SUCCESS) {
 		this->ClearCgiHandler();
 		return result;
 	}
-	if ((result = this->setUpCgiPipes_()) != E_CGI_OK) {
+	if ((result = this->setUpCgiPipes_()) != EXIT_SUCCESS) {
 		this->ClearCgiHandler();
 	}
 	return result;
@@ -172,7 +176,7 @@ int	CgiHandler::cgiFinish( Response& response ) {
 	// Logger::log(E_DEBUG, COLOR_GREEN, "INSIDE cgiFinish!!!");
 	int	result;
 
-	if ((result = this->executeCgi_(response.getUploadData())) != E_CGI_OK) {
+	if ((result = this->executeCgi_(response.getUploadData())) != EXIT_SUCCESS) {
 		this->ClearCgiHandler();
 		return result;
 	}
@@ -226,7 +230,7 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 	this->metavariables_map_["REMOTE_HOST"] = client.getClientHost();
 	this->metavariables_map_["REMOTE_PORT"] = ntohs(client.getAddress().sin_port);
 
-	return E_CGI_OK;
+	return EXIT_SUCCESS;
 }
 
 /*! \brief convert the metavariables_map_ to a NULL-terminating c-style string array.
@@ -351,23 +355,24 @@ int	CgiHandler::createCgiArguments_( std::string uri, Client& client ) {
 		this->args_[size] = NULL;
 	} catch (std::exception& e) {
 		Logger::log(E_ERROR, COLOR_RED, "CreateCgiArguments allocation error: %s", e.what());
-		return E_CGI_SERVERERROR;
+		return E_INSUFFICIENT_STORAGE;
 	}
-	try {
-		if (size == 1){
-			this->args_[0] = ft_strdup(this->path_);
-		}
-		else {
-			this->args_[0] = ft_strdup(client.getServer()->getCgiExecutor(extension).c_str());	//extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
-			this->args_[1] = ft_strdup(this->path_);
-		}
-	} catch(std::exception& e) {
-		Logger::log(E_ERROR, COLOR_RED, "strdup error: %s", e.what());
-		deleteAllocatedCStringArray(this->args_);
-		this->args_ = NULL;
-		return E_CGI_SERVERERROR;
+	if (size == 1){
+		this->args_[0] = ft_strdup(this->path_);
+		if (this->args_[0] == NULL)
+			goto cleanup;
 	}
-	return E_CGI_OK;
+	else {
+		this->args_[0] = ft_strdup(client.getServer()->getCgiExecutor(extension).c_str());	//extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
+		this->args_[1] = ft_strdup(this->path_);
+		if (this->args_[0] == NULL || this->args_[1] == NULL)
+			goto cleanup;
+	}
+	return EXIT_SUCCESS;
+cleanup:
+	deleteAllocatedCStringArray(this->args_);
+	this->args_ = NULL;
+	return E_FAILED_DEPENDENCY;
 }
 
 /*! \brief This function monitors that the cgi process ends in a timely manner.
@@ -377,7 +382,7 @@ int	CgiHandler::createCgiArguments_( std::string uri, Client& client ) {
  *	@param status a reference to the integer in the executeCgi_ function where the result of the
  *	cgi process is stored in.
  */
-void	CgiHandler::cgiTimer_( int& status ) {
+int	CgiHandler::cgiTimer_( int& status ) {
 
 	time_t	start = time(NULL);
 	int		result;
@@ -385,11 +390,12 @@ void	CgiHandler::cgiTimer_( int& status ) {
 	while (difftime(time(NULL), start) <= CGI_TIMEOUT) {
 		result = waitpid(this->pid_, &status, WNOHANG);
 		if (result > 0)
-			return;
+			return EXIT_SUCCESS;
 	}
 
 	kill(this->pid_, SIGKILL);	// if it got here the CGI process has gone on for too long, close it remotely
 	waitpid(this->pid_, &status, 0);
+	return E_GATEWAY_TIMEOUT;
 }
 
 /*! \brief This function handles the setting up of the pipes used for both passing values for the cgi process
@@ -403,20 +409,20 @@ int	CgiHandler::setUpCgiPipes_( void ) {
 
 	if (pipe(pipe_into_cgi_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
-		return E_CGI_SERVERERROR;
+		return E_FAILED_DEPENDENCY;
 	}
 	if (pipe(pipe_from_cgi_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes: %s", strerror(errno));
 		this->closeCgiPipes();
-		return E_CGI_SERVERERROR;
+		return E_FAILED_DEPENDENCY;
 	}
 	if (fcntl(this->pipe_into_cgi_[E_PIPE_END_WRITE], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1 || fcntl(this->pipe_from_cgi_[E_PIPE_END_READ], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {	// check FD_CLOEXEC later...
 		Logger::log(E_ERROR, COLOR_RED, "setUpCgiPipes fcntl error: %s", strerror(errno));
 		this->closeCgiPipes();
-		return E_CGI_SERVERERROR;
+		return E_FAILED_DEPENDENCY;
 	}
 
-	return E_CGI_OK;
+	return EXIT_SUCCESS;
 }
 
 /*! \brief This function handles the execution of the cgi-script.
@@ -442,7 +448,7 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
 		this->closeCgiPipes();
-		return E_CGI_SERVERERROR;
+		return E_FAILED_DEPENDENCY;
 	}
 	if (this->pid_ == 0) {
 
@@ -479,12 +485,13 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 		close(this->pipe_from_cgi_[E_PIPE_END_WRITE]);
 
 		int status = 0;
-		this->cgiTimer_(status);
+		if (this->cgiTimer_(status) == E_GATEWAY_TIMEOUT)
+			return E_GATEWAY_TIMEOUT;
 		if (WIFSIGNALED(status) > 0 || WEXITSTATUS(status) != 0)
-			return E_CGI_SERVERERROR;
+			return E_FAILED_DEPENDENCY;
 	}
 
-	return E_CGI_OK;
+	return EXIT_SUCCESS;
 }
 
 /*! \brief Store cgi output into a string that will be sent to the client.
@@ -505,7 +512,6 @@ int		CgiHandler::storeCgiOutput_( void ) {
 
 	this->cgi_output_as_string_.clear();
 	memset(buffer, 0, BUFFER_SIZE);
-
 	while (ret > 0) {
 		ret = read(this->pipe_from_cgi_[E_PIPE_END_READ], buffer, BUFFER_SIZE - 1);
 
@@ -516,15 +522,13 @@ int		CgiHandler::storeCgiOutput_( void ) {
 		}
 		if (bytesread >= CGI_OUTPUT_BUFFER) {
 			close(this->pipe_from_cgi_[E_PIPE_END_READ]);
-			return E_CGI_SERVERERROR;
+			return E_INSUFFICIENT_STORAGE;
 		}
 	}
-
 	close(this->pipe_from_cgi_[E_PIPE_END_READ]);
 	if (ret < 0) {
 		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1 (cannot use errno after read to find reason for failure)");
-		return E_CGI_SERVERERROR;
+		return E_FAILED_DEPENDENCY;
 	}
-
-	return E_CGI_OK;
+	return EXIT_SUCCESS;
 }
