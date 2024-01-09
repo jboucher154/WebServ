@@ -17,6 +17,18 @@
 # include <limits>
 # include "utility.hpp"
 
+/** \brief A static class that parses a webserver configuration file.
+ * 		In case of error the validator will log it and end the program.
+ * 
+ *	@class Validator
+ * 
+ *  Validator handles reading and validating the config file and parsing its contents to set up
+ * 	one or more servers to run. Its main function is Validator::validate which is called in the main
+ *	after initializing the @class Logger and checking the amount of arguments.
+ * 
+ * 	If the validator comes upon an error in the config file, it will log the problem and end the program.
+ * 
+ */
 class Validator
 {
 private:
