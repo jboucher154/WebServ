@@ -69,8 +69,7 @@ std::string&	MimeTypes::getMimeTypeByExtension( std::string extension ) {
 *	Sets values in the mime_types_ map to use for recognizing and setting mime types.
 *	All values are used based on the IANA standards linked below.
 *
-* 	REFERENCE: https://www.iana.org/assignments/media-types/media-types.xhtml
-*
+*	read more about mime types in <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">iana.org media-types page</a>
 */
 void	MimeTypes::intializeMimeTypes( void ) {
 

@@ -4,6 +4,12 @@
 # include <map>
 # include <string>
 
+/*! \brief MimeTypes is a utility class for handling MIME types within the web server.
+ *
+ *	@class This static class provides functionality to map file extensions to their corresponding
+ *	MIME types. It is designed to be used within the web server to accurately identify
+ *	the content type of files based on their extensions.
+ */
 class	MimeTypes {
 
 	private:
