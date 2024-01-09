@@ -8,8 +8,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-/* CONSTRUCTORS */
-
 /*! \brief Construct a new Server Manager:: Server Manager object.
  * 
  * @param server_vector a reference to the Validator's vector of servers.
@@ -42,15 +40,20 @@ ServerManager::ServerManager( const ServerManager& other ) : servers_(other.serv
 	*this = other;
 }
 
-/* DESTRUCTOR */
-
 /*! \brief Destroy the Server Manager:: Server Manager object
  *	
  */
-ServerManager::~ServerManager( void ) {}
+ServerManager::~ServerManager( void ) {
 
-/* OPERATOR OVERLOADS */
+}
 
+/*! \brief ServerManager's assignment operator overload
+*       
+*  Returns a pointer to a copy of current instance. 
+*
+*   @param rhs, a refrance to an instance of the ServerManager class.
+*   @return a refrance to an instance of the ServerManager class created(copied) out of rhs.
+*/
 ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 
 	if (this != &rhs) {
@@ -852,8 +855,6 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 /* CLASS PRIVATE METHODS */
 
 void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out ) {
-
-	// int	array[2] = {pipe_out, pipe_in};
 
 	if (!this->client_cgi_map_.count(client_fd)) {
 
