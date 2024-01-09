@@ -12,6 +12,11 @@
 # include <sstream>
 # include <arpa/inet.h>
 
+/*! \brief utility header collects prototype of methods that can be used throught the project.
+*  
+*  Methods collected in this header do not belong together, hence utility not being a class.
+*
+*/
 int 		ft_stoi(const std::string& str);
 std::string	intToString(int integer);
 bool		isValidIpAddress(const char* ipAddress);

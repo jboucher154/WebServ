@@ -82,6 +82,9 @@ typedef	enum	e_StatusCode {
 }				t_StatusCode;
 
 class	ResponseCodes {
+/*! \brief This static class creates a map of Response Codes and creates
+*         and prepares html responses out of them when appropriate methods are clled.
+*/
 
 	private:
 		ResponseCodes( void );
