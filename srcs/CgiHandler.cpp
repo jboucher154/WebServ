@@ -1,49 +1,45 @@
 
 #include "CgiHandler.hpp"
 
-#include <signal.h>
-
 /*! \brief Construct a new Cgi Handler:: Cgi Handler object.
  * 
  */
 CgiHandler::CgiHandler( void )
-	:	cgi_output_as_string_(""),
+	:	cgi_output_(""),
 		metavariables_(NULL),
 		args_(NULL),
-		path_(NULL),
-		pid_(-1)
-{
+		path_(""),
+		pid_(-1) {
+
 	this->pipe_into_cgi_[0] = -1;
 	this->pipe_into_cgi_[1] = -1;
 	this->pipe_from_cgi_[0] = -1;
 	this->pipe_from_cgi_[1] = -1;
 }
 
-/*! \brief Copy construct a new Cgi Handler:: Cgi Handler object.
+/*! \brief Copy constructor a new Cgi Handler:: Cgi Handler object.
  * 
- *	@param to_copy another CgiHandler object.
+ *	@param to_copy CgiHandler object to be copied.
  */
 CgiHandler::CgiHandler( const CgiHandler& to_copy )
-	:	cgi_output_as_string_(""),
+	:	cgi_output_(""),
 		metavariables_(NULL),
 		args_(NULL),
-		path_(NULL),
-		pid_(-1)
-{
+		path_(""),
+		pid_(-1) {
+
 	*this = to_copy;
 } 
 
 /*! \brief Destroy the Cgi Handler:: Cgi Handler object.
  * 
- *	Close all possibly open pipes and free everything allocated before final destruction.
+ *	Closes all possibly open pipes and deletes everything allocated before final destruction.
  */
 CgiHandler::~CgiHandler( void ) {
 
 	this->closeCgiPipes();
 	deleteAllocatedCStringArray(this->metavariables_);
 	deleteAllocatedCStringArray(this->args_);
-	if (this->path_ != NULL)
-		delete [] this->path_;
 } 
 
 /* OPERATOR OVERLOADS */
@@ -51,13 +47,12 @@ CgiHandler::~CgiHandler( void ) {
 /*! \brief Operator overload for '=' for CgiHandler.
  * 
  *	@param rhs the CgiHandler object whose values are to be copied.
- *	@return CgiHandler& a reference to the CgiHandler object that copied the values of the rhs.
+ *	@return @b CgiHandler& a reference to the CgiHandler object that copied the values of the rhs.
  */
 CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 
 	if (this != &rhs) {
 		this->metavariables_map_ = rhs.metavariables_map_;
-		// this->cgi_map_ = rhs.cgi_map_;
 		if (this->metavariables_)
 			deleteAllocatedCStringArray(this->metavariables_);
 		if (rhs.metavariables_ != NULL)
@@ -70,12 +65,7 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 			this->args_ = copyCStringArray(rhs.args_);
 		else
 			this->args_ = NULL;
-		if (this->path_)
-			delete this->path_;
-		if (rhs.path_ != NULL)
-			this->path_ = ft_strdup(rhs.path_);
-		else
-			this->path_ = NULL;
+		this->path_ = rhs.path_;
 		for (int i = 0; i < 2; ++i) {
 			this->pipe_into_cgi_[i] = rhs.pipe_into_cgi_[i];
 			this->pipe_from_cgi_[i] = rhs.pipe_from_cgi_[i];
@@ -87,20 +77,20 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 
 /* CLASS PUBLIC METHODS */
 
-/*! \brief Prepare CgiHandler for next CGI call.
- *		'Zeros' out the values of the CgiHandler.
+/*! \brief Prepare CgiHandler for next CGI call. 'Zeros' out the values of the CgiHandler.
  *       
- *	This function does not clear the cgi_output_ (that happens in the beginning of CgiHandler::StoreCgiOutput_).
+ *	All class attributes are cleared other than the cgi_output_ (that happens in the beginning of CgiHandler::StoreCgiOutput_).
  */
 void	CgiHandler::ClearCgiHandler( void ) {
 	
 	this->metavariables_map_.clear();
-	// this->cgi_map_.clear();
-	deleteAllocatedCStringArray(this->metavariables_);
+	if (this->metavariables_)
+		deleteAllocatedCStringArray(this->metavariables_);
 	this->metavariables_ = NULL;
-	deleteAllocatedCStringArray(this->args_);
+	if (this->args_)
+		deleteAllocatedCStringArray(this->args_);
 	this->args_ = NULL;
-	this->path_ = NULL;
+	this->path_ = "";
 	this->closeCgiPipes();
 	for (int i = 0; i < 2; ++i) {
 		this->pipe_into_cgi_[i] = -1;
@@ -133,21 +123,16 @@ void	CgiHandler::closeCgiPipes( void ) {
  *	that the server has permission, that you can access the cgi sript etc.
  *
  *	@param client the client that has this CgiHandler object as an attribute.
- *	@return int which tells the result of the attempted initialization.
+ *	@return @b int which tells the result of the attempted initialization.
  */
 int	CgiHandler::initializeCgi( Client& client ) {
 
 	std::string uri = client.getRequest().getRequestLineValue("uri");
-
 	std::string temp = client.getResponse().getResourcePath();
-	this->path_ = const_cast<char*>(temp.erase(2, 8).c_str());
+	int 		result;
 
-	int 	result;
-
-	if ((result = this->fillMetavariablesMap_(client)) != EXIT_SUCCESS) {
-		this->ClearCgiHandler();
-		return result;
-	}
+	this->path_ = temp.erase(2, 8);
+	fillMetavariablesMap_(client);
 	this->metavariables_ = this->convertMetavariablesMapToCStringArray_();
 	if (this->metavariables_ == NULL) {
 		this->ClearCgiHandler();
@@ -166,14 +151,12 @@ int	CgiHandler::initializeCgi( Client& client ) {
 /*!	\brief this function handles the actual execution of the cgi-script and storing of its output which will
  *		then be passed to the client.
  *
- * 	
  * 
  *	@param response a reference to the client's Response object.
- *	@return int which tells if this function was successful or not.
+ *	@return @b int either EXIT_SUCESS or the relevant HTTP response code in case of error.
  */
 int	CgiHandler::cgiFinish( Response& response ) {
 
-	// Logger::log(E_DEBUG, COLOR_GREEN, "INSIDE cgiFinish!!!");
 	int	result;
 
 	if ((result = this->executeCgi_(response.getUploadData())) != EXIT_SUCCESS) {
@@ -188,31 +171,29 @@ int	CgiHandler::cgiFinish( Response& response ) {
 
 /*! \brief This function handles clearing of the cgi outputs. 
  *
- *	BE AWARE: I've created cgi_output_as_string, but if we don't go with this solution just remove it and
- *	implement these changes to ServerManager::sendResponseToClient and Client::getResponseString.
+ *	sets cgi_output_as_string to empty.
  */
 void	CgiHandler::clearCgiOutputs( void ) {
 
-	// this->cgi_output_.clear();
-	this->cgi_output_as_string_ = "";
+	this->cgi_output_ = "";
 }
 
 /* CLASS PRIVATE METHODS */
 
 
-/*! \brief Fill metavariables_map_ with key/value-data. Later on the map will be converted into a
- *		c-style string array which will be passed to the cgi script as the environment.
+/*! \brief Fills metavariables_map_ with key/value-data.
+ *
+ *	Later on the map will be converted into a c-style string array which will be 
+ *	passed to the cgi script as the environment.
  * 
  *	@param client the client that has this CgiHandler object as an attribute.
- *	@return int which tells if the function was successful or not.
  */
-int	CgiHandler::fillMetavariablesMap_( Client& client ) {
+void	CgiHandler::fillMetavariablesMap_( Client& client ) {
 
 	Request&	request = client.getRequest();
 	Server&		server = *(client.getServer());
 
 	this->metavariables_map_["AUTH_TYPE"] = "Basic";
-
 	this->metavariables_map_["DOCUMENT_ROOT"] = server.getRoot();
 	this->metavariables_map_["HTTP_USER_AGENT"] = request.getHeaderValueByKey("User-Agent");
 	this->metavariables_map_["HTTP_COOKIE"] = request.getHeaderValueByKey("Cookie");
@@ -221,16 +202,13 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
 	this->metavariables_map_["PATH_TRANSLATED"] = this->path_;
 	this->metavariables_map_["QUERY_STRING"] = client.getResponse().getQueryString();
 	this->metavariables_map_["GATEWAY_INTERFACE"] = "CGI/1.1";
-
 	this->metavariables_map_["SERVER_NAME"] = server.getServerName();
 	this->metavariables_map_["SERVER_PORT"] = server.getListeningPortInt();
 	this->metavariables_map_["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->metavariables_map_["SERVER_SOFTWARE"] = "JAS-webserver/0.75";
-
 	this->metavariables_map_["REMOTE_HOST"] = client.getClientHost();
 	this->metavariables_map_["REMOTE_PORT"] = ntohs(client.getAddress().sin_port);
 
-	return EXIT_SUCCESS;
 }
 
 /*! \brief convert the metavariables_map_ to a NULL-terminating c-style string array.
@@ -244,7 +222,7 @@ int	CgiHandler::fillMetavariablesMap_( Client& client ) {
  *
  *	After iterating through the map we set the final pointer to NULL and return the string array.
  *
- *	@return string_array which is the metavariables that will be passed to the execve as the environment variable or NULL in case of error.
+ *	@return @b char** which is the metavariables that will be passed to the execve as the environment variable or NULL in case of error.
  */
 char**	CgiHandler::convertMetavariablesMapToCStringArray_( void ) {
 
@@ -281,7 +259,7 @@ char**	CgiHandler::convertMetavariablesMapToCStringArray_( void ) {
  *		Needed for creating the arguments for the execution of the cgi-script.
  * 
  *	@param uri the uri of the of the requested cgi-script.
- *	@return std::string of the cgi-script's extension
+ *	@return @b std::string of the cgi-script's extension
  */
 std::string	CgiHandler::getExtension( std::string uri ) {
 
@@ -299,16 +277,16 @@ std::string	CgiHandler::getExtension( std::string uri ) {
 
 /*! \brief get the cgi output
  * 
- * @return const std::string& ie. the cgi output 
+ * @return @b const @b std::string& ie. the cgi output 
  */
 const std::string&	CgiHandler::getCgiOutputAsString( void ) const {
 
-	return this->cgi_output_as_string_;
+	return this->cgi_output_;
 }
 
 /*! \brief get the ends of the pipe that leads INTO OF the cgi-process.
  * 
- *	@return const int* pointers to the pipe ends.
+ *	@return @b const @b int* pointers to the pipe ends.
  */
 const int*	CgiHandler::getPipeIn( void ) const {
 
@@ -317,14 +295,12 @@ const int*	CgiHandler::getPipeIn( void ) const {
 
 /*! \brief get the ends of the pipe that leads OUT OF the cgi-process.
  * 
- *	@return const int* pointers to the pipe ends.
+ *	@return @b const @b int* pointers to the pipe ends.
  */
 const int*	CgiHandler::getPipeOut( void ) const {
 
 	return this->pipe_from_cgi_;
 }
-
-
 
 /* CLASS PRIVATE METHODS */
 
@@ -333,13 +309,13 @@ const int*	CgiHandler::getPipeOut( void ) const {
  *	First we find out if the script's extension is ".cgi" and set the size
  *	of the args_ array to either 1 or 2 (+1). If the extension is ".cgi", we do not need
  *	a program to run the script and can set the script as the first and only arg,
- *	 but otherwise we need the path to the program to run the script
+ *	but otherwise we need the path to the program to run the script
  *	(for example if bash, args_[0] should be "bin/bash"), and set the path to the
- *	actual script as the second argument. Last arg has to be NULL!
+ *	actual script as the second argument. Last arg will be NULL!
  *
- * @param uri the uri of the of the requested cgi-script.
+ * @param uri the uri of the of the client's request, should be path to cgi script.
  * @param client the client that has this CgiHandler object as an attribute.
- * @return int which tells if this function was successful or not.
+ * @return @b int which tells if this function was successful or not.
  */
 int	CgiHandler::createCgiArguments_( std::string uri, Client& client ) {
 	
@@ -347,7 +323,7 @@ int	CgiHandler::createCgiArguments_( std::string uri, Client& client ) {
 	std::string	extension = this->getExtension(uri);
 
 	try {
-		if (extension == ".cgi") // get extension, if ".cgi" malloc an string array of 2, else 3
+		if (extension == ".cgi")
 			size = 1;
 		else
 			size = 2;
@@ -358,13 +334,13 @@ int	CgiHandler::createCgiArguments_( std::string uri, Client& client ) {
 		return E_INSUFFICIENT_STORAGE;
 	}
 	if (size == 1){
-		this->args_[0] = ft_strdup(this->path_);
+		this->args_[0] = ft_strdup(this->path_.c_str());
 		if (this->args_[0] == NULL)
 			goto cleanup;
 	}
 	else {
-		this->args_[0] = ft_strdup(client.getServer()->getCgiExecutor(extension).c_str());	//extension executable, for example "/bin/bash" or "/usr/local/bin/python3"
-		this->args_[1] = ft_strdup(this->path_);
+		this->args_[0] = ft_strdup(client.getServer()->getCgiExecutor(extension).c_str());
+		this->args_[1] = ft_strdup(this->path_.c_str());
 		if (this->args_[0] == NULL || this->args_[1] == NULL)
 			goto cleanup;
 	}
@@ -376,11 +352,13 @@ cleanup:
 }
 
 /*! \brief This function monitors that the cgi process ends in a timely manner.
- *		If the cgi process has not ended in by the CGI_TIMEOUT the process will be
- *		sent a signal to kill the process.
+ *	
+ *	If the cgi process has not ended in by the CGI_TIMEOUT the process will be
+ *	sent a signal to kill the process.
  * 
  *	@param status a reference to the integer in the executeCgi_ function where the result of the
  *	cgi process is stored in.
+ *	@return @b int EXIT_SUCESS or HTTP code for gateway timeout
  */
 int	CgiHandler::cgiTimer_( int& status ) {
 
@@ -392,8 +370,7 @@ int	CgiHandler::cgiTimer_( int& status ) {
 		if (result > 0)
 			return EXIT_SUCCESS;
 	}
-
-	kill(this->pid_, SIGKILL);	// if it got here the CGI process has gone on for too long, close it remotely
+	kill(this->pid_, SIGKILL);
 	waitpid(this->pid_, &status, 0);
 	return E_GATEWAY_TIMEOUT;
 }
@@ -430,21 +407,20 @@ int	CgiHandler::setUpCgiPipes_( void ) {
  *
  *	In the beginning of the function we fork.
  *	
- *	IN THE CHILD PROCESS we dup2 the pipe_ends used by the cgi process.
+ *	IN THE @b CHILD PROCESS we dup2 the pipe_ends used by the cgi process.
  *	After that we write the body_string into the child process's STD_IN.
  *	Then we close all the cgi pipes. Then we chdir into the cgi-bin.
  *	Finally we execve the cgi-script.
  *
- *	IN THE PARENT PROCESS we close all the pipe ends except the pipe_from_cgi_[READ_END] which we use in CgiHandler::storeCgiOutput_.
+ *	IN THE @b PARENT PROCESS we close all the pipe ends except the pipe_from_cgi_[READ_END] which we use in CgiHandler::storeCgiOutput_.
  *	Then we get the status the cgi (child) process with the CgiHandler::cgiTimer_ and if the process hangs too long or it otherwise fails
  *	(we get another exit code than 0) we mark it as a server error.
  * 
  *	@param body_string the string that will be passed to the cgi process as STD_IN.
- *	@result int which tells if function was successful or not.
+ *	@result @b int which tells if function was successful or not, EXIT_SUCCESS or relevant HTTP status code.
  */
 int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
-	// Logger::log(E_DEBUG, COLOR_GREEN, "BEFOR FORKING executeCgi!!!");
 	if ((this->pid_ = fork()) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "fork failure: %s", strerror(errno));
 		this->closeCgiPipes();
@@ -496,13 +472,13 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 /*! \brief Store cgi output into a string that will be sent to the client.
  *
- *	In the beginning of the function we clear the cgi_output_as_string_ attribute.
+ *	In the beginning of the function we clear the cgi_output_ attribute.
  *	Then we will simply keep looping the reading of the pipe end where the results
  *	of the cgi-script until everything has been read or the bytes read are over the CGI_OUTPUT_BUFFER.
  *	After a successful reading of the cgi output we close the pipe and we check that the there was no
  *	error with read (we cannot use errno to find out why it failed because the subject explicitly prohibits doing so).
  * 
- *	@result int which tells if the function was successful or not.
+ *	@result @b int which tells if the function was successful or not, EXIT_SUCESS or relevant HTTP response code.
  */
 int		CgiHandler::storeCgiOutput_( void ) {
 
@@ -510,14 +486,14 @@ int		CgiHandler::storeCgiOutput_( void ) {
 	ssize_t	bytesread = 0;
 	char	buffer[BUFFER_SIZE];
 
-	this->cgi_output_as_string_.clear();
+	this->cgi_output_.clear();
 	memset(buffer, 0, BUFFER_SIZE);
 	while (ret > 0) {
 		ret = read(this->pipe_from_cgi_[E_PIPE_END_READ], buffer, BUFFER_SIZE - 1);
 
 		if (ret > 0) {
 			buffer[ret] = '\0';
-			this->cgi_output_as_string_.append(buffer, ret);
+			this->cgi_output_.append(buffer, ret);
 			bytesread += ret;
 		}
 		if (bytesread >= CGI_OUTPUT_BUFFER) {
@@ -527,7 +503,7 @@ int		CgiHandler::storeCgiOutput_( void ) {
 	}
 	close(this->pipe_from_cgi_[E_PIPE_END_READ]);
 	if (ret < 0) {
-		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read returned -1 (cannot use errno after read to find reason for failure)");
+		Logger::log(E_ERROR, COLOR_RED, "storeCgiOutput read failure, returned -1 ");
 		return E_FAILED_DEPENDENCY;
 	}
 	return EXIT_SUCCESS;
