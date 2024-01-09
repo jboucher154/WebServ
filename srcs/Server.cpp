@@ -1,19 +1,9 @@
 #include "Server.hpp"
-#include "Logger.hpp"
-#include "Color.hpp"
-#include "utility.hpp"
-
-// put these in its own file? Used by Client class as well
-#include <fcntl.h>
-#include <unistd.h>
-
-// Macro used for listen()
-#define	LISTEN_BACKLOG	20
 
 /*! \brief Server class constructor
-*       
-*  Server class constructor, This constructor is not public and it is advised that
-*  it is not used, since it leaves the required fields of a Server uninitialized.
+*  
+*	Server class constructor, This constructor is not public and it is advised that
+*	it is not used, since it leaves the required fields of a Server uninitialized.
 *
 */
 Server::Server() {}
@@ -44,7 +34,7 @@ Server& Server::operator=( const Server& rhs ) {
 		this->client_max_body_size_ = rhs.getClientMaxBodySize();
 		this->index_ = rhs.getIndex();
 		this->error_pages = rhs.error_pages;
-		this->location = rhs.location;
+		this->location_ = rhs.location_;
 		this->upload_store_ = rhs.upload_store_;
 	}
 	return *this;
@@ -145,9 +135,9 @@ void	Server::setErrorPage( std::string error_code, std::string errorPage ) {
 *
 */
 void Server::setKeyValueInLocation(std::string locationBlockKey, std::string key, std::vector<std::string> values) {
-    std::map<std::string, std::map<std::string, std::vector<std::string> > >::iterator outerMapIt = this->location.find(locationBlockKey);
+    std::map<std::string, std::map<std::string, std::vector<std::string> > >::iterator outerMapIt = this->location_.find(locationBlockKey);
 
-    if (outerMapIt != this->location.end()) {
+    if (outerMapIt != this->location_.end()) {
         std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
         std::map<std::string, std::vector<std::string> >::iterator innerMapIt = innerMap.find(key);
 
@@ -159,7 +149,7 @@ void Server::setKeyValueInLocation(std::string locationBlockKey, std::string key
     } else {
         std::map<std::string, std::vector<std::string> > newInnerMap;
         newInnerMap[key] = values;
-        this->location[locationBlockKey] = newInnerMap;
+        this->location_[locationBlockKey] = newInnerMap;
     }
 }
 
@@ -168,9 +158,9 @@ void Server::setKeyValueInLocation(std::string locationBlockKey, std::string key
 *  Returns the listening port as an int.
 *
 */
-void	Server::setLocation( std::map<std::string, std::vector<std::string> >	innerBlock, std::string key ) {
+void	Server::setLocation( map_of_str_vec_of_str innerBlock, std::string key ) {
 
-	(this->location)[key] = innerBlock;
+	(this->location_)[key] = innerBlock;
 }
 
 /*************ssalmi's functions for server management*************/
@@ -383,7 +373,7 @@ std::string	Server::getErrorPage( std::string error_code ) const {
 */
 int	Server::getLocationBlockCount( void ) const {
 
-	return (this->location.size());
+	return (this->location_.size());
 }
 
 /*! \brief returns a list of location block keys
@@ -395,7 +385,7 @@ std::vector<std::string>	Server::getLocationBlockKeys( void ) const {
 
 	std::vector<std::string> locationBlockKeys;
 
-	for (std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator it = this->location.begin(); it != this->location.end(); it++)
+	for (const_it_for_map_of_str_map_of_str_vec_of_str it = this->location_.begin(); it != this->location_.end(); it++)
 		locationBlockKeys.push_back(it->first);
 	return locationBlockKeys;
 }
@@ -408,12 +398,12 @@ std::vector<std::string>	Server::getLocationBlockKeys( void ) const {
 const std::vector<std::string> Server::getLocationKeys(std::string locationBlockKey) const {
 
     std::vector<std::string> locationKeys;
-    std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator outerMapIt = this->location.find(locationBlockKey);
+    const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(locationBlockKey);
 
-    if (outerMapIt != this->location.end()) {
+    if (outerMapIt != this->location_.end()) {
         const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
 
-        for (std::map<std::string, std::vector<std::string> >::const_iterator innerMapIt = innerMap.begin(); innerMapIt != innerMap.end(); ++innerMapIt) {
+        for (const_it_for_map_of_str_vec_of_str innerMapIt = innerMap.begin(); innerMapIt != innerMap.end(); ++innerMapIt) {
             locationKeys.push_back(innerMapIt->first);
         }
     }
@@ -428,12 +418,12 @@ const std::vector<std::string> Server::getLocationKeys(std::string locationBlock
 int	Server::getLocationBlockCount( std::string locationBlockKey ) const {
 
 	int locationKeysCout = 0;
-    std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator outerMapIt = this->location.find(locationBlockKey);
+    const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(locationBlockKey);
 
-    if (outerMapIt != this->location.end()) {
+    if (outerMapIt != this->location_.end()) {
         const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
 
-        for (std::map<std::string, std::vector<std::string> >::const_iterator innerMapIt = innerMap.begin(); innerMapIt != innerMap.end(); ++innerMapIt) {
+        for (const_it_for_map_of_str_vec_of_str innerMapIt = innerMap.begin(); innerMapIt != innerMap.end(); ++innerMapIt) {
             locationKeysCout++;
         }
     }
@@ -449,10 +439,10 @@ int	Server::getLocationBlockCount( std::string locationBlockKey ) const {
 */
 const std::vector<std::string>*	Server::getLocationValue( std::string locationBlockKey, std::string key ) const{
 	
-	std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator outerMapIt = this->location.find(locationBlockKey);
-	if (outerMapIt != this->location.end()) {
+	const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(locationBlockKey);
+	if (outerMapIt != this->location_.end()) {
 		const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
-		std::map<std::string, std::vector<std::string> >::const_iterator innerMapIt = innerMap.find(key);
+		const_it_for_map_of_str_vec_of_str innerMapIt = innerMap.find(key);
 		if (innerMapIt != innerMap.end())
 			return &(innerMapIt->second);
 		else
@@ -502,7 +492,7 @@ bool Server::isKeyInLocation( std::string locationBlockKey, std::string key ) co
 */
 bool	Server::isLocationInServer( std::string locationBlockKey ) const {
 
-	for ( std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator it = this->location.begin(); it != this->location.end(); it++ ) {
+	for ( const_it_for_map_of_str_map_of_str_vec_of_str it = this->location_.begin(); it != this->location_.end(); it++ ) {
 		if (locationBlockKey.compare( it->first ) == 0)
 			return true;
 	}
