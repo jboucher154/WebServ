@@ -38,7 +38,7 @@ class	Client {
 		void					finishCgiResponse( void );
 
 		// setters
-		void					setLatestTime( void );
+		void					setLatestTimeForClientAndServer( void );
 		void					setServerAndFd( Server* server, int new_server_fd );
 
 		// getters

@@ -25,6 +25,7 @@ private:
 	std::string								upload_store_;
 	std::map<std::string, std::string>		error_pages;
 	std::map<std::string, std::map<std::string, std::vector<std::string> > >	location;
+	time_t									latest_server_activity_time_;
 
 
 public:
@@ -45,8 +46,9 @@ public:
 	void							setLocation( std::map<std::string, std::vector<std::string> >	innerBlock, std::string key );
 	int								setupServer();
 	bool							setUploadStore( std::string upload_dir );
-	std::string						getServerIdforLog() const;
+	void							setLatestServerTime();
 
+	std::string						getServerIdforLog() const;
 	int								getListeningPortInt( void ) const;
 	std::string						getListeningPortString( void ) const;
 	std::string						getServerName( void ) const;
@@ -65,6 +67,7 @@ public:
 	const std::vector<std::string>	getLocationKeys( std::string locationBlockKey ) const;
 	const std::vector<std::string>*	getLocationValue( std::string locationBlockKey, std::string key ) const;
 	std::string						getCgiExecutor( std::string extension ) const;
+	time_t							getLatestServerActivity( void );
 	bool							isKeyInLocation( std::string locationBlockKey, std::string key ) const;
 	bool							isLocationInServer( std::string locationBlockKey ) const;
 	bool							isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const;
