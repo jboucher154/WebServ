@@ -34,13 +34,11 @@ enum	e_log_msg_type {
 # define LOG_INFO		"log_info.txt"
 # define LOG_DEBUG		"log_debug.txt"
 
-/*! \brief Brief description.
-*         Brief description continued.
-*
-*  Detailed description starts here.
+
+/*! \brief This static class logs the log messages in formats and files of the caller's choice. 
+*  
 */
 class	Logger {
-
 	private:
 		static bool			log_to_console_;
 		static bool			log_to_files_;

@@ -50,6 +50,7 @@ ResponseCodes::~ResponseCodes( void ) {
 */
 ResponseCodes&	ResponseCodes::operator=( const ResponseCodes& rhs ) {
 
+	(void)rhs;
 	return (*this);
 }
 
