@@ -130,7 +130,7 @@ int	CgiHandler::initializeCgi( Client& client ) {
 	std::string uri = client.getRequest().getRequestLineValue("uri");
 	std::string temp = client.getResponse().getResourcePath();
 	int 		result;
-	
+
 	this->path_ = temp.erase(2, 8);
 	fillMetavariablesMap_(client);
 	this->metavariables_ = this->convertMetavariablesMapToCStringArray_();
@@ -407,12 +407,12 @@ int	CgiHandler::setUpCgiPipes_( void ) {
  *
  *	In the beginning of the function we fork.
  *	
- *	IN THE CHILD PROCESS we dup2 the pipe_ends used by the cgi process.
+ *	IN THE @b CHILD PROCESS we dup2 the pipe_ends used by the cgi process.
  *	After that we write the body_string into the child process's STD_IN.
  *	Then we close all the cgi pipes. Then we chdir into the cgi-bin.
  *	Finally we execve the cgi-script.
  *
- *	IN THE PARENT PROCESS we close all the pipe ends except the pipe_from_cgi_[READ_END] which we use in CgiHandler::storeCgiOutput_.
+ *	IN THE @b PARENT PROCESS we close all the pipe ends except the pipe_from_cgi_[READ_END] which we use in CgiHandler::storeCgiOutput_.
  *	Then we get the status the cgi (child) process with the CgiHandler::cgiTimer_ and if the process hangs too long or it otherwise fails
  *	(we get another exit code than 0) we mark it as a server error.
  * 
