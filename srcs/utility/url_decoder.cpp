@@ -4,6 +4,8 @@
 *       
 *	Returns url decoded input string leaving '/' undecoded. Used to decode
 *   uri from client.
+*   @param input, a string that will be url decoded.
+*   @return decoded as a string.
 *
 */
 std::string urlDecode(const std::string& input) {
