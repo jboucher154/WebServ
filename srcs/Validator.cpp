@@ -813,7 +813,7 @@ bool Validator::checkCgiBlockKeyValues( void ) {
 	return true;
 }
 
-/*! \brief Set up location root and index
+/*! \brief Sets up location root and index
 *  
 *  If this block doesn't have a return or/and alias key,
 *  the default value for its root and index have to be added and verified.
@@ -852,7 +852,7 @@ void Validator::setUpLocationRootAndIndex( std::string locationKey ) {
 	}
 }
 
-/*! \brief Check location block keys and values
+/*! \brief Checks location block keys and values
 *  
 *  Cgi block will be validated by its own validator.
 *  Location specific key can not contain spaces or #
