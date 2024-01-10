@@ -79,7 +79,7 @@ typedef	enum	e_StatusCode {
 	E_LOOP_DETECTED = 508,
 	E_NOT_EXTENDED = 510,
 	E_NETWORK_AUTHENTIFICATION_REQUIRED = 511
-}				t_StatusCode;
+}				t_StatusCode; /*!< @brief an enum that has all of the status codes asigned to their discriptive strings. */
 
 /*! \brief This static class creates a map of Response Codes and creates
 *         and prepares html responses out of them when appropriate methods are clled.
@@ -92,13 +92,11 @@ class	ResponseCodes {
 		~ResponseCodes( void );
 		ResponseCodes&	operator=( const ResponseCodes& to_copy );
 
-		/* PRIVATE METHODS AND MEMBERS */
-		static std::map<int, std::string>	codes_;
+		static std::map<int, std::string>	codes_; /*!< @brief a map of matching pairs of codes and the dscriptive string associated to them. */
 
 		static void	initialize_codes( void );
 
 	public:
-		/* PUBLIC METHODS */
 		static std::string	getCodeElementBody( int code );
 		static std::string	getCodeStatusLine( int code );
 		static std::string	getCombinedStatusLineAndBody( int code );
