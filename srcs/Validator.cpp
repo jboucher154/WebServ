@@ -852,7 +852,7 @@ void Validator::setUpLocationRootAndIndex( std::string locationKey ) {
 	}
 }
 
-/*! \brief Check location block key's values
+/*! \brief Check location block keys and values
 *  
 *  Cgi block will be validated by its own validator.
 *  Location specific key can not contain spaces or #
