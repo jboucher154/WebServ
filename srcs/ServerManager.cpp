@@ -14,8 +14,6 @@
  */
 ServerManager::ServerManager( std::vector<Server>& server_vector ) : servers_(server_vector) {
 
-	this->servers_.clear();
-
 	#if POLL_TRUE_SELECT_FALSE
 		this->pollfds_.clear();
 		this->pollfds_size_ = -1;

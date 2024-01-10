@@ -1,7 +1,4 @@
 #ifndef RESPONSECODES_HPP
-/*! \brief This static class creates a map of Response Codes and creates
-*         and prepares html responses out of them when appropriate methods are clled.
-*/
 # define RESPONSECODES_HPP
 
 # include <map>
@@ -84,6 +81,9 @@ typedef	enum	e_StatusCode {
 	E_NETWORK_AUTHENTIFICATION_REQUIRED = 511
 }				t_StatusCode;
 
+/*! \brief This static class creates a map of Response Codes and creates
+*         and prepares html responses out of them when appropriate methods are clled.
+*/
 class	ResponseCodes {
 
 	private:

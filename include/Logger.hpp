@@ -1,7 +1,4 @@
 #ifndef LOGGER_HPP
-/*! \brief This static class logs the log messages in formats and files of the caller's choice. 
-*  
-*/
 # define LOGGER_HPP
 
 // rm later
@@ -38,6 +35,9 @@ enum	e_log_msg_type {
 # define LOG_DEBUG		"log_debug.txt"
 
 
+/*! \brief This static class logs the log messages in formats and files of the caller's choice. 
+*  
+*/
 class	Logger {
 	private:
 		static bool			log_to_console_;

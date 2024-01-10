@@ -7,17 +7,16 @@ std::map<std::string, std::string>	MimeTypes::mime_types_;
 /* CONSTRUCTORS */
 
 /*! \brief default constructor, private for static class
-*       
-*	Default constructor, private for static class.
-*
-*/
+ *       
+ *	Default constructor, private for static class.
+ *
+ */
 MimeTypes::MimeTypes( void ) {}
 
 /*! \brief copy constructor, private for static class
-*       
-*	Copy constructor, private for static class.
-*
-*/
+ *       
+ *	Copy constructor, private for static class.
+ */
 MimeTypes::MimeTypes( const MimeTypes& to_copy ) {
 
 	*this = to_copy;
@@ -26,19 +25,19 @@ MimeTypes::MimeTypes( const MimeTypes& to_copy ) {
 /* DESTRUCTOR */
 
 /*! \brief default destructor, private for static class
-*       
-*	Default destructor, private for static class.
-*
-*/
+ *       
+ *	Default destructor, private for static class.
+ */
 MimeTypes::~MimeTypes( void ) {} 
 
 /* OPERATOR OVERLOADS */
 
 /*! \brief copy assignment operator, private for static class
-*       
-*	Copy assignment operator, private for static class.
-*
-*/
+ *       
+ *	Copy assignment operator, private for static class.
+ *
+ *	@return @b MimeTypes& of the left-hand side MimeTypes object.
+ */
 MimeTypes&	MimeTypes::operator=( const MimeTypes& rhs ) {
 
 	(void)rhs;
@@ -48,11 +47,13 @@ MimeTypes&	MimeTypes::operator=( const MimeTypes& rhs ) {
 /* CLASS PUBLIC METHODS */
 
 /*! \brief returns reference to the mime type belonging to the param extension
-*       
-*	Returns reference to the mime type belonging to the param extension. If mime
-*	type is not stored, an empty string is returned.
-*
-*/
+ *
+ *	First time this function MimeTypes::intializeMimeTypes()
+ *	is called which will fill the map with mime types the webserver can handle.
+ * 
+ *	@return @b std::string& of the mime type belonging to the param extension.
+ *	@warning If mime type is not stored, an empty string is returned.
+ */
 std::string&	MimeTypes::getMimeTypeByExtension( std::string extension ) {
 
 	if (MimeTypes::mime_types_.empty())
@@ -64,14 +65,13 @@ std::string&	MimeTypes::getMimeTypeByExtension( std::string extension ) {
 
 
 /*! \brief	used to intialize Mime type values
-*
-*
-*	Sets values in the mime_types_ map to use for recognizing and setting mime types.
-*	All values are used based on the IANA standards linked below.
-*
-* 	REFERENCE: https://www.iana.org/assignments/media-types/media-types.xhtml
-*
-*/
+ *
+ *
+ *	Sets values in the mime_types_ map to use for recognizing and setting mime types.
+ *	All values are used based on the IANA standards linked below.
+ *
+ *	REFERENCE: <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">iana.org media-types page</a>
+ */
 void	MimeTypes::intializeMimeTypes( void ) {
 
 	//text
@@ -83,17 +83,13 @@ void	MimeTypes::intializeMimeTypes( void ) {
 	MimeTypes::mime_types_["csv"] = "text/csv";
 	MimeTypes::mime_types_["rtf"] = "text/rtf";
 	MimeTypes::mime_types_["xml"] = "text/xml";
-	// text/x-python-script
 
 	//application
-	MimeTypes::mime_types_["unknown"] = "application/octet-stream";//unkown binary file
+	MimeTypes::mime_types_["unknown"] = "application/octet-stream";
 	MimeTypes::mime_types_["pdf"] = "application/pdf";
-	MimeTypes::mime_types_["msword"] = "application/msword";//?
+	MimeTypes::mime_types_["msword"] = "application/msword";
 	MimeTypes::mime_types_["zip"] = "application/zip";
 	MimeTypes::mime_types_["x-www-form-urlencoded"] ="application/x-www-form-urlencoded";
-
-	//audio
-	// MimeTypes::mime_types_["mp4"] = {"mp4", "audio/mp4";
 
 	//font
 	MimeTypes::mime_types_["ttf"] = "font/ttf";
@@ -107,14 +103,7 @@ void	MimeTypes::intializeMimeTypes( void ) {
 	MimeTypes::mime_types_["tiff"] = "image/tiff";
 	MimeTypes::mime_types_["ico"] = "image/x-icon";
 
-	//message
-
-
-	//model
-	//multipart
-
 	//video
-	// MimeTypes::mime_types_["jpeg"] = {"jpeg", "video/jpeg", true};
 	MimeTypes::mime_types_["mp4"] = "video/mp4";
 	MimeTypes::mime_types_["raw"] = "video/raw";
 	MimeTypes::mime_types_["MPV"] = "video/MPV";

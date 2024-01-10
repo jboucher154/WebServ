@@ -1,20 +1,4 @@
 #ifndef CGIHANDLER_HPP
-/*! \brief CgiHandler class handles the setting up and execution of cgi scripts in the webserver .
- *		Every client has a CgiHandler object which it uses to handle cgi requests.
- *
- *	The handling of a cgi requests proceeds in the following way:
- *	1. if the request was valid, the ServerManager::receiveFromClient will call Client::startCgiResponse
- *	which will initialize the cgi with CgiHandler::initializeCgi.
- *	2. if this was successful, the pipe ends used to communicate with the cgi process will be added
- *	to the fds the ServerManager monitors.
- *	3. the cgi pipe used to read from the cgi process will trigger an event in the ServerManager::runServer function.
- *	4. the ServerManager::handleEvent function will detect that which client this cgi pipe end belongs to and
- *	will call that client's Client::cgiFinishCgiResponse function which in turn calls CgiHandler::cgiFinish.
- *	5. in cgiFinish the cgi script will be executed and its results will be stored.
- *	6. if this was successful the results will be passed forward to the client.
- *
- *	If there are any errors during the cgi handling, the client will be informed of a server error. 
- */
 # define CGIHANDLER_HPP
 
 # include "Client.hpp"
@@ -26,6 +10,7 @@
 # include <vector>
 # include <map>
 # include <string>
+# include <signal.h>
 
 // forward declaration
 class Client;
@@ -38,20 +23,39 @@ enum	e_pipe_ends {
 	E_PIPE_END_WRITE
 };
 
+/*! \brief CgiHandler class handles the setting up and execution of cgi scripts in the webserver .
+ *		Every client has a CgiHandler object which it uses to handle cgi requests.
+ *
+ *	@class CgiHandler
+ *	
+ *	The handling of a cgi requests proceeds in the following way:
+ *	1. if the request was valid, the ServerManager::receiveFromClient will call Client::startCgiResponse
+ *	which will initialize the cgi with CgiHandler::initializeCgi.
+ *	2. if this was successful, the pipe ends used to communicate with the cgi process will be added
+ *	to the fds the ServerManager monitors.
+ *	3. the cgi pipe used to read from the cgi process will trigger an event in the ServerManager::runServer function.
+ *	4. the ServerManager::handleEvent function will detect that which client this cgi pipe end belongs to and
+ *	will call that client's Client::cgiFinishCgiResponse function which in turn calls CgiHandler::cgiFinish.
+ *	5. in cgiFinish the cgi script will be executed and its results will be stored.
+ *	6. if this was successful the results will be passed forward to the client.
+ *
+ *	If there are any errors during the cgi handling, the client will be informed of a server error.
+ *	
+ */
 class	CgiHandler {
 
 	private:
-		std::map<std::string, std::string>	metavariables_map_;
-		std::string			cgi_output_as_string_;
-		char**				metavariables_;
-		char**				args_;
-		char*				path_;
-		int					pid_;
-		int					pipe_into_cgi_[2];
-		int					pipe_from_cgi_[2];
 
+		std::map<std::string, std::string>	metavariables_map_; /*!< @brief Map of environment variables to create the metavariables_ */
+		std::string							cgi_output_; /*!< @brief used to store response returned from cgi process */
+		char**								metavariables_; /*!< @brief c-style array of environment variables to pass to cgi execve() call */
+		char**								args_; /*!< @brief c-style string array for arguments to pass to execve() */
+		std::string							path_; /*!< @brief string for path to cgi-script from the request uri */
+		int									pid_; /*!< @brief for result of fork, used by parent to track child result */
+		int									pipe_into_cgi_[2]; /*!< @brief stores pipe fds for content directed into the cgi process */
+		int									pipe_from_cgi_[2]; /*!< @brief stores pipe fds for content coming from the cgi child process */
 
-		int		fillMetavariablesMap_( Client& client );
+		void	fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
 		int		createCgiArguments_( std::string uri, Client& client );
 		int		cgiTimer_( int& status );
@@ -61,6 +65,7 @@ class	CgiHandler {
 		int		storeCgiOutput_( void );
 
 	public:
+
 		CgiHandler( void );
 		CgiHandler( const CgiHandler& to_copy );
 
