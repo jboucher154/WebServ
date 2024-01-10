@@ -557,13 +557,14 @@ void	Request::setCgiFlag_( void ) {
 
 /*! \brief private setter for the host name and port based on Host Header
 *
-*	Private setter for the the host name and port based on Host Header
+*	Private setter for the the host name and port based on Host Header.
+*	If the host header os empty the status code will be set to E_BAD_REQUEST.
 */
 void	Request::setHostNameAndPort_( void ) {
 
 	std::string	host_header = getHeaderValueByKey("Host");
 	if (host_header.empty()) {
-		this->status_code_ = E_BAD_REQUEST; //invalid request
+		this->status_code_ = E_BAD_REQUEST;
 		return ;
 	}
 	std::string	request_host_name;
@@ -577,12 +578,11 @@ void	Request::setHostNameAndPort_( void ) {
 /*! \brief calls all private setters to intialize request attibutes based on headers
 *
 *	Calls all private setters to intialize request attibutes based on headers.
-*  
 */
 void	Request::setRequestAttributes_( void ) {
 
 	void	(Request::*setters[])(void) = { &Request::setKeepAlive_, &Request::setChunked_, &Request::setBodySize_ , &Request::setCgiFlag_, &Request::setHostNameAndPort_ };
-	for (int i = 0; i < 5; i++) { //get size of setters instead of 3
+	for (int i = 0; i < 5; i++) {
 		(this->*setters[i])();
 	}
 }
@@ -590,10 +590,9 @@ void	Request::setRequestAttributes_( void ) {
 /*! \brief stores request line values in map
 *
 *	Stores request line values in map. if method not implemented or HTTP version
-*	is not supported the status code will be set and the parsing stops.
-*	The uri as recieved is stored under "raw_uri" and the url decoded uri is stored
+*	is not supported, the status code will be set and the parsing stops.
+*	The uri as received is stored under "raw_uri" and the url decoded uri is stored
 *	under "uri" in the request_line_ map.
-*  
 */
 void	Request::parseRequestLine_( std::string& to_parse ) {
 
@@ -622,11 +621,10 @@ void	Request::parseRequestLine_( std::string& to_parse ) {
 	this->request_line_["version"] = part;
 }
 
-/*! \brief parses key and value from request header.
+/*! \brief parses key and value from request header
 *       
 *
-*  If a header already exists it will not overwrite the old value.
-*  
+*  If a header already exists, it will not overwrite the old value.
 */
 void	Request::parseHeader_( std::string& to_parse ) {
 
@@ -647,12 +645,11 @@ void	Request::parseHeader_( std::string& to_parse ) {
 	}
 }
 
-/*! \brief saves request body into raw_body_ and adds the length to body_len_recieved
+/*! \brief saves request body into raw_body_ and adds the length to body_len_received
 *
 *	Saves request body into raw_body_ character by character to ensure entire message
 *	(including any binary file content) is transfered and adds the length to 
 *	body_len_recieved_.
-*  
 */
 void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_bytes) {
 	
@@ -680,9 +677,8 @@ void Request::saveBody_(std::string& to_add, size_t body_start, size_t total_byt
 /*! \brief static function that parses boundary from the Content-Type header
 *
 *	Static function parses boundary from the Content-Type header for multipart form.
-*  
 */
-static std::string	parseBoundry(std::string& content_type_header ) {
+static std::string	parseBoundary(std::string& content_type_header ) {
 
 	int			boundry_start = content_type_header.find(";") + 1;
 	std::string	boundary = content_type_header.substr(boundry_start);
@@ -697,10 +693,9 @@ static std::string	parseBoundry(std::string& content_type_header ) {
 /*! \brief directs parsing of raw_body_ into processed_body_ based on the content type
 *
 *	Directs parsing of raw_body_ based on the content type (chunked, multipart/form-data, or other)
-*	If no boundary found for multipart/form-data the request is rejected. 
+*	If no boundary found for multipart/form-data, the request is rejected. 
 *	According to RFC 7231 "the definition of GET has been relaxed so that requests can have a body, 
 *	even though a body has no meaning for GET", therefore the request is not rejected based on method.
-*  
 */
 void	Request::parseBody_( void ) {
 
@@ -714,7 +709,7 @@ void	Request::parseBody_( void ) {
 		return ;
 	}
 	else if (is_multipart_form) {
-		std::string	boundry = parseBoundry(content_type_header);
+		std::string	boundry = parseBoundary(content_type_header);
 		if (boundry.empty()) {
 			this->status_code_ = E_BAD_REQUEST;
 			return ;
@@ -727,16 +722,15 @@ void	Request::parseBody_( void ) {
 	}
 }
 
-/*! \brief parses chunked body setting chunked value to false if all chunks are processed
+/*! \brief parses chunked body, setting chunked value to false if all chunks are processed
 *
 *	Parses chunked body setting chunked value to false if all chunks are processed. Each
 *	loop process one chunk and may process multiple chunks if they are present in the same message.
-*	If invalid formatting is found the status code is set to 400/Bad Request. If an conversion for
-*	the hexadecimal to decimal fails 500/Internal Server Error is set.
+*	If invalid formatting is found, the status code is set to 400/Bad Request. If an conversion for
+*	the hexadecimal to decimal fails, 500/Internal Server Error is set.
 *	When end of chunked data is found, the chunked flag is dropped and the bodysize is set to 
-*	the size of the total body recieved as the Content-Size header is not present for 
+*	the size of the total body received as the Content-Size header is not present for 
 *	chunked encoding.
-*  
 */
 void	Request::parseChunkedBody_( void ) {
 
@@ -790,7 +784,6 @@ void	Request::parseChunkedBody_( void ) {
 *	Stores file contents from multipart/form-data, stopping once a boundary is found.
 *	The last two characters are removed as they are the CRLF formatting and not
 *	part of the file contents.
-*  
 */
 void	Request::storeFileContents_( const std::string& section_bound, const std::string& last_bound, size_t& body_index ) {
 
@@ -817,7 +810,6 @@ void	Request::storeFileContents_( const std::string& section_bound, const std::s
 *
 *	Sets the filename indicated in the from data header. Removes quotes 
 *	surrounding the filename. Sets file_upload bool to true.
-*  
 */
 void	Request::setFilename_( const std::string& to_parse ) {
 
@@ -835,10 +827,9 @@ void	Request::setFilename_( const std::string& to_parse ) {
 *			separately from processed_body_
 *
 *	Parses multipart/form-data by Removing boundaries. Non-file content is added to 
-*	processed_body_, including CRLF formatting, and prepending "value=" to form feild
+*	processed_body_, including CRLF formatting, and prepending "value=" to form field
 *	values that are not files.
-*	File content is procesed and stored separatley by storeFileContents_().
-*
+*	File content is processed and stored separately by storeFileContents_().
 */
 void	Request::parseMultipartForm_( std::string boundary ) {
 

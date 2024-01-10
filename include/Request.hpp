@@ -23,6 +23,18 @@
  */
 # define REQUEST_TIMEOUT_SEC 10
 
+/*! \brief Class that handles the parsing and validation of client Requests
+ * 
+ *	@class Request
+ * 
+ *	The request class handles the parsing and validation of client requests.
+ *	It handles things like parsing the request line, headers and body of the request.
+ *	It is able to handle requests that come in multiple parts (ie. chunked).
+ *	If the client's request is valid, an appropriate response will be sent with
+ *	the contents that were requested.
+ *	If the client's request was invalid, the Request class will set the appropriate
+ *	error (status) code for the response to send back to the client.
+ */
 class	Request {
 
 	private:
