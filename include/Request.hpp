@@ -57,14 +57,14 @@ class	Request {
 		void	parseChunkedBody_( void );
 		void 	storeFileContents_( const std::string& section_bound, const std::string& last_bound, size_t& body_index );
 		void	parseMultipartForm_( std::string boundary );
-		void	setFilename( const std::string& to_parse );
+		void	setFilename_( const std::string& to_parse );
 
-		void	setBodySize( void );
-		void	setChunked( void );
-		void	setKeepAlive( void );
-		void	setRequestAttributes( void );
-		void	setCgiFlag( void );
-		void	setHostNameAndPort( void );
+		void	setBodySize_( void );
+		void	setChunked_( void );
+		void	setKeepAlive_( void );
+		void	setRequestAttributes_( void );
+		void	setCgiFlag_( void );
+		void	setHostNameAndPort_( void );
 
 	public:
 		Request( void );

@@ -116,7 +116,7 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 			}
 			else if (line.compare("\r") == 0) {
 				this->headers_complete = true;
-				this->setRequestAttributes();
+				this->setRequestAttributes_();
 				time(&this->request_start_time_);
 			}
 			else {
@@ -373,7 +373,8 @@ std::string	Request::getHeaderValueByKey( std::string key ) const {
 *
 *	Returns a const reference to the processed body string. Will not include any 
 *	file contents that were submitted by multipart form.
-*  
+*
+*	@return @b const @b std::string& of the processed body string
 */
 const std::string&		Request::getProcessedBody( void ) const {
 
@@ -384,7 +385,8 @@ const std::string&		Request::getProcessedBody( void ) const {
 *
 *	Returns a const reference to the file content for upload that is stored from
 *	a multipart form. The file name can be obtained from getUploadName().
-*  
+*
+*	@return @b const @b std::string& of file content for upload
 */
 const std::string&		Request::getUploadContent( void ) const {
 
@@ -396,6 +398,7 @@ const std::string&		Request::getUploadContent( void ) const {
 *	Returns a const reference to the file name for upload that is stored from
 *	a multipart form. The file content can be obtained from getUploadContent().	
 *  
+*	@return @b const @b std::string& of file name for upload
 */
 const std::string&		Request::getUploadName( void ) const {
 
@@ -407,6 +410,7 @@ const std::string&		Request::getUploadName( void ) const {
 *	Returns bool indicating if a file has been stored for upload. File name and content
 *	can be obtained from getUploadName() and getUploadContent().
 *  
+@	@return bool indicating if a file has been stored for upload
 */
 bool				Request::isFileUpload( void ) const {
 
@@ -416,10 +420,11 @@ bool				Request::isFileUpload( void ) const {
 /*! \brief returns the http status code that indicates the status for response based on 
 *				processing of body and headers in request class.
 *
-*	Returns unsigned int indicating the status code thatt may be set to an error based on
-*	the header checks and body processing thatt occurs in the request class. It is intialized
-*	to 0, which indicates no errors. Any other value may indicate an error encountered.
+*	Returns unsigned int indicating the status code that may be set to an error based on
+*	the header checks and body processing that occurs in the Request class. It is intialized
+*	to 0 which indicates no errors. Any other value may indicate an error encountered.
 *  
+*	@return @b unsigned @b int indicating the status code
 */
 unsigned int		Request::getStatusCode( void ) const {
 
@@ -430,7 +435,8 @@ unsigned int		Request::getStatusCode( void ) const {
 *
 *	Returns a const reference to the mime type for the upload file indicated
 *	in the header in the multipart form.
-*  
+*
+*	@return @b const @b std::string& of upload mime type
 */
 const std::string&		Request::getUploadMime( void ) const {
 
@@ -439,9 +445,10 @@ const std::string&		Request::getUploadMime( void ) const {
 
 /*! \brief returns bool if request timed out based on REQUEST_TIMEOUT_SEC macro
 *
-*	Returns bool if request timed out based on REQUEST_TIMEOUT_SEC macro  calculating
-*	from current time and time response	processing started.
+*	Returns bool if request timed out based on the REQUEST_TIMEOUT_SEC macro.
+*	Calculated from the current time and the time response processing started.
 *  
+*	@return @b bool indicating if request has timed out or not
 */
 bool	Request::checkRequestTimeout( void ) const {
 
@@ -461,7 +468,6 @@ bool	Request::checkRequestTimeout( void ) const {
 *
 *	Public setter for the cgi flag to allow response to change value of cgi bool
 *	if redirection or alias points to cgi script.
-*  
 */
 void	Request::setCgiFlag( bool flag) {
 	
@@ -471,7 +477,6 @@ void	Request::setCgiFlag( bool flag) {
 /*! \brief public function to clear upload content
 *
 *	Clears the upload content. Intended to be used after a temp file has been created.
-*  
 */
 void	Request::clearUploadContent( void ) {
 
@@ -485,10 +490,9 @@ void	Request::clearUploadContent( void ) {
 /*! \brief private setter for body_length based on request headers
 *
 *	Private setter for body_length based on request Content-Length Header.
-*	If no Content-Length header is present the body size is set to 0.
-*  
+*	If no Content-Length header is present, the body size is set to 0.
 */
-void	Request::setBodySize( void ) {
+void	Request::setBodySize_( void ) {
 
 	std::string	content_length = this->headers_["Content-Length"];
 	if (content_length.empty()) {
@@ -508,9 +512,8 @@ void	Request::setBodySize( void ) {
 /*! \brief private setter for chunked bool based on request headers
 *
 *	Private setter for chunked bool based on Transfer-Encoding header.
-*  
 */
-void	Request::setChunked( void ) {
+void	Request::setChunked_( void ) {
 
 	std::string	transfer_encoding = this->headers_["Transfer-Encoding"];
 	if (transfer_encoding == "chunked") {
@@ -524,9 +527,8 @@ void	Request::setChunked( void ) {
 /*! \brief private setter for keep_alive_ bool based on request headers
 *
 *	Private setter for keep_alive_ bool based on Connection header.
-*  
 */
-void	Request::setKeepAlive( void ) {
+void	Request::setKeepAlive_( void ) {
 
 	std::string connection = this->headers_["Connection"];
 	if (connection == "keep-alive") {
@@ -539,11 +541,10 @@ void	Request::setKeepAlive( void ) {
 
 /*! \brief private setter for the cgi flag. Sets bool based on uri
 *
-*	Private setter for the cgi flag. Sets bool true if uri begins with 
-*	`/cgi-bin'.
-*  
+*	Private setter for the cgi flag.
+*	Sets bool true if uri begins with `/cgi-bin'.
 */
-void	Request::setCgiFlag( void ) {
+void	Request::setCgiFlag_( void ) {
 
 	std::string	uri = this->getRequestLineValue("uri");
 	if (strncmp(uri.c_str(), "/cgi-bin", 8) == 0) {
@@ -557,9 +558,8 @@ void	Request::setCgiFlag( void ) {
 /*! \brief private setter for the host name and port based on Host Header
 *
 *	Private setter for the the host name and port based on Host Header
-*  
 */
-void	Request::setHostNameAndPort( void ) {
+void	Request::setHostNameAndPort_( void ) {
 
 	std::string	host_header = getHeaderValueByKey("Host");
 	if (host_header.empty()) {
@@ -579,9 +579,9 @@ void	Request::setHostNameAndPort( void ) {
 *	Calls all private setters to intialize request attibutes based on headers.
 *  
 */
-void	Request::setRequestAttributes( void ) {
+void	Request::setRequestAttributes_( void ) {
 
-	void	(Request::*setters[])(void) = { &Request::setKeepAlive, &Request::setChunked, &Request::setBodySize , &Request::setCgiFlag, &Request::setHostNameAndPort };
+	void	(Request::*setters[])(void) = { &Request::setKeepAlive_, &Request::setChunked_, &Request::setBodySize_ , &Request::setCgiFlag_, &Request::setHostNameAndPort_ };
 	for (int i = 0; i < 5; i++) { //get size of setters instead of 3
 		(this->*setters[i])();
 	}
@@ -819,7 +819,7 @@ void	Request::storeFileContents_( const std::string& section_bound, const std::s
 *	surrounding the filename. Sets file_upload bool to true.
 *  
 */
-void	Request::setFilename( const std::string& to_parse ) {
+void	Request::setFilename_( const std::string& to_parse ) {
 
 	int fname_start = to_parse.find("filename=") + 9;
 
@@ -864,7 +864,7 @@ void	Request::parseMultipartForm_( std::string boundary ) {
 				break ;
 			else if (parse_buffer != section_bound) {
 				if (parse_buffer.find("filename=") != std::string::npos) {
-					setFilename(parse_buffer);
+					setFilename_(parse_buffer);
 					file_present = true;
 				}
 				if (file_present && strncmp(parse_buffer.c_str(), "Content-Type:", 13) == 0) {
