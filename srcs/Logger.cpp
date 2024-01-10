@@ -12,9 +12,10 @@ std::ofstream	Logger::debug_log_file_;
 /*! \brief Default constructor, not used for static class
 *       
 *  	Default constructor, not used for static class
-*
 */
-Logger::Logger( void ) {}
+Logger::Logger( void ) {
+
+}
 
 /*! \brief Copy constructor, not used for static class
 *       
@@ -26,16 +27,14 @@ Logger::Logger( const Logger& to_copy ) {
 	*this = to_copy;
 } 
 
-/* DESTRUCTOR */
-
 /*! \brief Defalut destructor, not used for static class
 *       
 *  	Defalut destructor, not used for static class
 *
 */
-Logger::~Logger( void ) {} 
+Logger::~Logger( void ) {
 
-/* OPERATOR OVERLOADS */
+}
 
 /*! \brief Assignment operator overload , not used for static class
 *       
@@ -48,15 +47,12 @@ Logger&	Logger::operator=( const Logger& rhs ) {
 	return *this;
 }
 
-/* CLASS PUBLIC METHODS */
-
 /*! \brief initializes the log to console and log to files varaibles based on 
 *				macros set at compile time.
 *       
 *  	Initializes the log to console and log to files varaibles based on 
 *	macros set at compile time. If logging to files is set true, the log files
 *	will be intialized.
-*
 */
 void	Logger::initLogger( void ) {
 
@@ -76,6 +72,11 @@ void	Logger::initLogger( void ) {
 *	indicated by msg_type in the color given by msg_color. The message will be
 *	written to the std_out or std_err  and the appropriate logfile if file
 *	logging is enabled.
+*
+*   @param msg_type could be INFO, ERROR, or DEBUG for instance.
+*   @param *msg_color could be INFO, ERROR, or DEBUG for instance.
+*   @param *msg is a text including C-Style %d, %s, %i, %p and so on.
+*   @param ... is the text that will make the  %d, %s, %i, %pof the message.
 *
 */
 void	Logger::log( e_log_msg_type msg_type, const char *msg_color, const char *msg, ... ) {
@@ -184,7 +185,6 @@ bool	Logger::checkIfToLogInFiles( void ) {
 *       
 *  	Creates logfile directory if needed and calls to open the logfiles. If error occurs
 *	logging will be to console only.
-*
 */
 void	Logger::initLogFiles( void ) {
 
@@ -212,6 +212,7 @@ void	Logger::initLogFiles( void ) {
 *  	Opens three logfiles, all_log.txt, log_error.txt, and log_info.txt in the logfile 
 *	directory configured. Will return false if any of the openings fail.
 *
+*   @return true/false indicating if the opening of log files is successful or not.
 */
 bool	Logger::openLogFiles( void ) {
 	

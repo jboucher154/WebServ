@@ -228,8 +228,7 @@ int	Server::setupServer( void ) {
 bool	Server::setUploadStore( std::string upload_dir) {
 	std::string upload_store = this->getRoot() + "/." + this->getServerName() + this->getListeningPortString() + upload_dir;
 	if (access(upload_store.c_str(), F_OK) == 0){
-		Logger::log(E_ERROR, COLOR_RED, "server failed to create temprary upload directory. They already exist. Please remove or rename.");
-		return false;
+		return true;
 	}
 	if (mkdir(upload_store.c_str(), 0777) != 0){
 		Logger::log(E_ERROR, COLOR_RED, "server failed to create temprary upload directory");
@@ -239,6 +238,17 @@ bool	Server::setUploadStore( std::string upload_dir) {
 	return true;
 
 }
+
+/*! \brief set the latest server activity.
+ * 
+ * @param time the time of the latest activity.
+ */
+void	Server::setLatestServerTime( void ) {
+
+	this->latest_server_activity_time_ = time(NULL);
+}
+
+/**************************/
 
 /*! \brief getter that formats the servid id information to be printed to the logging
 *       
@@ -258,8 +268,6 @@ std::string	Server::getServerIdforLog( void ) const {
 	id += "]"; 
 	return id;
 }
-
-/**************************/
 
 /*! \brief getter for server object listening_port_
 *       
@@ -447,6 +455,15 @@ std::string	Server::getCgiExecutor( std::string extension ) const {
 		pathtIt++;
 	}
 	return *pathtIt;
+}
+
+/*! \brief return the time of the latest server activity.
+ * 
+ * @return time_t the server's latest activity
+ */
+time_t	Server::getLatestServerActivity( void ) {
+
+	return this->latest_server_activity_time_;
 }
 
 /*! \brief checks if a certain key exists in a certain location

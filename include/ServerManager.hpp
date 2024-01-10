@@ -6,30 +6,30 @@
 # include "Client.hpp"
 
 /*! \brief Server Manager class.
-*         This class handles managing the server and client sockets.
-*
-*  Detailed description starts here.
-*	BE AWARE: I have the poll() and select() variables/functions here (labeled clearly), the one we don't go with will be removed
-*/
-
+ *         This class handles managing the server and client sockets + client cgi pipes.
+ *
+ *	The ServerManager does what its name implies. It handles stuff like setting up server sockets, creating client sockets and connections
+ *	and switching of the client between receiving requests and sending responses, adding possible cgi pipes to the monitored file descriptors,
+ *	monitoring that inactive client connections are cut after a certain, and shutting down the program if there is no activity for a certain time.
+ */
 class	ServerManager {
 	private:
-		std::vector<Server>					servers_;				// vector of all servers
+		std::vector<Server>&				servers_;
 
-		std::map<int, std::vector<int> >	client_cgi_map_;		// map of client fds and their pipe fds (for cgi)
+		std::map<int, std::vector<int> >	client_cgi_map_;
 
 		#if POLL_TRUE_SELECT_FALSE
-			std::vector<struct pollfd>		pollfds_;				// vector of all server, client and cgi pipe pollfds (POLL)
-			int								pollfds_size_;			// this is needed so that you don't iterate over a vector after you erase a pollfd (POLL)
+			std::vector<struct pollfd>		pollfds_;
+			int								pollfds_size_;
 		#else
-			fd_set							read_fd_set_;			// set of file descriptors ready for read (SELECT)
-			fd_set							write_fd_set_;			// set of file descriptors ready for write (SELECT)
-			int								biggest_fd_;			// biggest fd value (SELECT)
+			fd_set							read_fd_set_;
+			fd_set							write_fd_set_;
+			int								biggest_fd_;
 		#endif
 
-		std::map<int, Server*>			server_map_;			// map of server socket descriptors and a pointers to servers objects
-		std::map<int, Client>			client_map_;			// map of client socket descriptors and Client objects
-		time_t							last_client_time_;		// for automatic shutdown
+		std::map<int, Server*>			server_map_;
+		std::map<int, Client>			client_map_;
+		time_t							latest_server_time_;
 
 		void	addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out );
 
@@ -40,9 +40,8 @@ class	ServerManager {
 		void	SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out );
 		void	SELECT_removeClientCgiFdsFromSets_( int client_fd );
 		void	SELECT_handleClientCgi_( int client_fd );
-
+	
 	public:
-		ServerManager( void );
 		ServerManager( std::vector<Server>& server_vector );
 		ServerManager( const ServerManager& other );
 		~ServerManager( void );
@@ -59,8 +58,6 @@ class	ServerManager {
 		int		getClientFdByItsCgiPipeFd( int pipe_fd );
 		void	checkIfClientTimeout( int client_fd );
 		void	checkServerAssignmentBasedOnRequest( Client& client );//
-
-		int		getServerFdFromServerMap( Server* server ) const;
 
 
 		bool	SELECT_initializeServers( void );

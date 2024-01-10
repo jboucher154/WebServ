@@ -27,29 +27,27 @@ enum	e_log_msg_type {
 	E_DEBUG
 };
 
-# define LOG_LOCATION	E_LOG_TO_BOTH_CONSOLE_AND_FILES
+# define LOG_LOCATION	E_LOG_ONLY_TO_CONSOLE
 # define LOG_DIR		"webserv_log"
 # define LOG_ALL		"log_all.txt"
 # define LOG_ERROR		"log_error.txt"
 # define LOG_INFO		"log_info.txt"
 # define LOG_DEBUG		"log_debug.txt"
 
-/*! \brief Brief description.
-*         Brief description continued.
-*
-*  Detailed description starts here.
+
+/*! \brief This static class logs the log messages in formats and files of the caller's choice. 
+*  
 */
 class	Logger {
-
 	private:
-		static bool			log_to_console_;
-		static bool			log_to_files_;
-		static bool			log_dir_already_exists_;
+		static bool			log_to_console_; /*!< @brief flag indicating if logs should be printed to console. */
+		static bool			log_to_files_; /*!< @brief flag indicating if logs should be printed to file. */
+		static bool			log_dir_already_exists_; /*!< @brief flag indicating if log file already exist or if they need to be created. */
 
-		static std::ofstream	all_log_file_;
-		static std::ofstream	error_log_file_;
-		static std::ofstream	info_log_file_;
-		static std::ofstream	debug_log_file_;
+		static std::ofstream	all_log_file_; /*!< @brief a log file ofsream that will be used to write all of the logs */
+		static std::ofstream	error_log_file_; /*!< @brief a log file ofsream that will be used to write error logs */
+		static std::ofstream	info_log_file_; /*!< @brief a log file ofsream that will be used to write info logs */
+		static std::ofstream	debug_log_file_; /*!< @brief a log file ofsream that will be used to write debug logs */
 
 		Logger( void );
 		Logger( const Logger& to_copy );

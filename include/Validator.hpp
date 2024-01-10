@@ -17,15 +17,26 @@
 # include <limits>
 # include "utility.hpp"
 
+/*! \brief a static class used to parse and validate a webserver config file.
+ *
+ *	@class Validator
+ * 
+ *	
+ *	The static class Validator handles the parsing of the webserver configuration file.
+ *	During this parsing it validates that everything is formatted correctly in the config file.
+ *	If parsing is successful, it will result in a vector of servers that the ServerManager will use.
+ *	If parsing is unsuccessful, the error will be logged and the program ends with EXIT_FAILURE.
+ * 
+ */
 class Validator
 {
 private:
-	static std::multimap<std::string, std::string>			validIpHostMap;
-	static std::vector<std::string>							lines;
-	static size_t 											serverLines;
-	static std::string 										mainRootPath;
-	static std::string 										rootPath;
-	static std::map<std::string, std::vector<std::string> >	innerBlock;
+	static std::multimap<std::string, std::string>			validIpHostMap_; /*!< \brief static map of IP-addresses and their hostnames */
+	static std::vector<std::string>							lines_;			/*!< \brief static vector of the config file's lines */
+	static size_t 											serverLines_;	/*!< \brief static size_t for the server's lines */
+	static std::string 										mainRootPath_;	/*!< \brief static string of main root path */
+	static std::string 										rootPath_;		/*!< \brief static string of root path */
+	static std::map<std::string, std::vector<std::string> >	innerBlock_;	/*!< \brief static map of server's inner blocks and the values in them */
 
 	static std::vector<std::string> valid_main_keys_;
 	static std::string valid_main_keys_array;

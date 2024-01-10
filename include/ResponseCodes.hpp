@@ -4,6 +4,9 @@
 # include <map>
 # include <string>
 
+/*! \brief all of the status codes asigned to their discriptive strings.
+*   
+*/
 typedef	enum	e_StatusCode {
 	E_UNSET = 0,
 	E_SERVER_PROCESSING = 1,
@@ -81,6 +84,9 @@ typedef	enum	e_StatusCode {
 	E_NETWORK_AUTHENTIFICATION_REQUIRED = 511
 }				t_StatusCode;
 
+/*! \brief This static class creates a map of Response Codes and creates
+*         and prepares html responses out of them when appropriate methods are clled.
+*/
 class	ResponseCodes {
 
 	private:
@@ -89,13 +95,11 @@ class	ResponseCodes {
 		~ResponseCodes( void );
 		ResponseCodes&	operator=( const ResponseCodes& to_copy );
 
-		/* PRIVATE METHODS AND MEMBERS */
-		static std::map<int, std::string>	codes_;
+		static std::map<int, std::string>	codes_; /*!< @brief a map of matching pairs of codes and the dscriptive string associated to them. */
 
 		static void	initialize_codes( void );
 
 	public:
-		/* PUBLIC METHODS */
 		static std::string	getCodeElementBody( int code );
 		static std::string	getCodeStatusLine( int code );
 		static std::string	getCombinedStatusLineAndBody( int code );
