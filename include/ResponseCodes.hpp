@@ -4,6 +4,9 @@
 # include <map>
 # include <string>
 
+/*! \brief all of the status codes asigned to their discriptive strings.
+*   
+*/
 typedef	enum	e_StatusCode {
 	E_UNSET = 0,
 	E_SERVER_PROCESSING = 1,
@@ -79,7 +82,7 @@ typedef	enum	e_StatusCode {
 	E_LOOP_DETECTED = 508,
 	E_NOT_EXTENDED = 510,
 	E_NETWORK_AUTHENTIFICATION_REQUIRED = 511
-}				t_StatusCode; /*!< @brief an enum that has all of the status codes asigned to their discriptive strings. */
+}				t_StatusCode;
 
 /*! \brief This static class creates a map of Response Codes and creates
 *         and prepares html responses out of them when appropriate methods are clled.
