@@ -7,15 +7,7 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <csignal>
 
-// void ServerManager::signalHandler(int signum) {
-//     std::cout << "Interrupt signal (Ctrl+C) received." << std::endl;
-
-//     this->closeAllSockets();
-
-//     std::exit(0);
-// }
 
 /* CONSTRUCTORS */
 
@@ -332,7 +324,6 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 
 		int				poll_result;
 
-		//signal(SIGINT, signalHandler);
 		Logger::log(E_INFO, COLOR_GREEN, "runServers() [POLL VERSION] starting...");
 
 		this->last_client_time_ = time(0);	// get the start time
