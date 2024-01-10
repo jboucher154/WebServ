@@ -5,6 +5,8 @@
 *   
 *	Delete an allocated NULL terminating c-style string array and sets to NULL.    
 *	Use only with a NULL terminating array, otherwise will cause a segfault!
+*   @param array whose allocated nodes as well as it itself are to be deleted(freed)
+*   @return has no return value
 */
 void	deleteAllocatedCStringArray(char** array) {
 

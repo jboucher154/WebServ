@@ -3,6 +3,9 @@
 /*! \brief This function gets the current date and time as a string
 *
 *	Used to timestamp the logs with current time and date with localtime.
+*   @param no param.
+*   @return buf, a string of a formated time stamp formated.
+*
 */
 std::string	getTimestampString( void ) {
 	
@@ -14,4 +17,3 @@ std::string	getTimestampString( void ) {
 	strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
 	return buf;
 }
-

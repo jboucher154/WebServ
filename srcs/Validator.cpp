@@ -31,7 +31,7 @@ std::string											Validator::mainRootPath_ = "";
 
 /*! \brief Validator's class constructor
 *       
-*  Doesn't do anything just constructs an instance of the class. 
+*  Constructs an instance of the class. 
 *  This constructor is private.
 */
 Validator::Validator() {
@@ -40,7 +40,7 @@ Validator::Validator() {
 
 /*! \brief Validator's class destructor
 *       
-*  Doesn't do anything just destructs an instance of the class. 
+*  Destructs an instance of the class. 
 *  This destructor is private.
 */
 Validator::~Validator() {

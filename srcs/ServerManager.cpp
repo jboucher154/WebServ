@@ -8,11 +8,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-/* CONSTRUCTORS */
-
-ServerManager::ServerManager( void ) {
-	
-	this->servers_.clear();
+/*! \brief Construct a new Server Manager:: Server Manager object.
+ * 
+ * @param server_vector a reference to the Validator's vector of servers.
+ */
+ServerManager::ServerManager( std::vector<Server>& server_vector ) : servers_(server_vector) {
 
 	#if POLL_TRUE_SELECT_FALSE
 		this->pollfds_.clear();
@@ -27,36 +27,31 @@ ServerManager::ServerManager( void ) {
 	this->client_map_.clear();
 }
 
-ServerManager::ServerManager( std::vector<Server>& server_vector ) {
-
-	this->servers_.clear();
-
-	#if POLL_TRUE_SELECT_FALSE
-		this->pollfds_.clear();
-		this->pollfds_size_ = -1;
-	#else
-		FD_ZERO(&this->read_fd_set_);
-		FD_ZERO(&this->write_fd_set_);
-		this->biggest_fd_ = -1;
-	#endif
-
-	this->server_map_.clear();
-	this->client_map_.clear();
-
-	this->servers_ = server_vector;
-}
-
-ServerManager::ServerManager( const ServerManager& other ) {
+/*! \brief Copy construct a new Server Manager:: Server Manager object
+ *
+ * NOT USED ANYWHERE.
+ * 
+ * @param other the other ServerManager
+ */
+ServerManager::ServerManager( const ServerManager& other ) : servers_(other.servers_) {
 
 	*this = other;
 }
 
-/* DESTRUCTOR */
+/*! \brief Destroy the Server Manager:: Server Manager object
+ *	
+ */
+ServerManager::~ServerManager( void ) {
 
-ServerManager::~ServerManager( void ) {}
+}
 
-/* OPERATOR OVERLOADS */
-
+/*! \brief ServerManager's assignment operator overload
+*       
+*  Returns a pointer to a copy of current instance. 
+*
+*   @param rhs, a  reference to an instance of the ServerManager class.
+*   @return a  reference to an instance of the ServerManager class created(copied) out of rhs.
+*/
 ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 
 	if (this != &rhs) {
@@ -73,15 +68,20 @@ ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 
 		this->server_map_ = rhs.server_map_;
 		this->client_map_ = rhs.client_map_;
-		this->last_client_time_ = rhs.last_client_time_;
+		this->latest_server_time_ = rhs.latest_server_time_;
 	}
 	return *this;
 }
 
 
 /*! \brief get a client by it's cgi pipe fd.
-*       
-*/
+ *
+ *	This function is called when the ServerManager detects activity in a fd with a write flag which is NOT a client fd.
+ *	In the function we go through the client_cgi_map_ and see which of client has the pipe_fd as one of its values.
+ * 
+ *	@param pipe_fd the fd of a pipe end which triggered this function to be called.
+ *	@return int which is the client fd (or -1 in case of error).
+ */
 int	ServerManager::getClientFdByItsCgiPipeFd( int pipe_fd ) {
 
 	for (std::map<int, std::vector<int> >::iterator it = this->client_cgi_map_.begin(); it != this->client_cgi_map_.end(); ++it) {
@@ -92,6 +92,9 @@ int	ServerManager::getClientFdByItsCgiPipeFd( int pipe_fd ) {
 	return -1;
 }
 
+/*! \brief Close server sockets.
+ * 		This function is called after the SERVER_SHUTDOWN_TIME_SEC has been passed without any client activity.
+ */
 void	ServerManager::closeServerSockets( void ) {
 
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all server sockets...");
@@ -102,6 +105,10 @@ void	ServerManager::closeServerSockets( void ) {
 	}
 }
 
+/*! \brief Close all remaining client connections.
+ *		Called after the SERVER_SHUTDOWN_TIME_SEC has passed withouth any client activity.
+ * 
+ */
 void	ServerManager::closeAllClientConnections( void ) {
 
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all remaining client sockets...");
@@ -113,13 +120,12 @@ void	ServerManager::closeAllClientConnections( void ) {
 			this->SELECT_removeClient(this->client_map_.begin()->first);
 		#endif
 	}
-
-	// for (std::map<int, Client>::iterator it = this->client_map_.begin(); it != this->client_map_.end(); ++it) {
-	// 	Logger::log(E_INFO, COLOR_WHITE, "Closing client %i connection", it->first);
-	// 	close(it->first);
-	// }
 }
 
+/** \brief Close all sockets.
+ * 		This function is called after the SERVER_SHUTDOWN_TIME_SEC has been passed without any client activity.
+ * 
+ */
 void	ServerManager::closeAllSockets( void ) {
 
 	Logger::log(E_INFO, COLOR_WHITE, "Closing all sockets...");
@@ -128,21 +134,38 @@ void	ServerManager::closeAllSockets( void ) {
 	this->closeServerSockets();
 }
 
+/*! \brief This function checks if the servers have been without activity past a certain deadline (SERVER_SHUTDOWN_TIME_SEC).
+ * 		If this is the case we end running of the servers and close the program.
+ * 
+ *	The function iterates through all the servers and checks the latest client event in that server. We get the shortest time
+ *	and we compare that to the SERVER_SHUTDOWN_TIME_SEC.
+ * 
+ *	@return true if the SERVER_SHUTDOWN_TIME_SEC has been passed (the program will be closed).
+ *	@return false if the SERVER_SHUtDOWN_TIME_SEC has not been passed.
+ */
 bool	ServerManager::CheckServersTimeout( void ) {
 
+	time_t	server_last_time;
 	time_t	now;
 
-	for (std::map<int, Client>::iterator it = this->client_map_.begin(); it != this->client_map_.end(); ++it) {
-		if (it->second.getLatestTime() > this->last_client_time_)
-			this->last_client_time_ = it->second.getLatestTime();
+	for (std::map<int, Server*>::iterator it = this->server_map_.begin(); it != this->server_map_.end(); ++it) {
+		server_last_time = it->second->getLatestServerActivity();
+		if (server_last_time > this->latest_server_time_)
+			this->latest_server_time_ = server_last_time;
 	}
 
 	time(&now);
-	if (difftime(now, this->last_client_time_) >= SERVER_SHUTDOWN_TIME_SEC)
+	if (difftime(now, this->latest_server_time_) >= SERVER_SHUTDOWN_TIME_SEC)
 		return true;
 	return false;
 }
 
+/*! \brief remove client.
+ * 
+ * First close the client socket and then remove client from client_map_.
+ * 
+ * @param client_fd client's file descriptor.
+ */
 void	ServerManager::removeClient( int client_fd ) {
 
 	Logger::log(E_INFO, COLOR_MAGENTA, "Closing socket %d, clearing client data...", client_fd);
@@ -150,6 +173,11 @@ void	ServerManager::removeClient( int client_fd ) {
 	this->client_map_.erase(client_fd);
 }
 
+/*! \brief Checks client's server assignment based on the request.
+ *		If the request is meant to another server the client's server and its fd are changed in the client attributes.
+ *  
+ * @param client the client the request was sent from.
+ */
 void	ServerManager::checkServerAssignmentBasedOnRequest( Client& client ) {
 
 	Server*				current_server = client.getServer();
@@ -167,6 +195,18 @@ void	ServerManager::checkServerAssignmentBasedOnRequest( Client& client ) {
 	}
 }
 
+/*! \brief Receive from from client's socket.
+ *
+ *	First the latest time is set for the client and its server
+ *	Then we recv from the client socket:
+ *	If the result was -1 (error) or 0 we return false to disconnect the client connection.
+ *	If it is anything else we add the received bytes to the client's request and we also check
+ *	which server was the request meant to (if there are multiple servers using the same port, that is).
+ * 
+ * @param client_fd the file descriptor of the client.
+ * @return true if we don't want to close the connection.
+ * @return false if we want to close the connection.
+ */
 bool	ServerManager::receiveFromClient( int client_fd ) {
 	
 	char		client_msg[500000];
@@ -174,7 +214,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	Server*		server = client->getServer();
 	Request&	request = client->getRequest();
 
-	client->setLatestTime();
+	client->setLatestTimeForClientAndServer();
 	memset(client_msg, 0, 500000);
 	int bytes_received = recv(client_fd, &client_msg, 500000 - 1, 0);
 
@@ -185,7 +225,7 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		Logger::log(E_ERROR, COLOR_RED, "recv error from socket %d to server %s, disconnecting client", client_fd, server->getServerIdforLog().c_str());
 		return false;
 	}
-	else if (bytes_received == 0){ // client has disconnected...
+	else if (bytes_received == 0){
 		Logger::log(E_INFO, COLOR_MAGENTA, "Client %d has disconnected", client_fd);
 		return false;
 	} else {
@@ -201,12 +241,21 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	return true;
 }
 
-/*! \brief in this function we send a response to the Client.
-*       
-*
-*	BE AWARE: the function 
-*  
-*/
+/*! \brief Send response to the Client.
+ *
+ *	First we check if the client's request has the keep-alive header.
+ *	We check if the response_string is empty and if it's not we send the response to the client.
+ *	If the send result was -1 (error) we disconnect the client.
+ *	Otherwise we check that we sent everything we were supposed to to the client.
+ *	If the client's request was complete (as in all of the request has been received and not just a part),
+ *	we reset the request and response.
+ *	We also check that the response's status code was request timeout and if so, we don't keep the connection alive.
+ * 
+ *
+ *	@param client_fd the file descriptor of the client.
+ *	@return true if we want to keep the connection alive.
+ *	@return false if we want to close the connection.
+ */
 bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 	Client*		client = &this->client_map_[client_fd];
@@ -216,7 +265,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	bool	keep_alive = client->getRequest().getKeepAlive();
 	const std::string&	response_string = client->getResponseString();
 
-	client->setLatestTime();
+	client->setLatestTimeForClientAndServer();
 
 	if (response_string.empty())
 		return keep_alive;
@@ -225,12 +274,7 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	if (bytes_sent == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "send error from server %s to socket %d, disconnecting client", server->getServerIdforLog().c_str(), client_fd);
 		return false;
-	}
-	else if (bytes_sent == 0) {	// check later is this necessary...
-		Logger::log(E_DEBUG, COLOR_YELLOW, " Server %s sent 0 bytes to socket %d",
-			server->getServerIdforLog().c_str(), client_fd);
-	}
-	else {
+	} else {
 		if (bytes_sent < static_cast<int>(response_string.length()))
 			Logger::log(E_ERROR, COLOR_RED, "incomplete response sent from server %s to socket %d ",
 				server->getServerIdforLog().c_str(), client_fd);
@@ -244,22 +288,19 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		client->resetRequest();
 	}
 	if (response.getStatusCode() == E_REQUEST_TIMEOUT) {
-		return (false);
+		return false;
 	}
 	return keep_alive;
 }
 
 /*! \brief Check if client has timed out, and if so, close connection.
 *       
-*  	
+*  	@param client_fd the file descriptor of the client.
 */
 void	ServerManager::checkIfClientTimeout( int client_fd ) {
 
 	time_t	current_time = time(NULL);
 	double	time_since_latest_action = difftime(current_time, client_map_[client_fd].getLatestTime());
-
-	//	I recommend keeping this log commented out, as it will flood the terminal/log-files otherwise...
-	// Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %d time since last action: %lld", client_fd, time_since_latest_action);
 
 	if (time_since_latest_action >= CLIENT_TIMEOUT_SEC) {
 		Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "client on socket %d timed out!", client_fd);
@@ -271,27 +312,18 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 	}
 }
 
-/*! \brief Allows lookup of server fd from the server pointer, returns -1 if server not found
-*       
-*  	Allows lookup of server fd from the server pointer, returns -1 if server not found or if server
-*	pointer is NULL
-*
-*/
-int		ServerManager::getServerFdFromServerMap( Server* server ) const {
-
-	if (server) {
-		for (std::map<int, Server*>::const_iterator it = this->server_map_.begin(); it != this->server_map_.end(); it++) {
-			if (it->second == server)
-				return it->first;
-		}
-	}
-	return -1;
-}
-
 
 #if	POLL_TRUE_SELECT_FALSE
 /********************************************** POLL functions **********************************************************/
 
+	/*! \brief initialize servers for running.
+	 *
+	 *	Iterate through server_vector_ and call Server::setupServer function which returns the fd of that server.
+	 *	Then we make a pollfd for that server and add a pair to the server_map_(fd as key and pointer to server as value). 
+	 *
+	 * @return true if initialization of servers was successful.
+	 * @return false if an error was encountered.
+	 */
 	bool	ServerManager::POLL_initializeServers( void ) {
 		
 		int		server_amount = this->servers_.size();
@@ -319,13 +351,28 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 		return true;
 	}
 
+	/*! \brief the main function that handles the management of servers and their clients.
+	 * 
+	 *	First we set the start time as the latest_server_time_.
+	 *	Then we enter an infinity loop that will only break when we reach the server shutdown time.
+	 *	in the loop:
+	 *	0.5	In the beginning of every loop the printData function will be called if GET_SELECT_POLL_LOOP_FD_INFO is true.
+	 *	1.	Then we call poll with all of the fds we want to handle and check if error.
+	 *	2.	Then we store the size of the pollfd vector (we need this so that when we remove a client connection we don't iterate over the vector).
+	 *	3.	We iterate through the pollfd vector and check if the pollfd has an revent and if so we call handleEvent.
+	 *	4.	if the pollfd is a client we check if the client has timed out.
+	 *	5.	after iterating the pollfd vector we check if the servers have timed out and if so, break out.
+	 * 
+	 * @return true if a successful end (ie. the checkServersTimeout returned true)
+	 * @return false if there was an error with the poll function (running of servers will be restarted).
+	 */
 	bool	ServerManager::POLL_runServers( void ) {
 
 		int				poll_result;
 
 		Logger::log(E_INFO, COLOR_GREEN, "runServers() [POLL VERSION] starting...");
 
-		this->last_client_time_ = time(0);	// get the start time
+		this->latest_server_time_ = time(0);	// get the start time
 
 		while (true) {	//	MAIN LOOP
 
@@ -340,11 +387,6 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 				return false;
 			}
 
-			
-			/*	The i is needed to keep track of the size of the pollfds_ vector so that if a client disconnects
-				the iterator will not go past the end of the vector. While erasing a pollfd in the vector will
-				make it skip the next pollfd (the next pollfd takes the spot of the just deleted pollfd), it won't be
-				a problem because of the looping. */
 			this->pollfds_size_ = this->pollfds_.size();
 			int	i = 0;
 
@@ -366,7 +408,21 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 		return true;
 	}
 
+	/*! \brief Handle a file descriptor event.
+	 * 
+	 *	if the revent is POLLIN. we check if the fd is a server or client:
+	 *	if server, we accept a new connection and create a client
+	 *	if client, we receive from the client
+	 *	If the revent is POLLOUT, we check if the fd is a client:
+	 *	if client, we send a response to the client.
+	 *	But if the fd IS NOT a client, we know it is a cgi pipe fd and we
+	 *	find out which client it belongs to and then call handleClientCgi.
+	 * 
+	 * @param it the pollfd vector iterator.
+	 */
 	void	ServerManager::POLL_handleEvent( std::vector<pollfd>::iterator& it ) {
+
+		int client_fd;
 
 		if (it->revents & POLLIN) {
 			if (this->server_map_.count(it->fd)) {
@@ -377,13 +433,24 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 		} else if (it->revents & POLLOUT) {
 			if (this->client_map_.count(it->fd)) {
 				this->POLL_sendResponseToClient(it->fd);
-			} else {	//cgi pipe activity
-				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, this->getClientFdByItsCgiPipeFd(it->fd));
-				this->POLL_handleClientCgi_(this->getClientFdByItsCgiPipeFd(it->fd));
+			} else {
+				client_fd = this->getClientFdByItsCgiPipeFd(it->fd);
+				Logger::log(E_DEBUG, COLOR_YELLOW, "pipe fd %d activity spotted, calling handleClientCgi client %d!", it->fd, client_fd);
+				this->POLL_handleClientCgi_(client_fd);
 			}
 		}
 	}
 
+	/*! \brief Accept a new client connection.
+	 *		Creates a client which is stored into the client map.
+	 *	
+	 *	First the we accept the client and that is succesful we fcntl that fd to make it non-blocking.
+	 *	Then we create the client object which we save into the client_map_ (copies the client object).
+	 *	Then we create a pollfd which will represent the client in runServers.
+	 *	If there is an error we simply log it and don't add a new client.
+	 * 
+	 * @param server_fd the file descriptor of the server.
+	 */
 	void	ServerManager::POLL_acceptNewClientConnection( int server_fd ) {
 
 		int			client_fd;
@@ -410,8 +477,7 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 		Client client(server_fd, server);
 
 		this->client_map_[client_fd] = client;
-		this->client_map_[client_fd].setLatestTime();
-		this->last_client_time_ = time(NULL);	// added in case client doesn't have keep_alive
+		this->client_map_[client_fd].setLatestTimeForClientAndServer();
 
 		pollfd new_pollfd = {client_fd, POLLIN, 0};	
 		this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
@@ -573,7 +639,7 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 
 		Logger::log(E_INFO, COLOR_GREEN, "runServers() [SELECT VERSION] starting...");
 
-		this->last_client_time_ = time(0);	// get the start time
+		this->latest_server_time_ = time(0);	// get the start time
 
 		while (true) {	//	MAIN LOOP
 
@@ -670,7 +736,7 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 		Client client(server_fd, server);
 
 		this->client_map_[client_fd] = client; 
-		this->client_map_[client_fd].setLatestTime();
+		this->client_map_[client_fd].setLatestTimeForClientAndServer();
 
 		FD_SET(client_fd, &this->read_fd_set_);
 	}
@@ -786,10 +852,7 @@ int		ServerManager::getServerFdFromServerMap( Server* server ) const {
 
 /* CLASS PRIVATE METHODS */
 
-
 void	ServerManager::addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out ) {
-
-	// int	array[2] = {pipe_out, pipe_in};
 
 	if (!this->client_cgi_map_.count(client_fd)) {
 

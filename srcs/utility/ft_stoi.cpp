@@ -5,6 +5,8 @@
 *       
 *	Converts a string to an integer. May throw invalid_argument exception for over/ under 
 *   flow or if empty string is passed.
+*   @param str which will be converted into an int if possible.
+*   @return an int or throws an exception in case of an overflow.
 *
 */
 int ft_stoi(const std::string& str) {
