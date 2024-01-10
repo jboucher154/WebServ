@@ -10,7 +10,17 @@
 # include "MimeTypes.hpp"
 # include "ResponseCodes.hpp"
 
-# define CRLF "\r\n" //make this project wide?
+/** \brief Carriage Return Line Feed
+ * 
+ * In the HTTP protocol, the CR-LF sequence is always used to terminate a line.
+ */
+# define CRLF "\r\n"
+
+/*! \brief macro for request's time limit (in seconds)
+ *
+ * The request must be fully received in the set time limit, otherwise the
+ * server will send an error code back to the client.
+ */
 # define REQUEST_TIMEOUT_SEC 10
 
 class	Request {
