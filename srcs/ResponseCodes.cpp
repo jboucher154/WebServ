@@ -8,9 +8,6 @@ std::map<int, std::string> ResponseCodes::codes_;
 *	instanciates an instance of the ResponseCodes class.
 *   This constructor is private.
 *
-*   @param no param.
-*   @return no returns.
-*
 */
 ResponseCodes::ResponseCodes( void ) { 
 
@@ -22,7 +19,6 @@ ResponseCodes::ResponseCodes( void ) {
 *  This copy constructor is private.
 *  
 *   @param to_copy, a  reference to an instance of the ResponseCodes class that is to be coppied.
-*   @return no return.
 */
 ResponseCodes::ResponseCodes( const ResponseCodes& to_copy ) {
 
@@ -33,8 +29,6 @@ ResponseCodes::ResponseCodes( const ResponseCodes& to_copy ) {
 *       
 *  Destructs an instance of the class. 
 *  This destructor is private.
-*   @param no param.
-*   @return no returns.
 */
 ResponseCodes::~ResponseCodes( void ) {
 
@@ -100,8 +94,6 @@ std::string	ResponseCodes::getCodeElementBody( int code ) {
 *    getCodeStatusLine + the element returned from getCodeElementBody of this class.
 *
 *
-*   @param no param.
-*   @return no returns.
 *   @param code, which will be used to generate a string made out of 2 html elements.
 *   @return element, combination of 2 other html elements made out of the code passed to the method.
 *
@@ -119,8 +111,6 @@ std::string	ResponseCodes::getCombinedStatusLineAndBody( int code ) {
 *
 *	Initializes map of Response Codes by assigning the corresponding string to Response Codes
 *   This static method is private.
-*   @param no param.
-*   @return no returns.
 *
 */
 void	ResponseCodes::initialize_codes( void ) {
