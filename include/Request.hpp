@@ -46,7 +46,7 @@ class	Request {
 		bool								file_upload_;			/*!< \brief bool indicating if a file has been stored for upload */
 		std::string							file_mime_;				/*!< \brief string of the mime type of a file */
 		unsigned int						status_code_;			/*!< \brief unsigned int that represents the status code */
-		time_t								request_start_time_;	/*!< \brief time_t that represents the time of when the request was received; used for request timeout */
+		time_t								request_start_time_;	/*!< \brief time_t that represents the time of when the all of the headers have been received */
 		bool								query_encode_;			/*!< \brief bool that represents if there is a encoded query in the request or not */
 
 		void	parseRequestLine_( std::string& to_parse );

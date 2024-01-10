@@ -35,7 +35,6 @@ query_encode_(false) {
 *
 *	
 *  Copy constructor calls copy assignment operator.
-*  
 */
 Request::Request( const Request& to_copy ) {
 
@@ -57,9 +56,10 @@ Request::~Request( void ) {
 
 /*! \brief copy assignment operator copies all values from rhs
 *
+* 	Copy assignment operator copies all values from rhs.
 *	
-*  Copy assignment operator copies all values from rhs.
-*  
+* 	@param rhs Request object whose values are to be copied
+*	@return @b Request& request on the left-hand side
 */
 Request&	Request::operator=( const Request& rhs ) {
 
@@ -91,13 +91,15 @@ Request&	Request::operator=( const Request& rhs ) {
 
 /*! \brief add to any part of the Request, directs to correct private parsing function
 *       
-*	Character buffer is converted to string and string stream to process into the relevant
+*	Character buffer is converted to string and stringstream to process into the relevant
 *	request part: request line, header, or body. Request attributes are set and checked
-*	based on headers then body is saved and parsed nusing the total bytes read from the 
-*	recv() call to guide the parsing. If exception for string conversions occur they are 
+*	based on headers, then body is saved and parsed using the total bytes read from the 
+*	recv() call to guide the parsing. If exceptions for string conversions occur, they are 
 *	caught and the error printed.
 *	After the headers are complete the timer for the request is started.
-*    
+*
+*	@param to_add c-style string to be added to the request
+*	@param bytes_read size_t of the amount of bytes read with recv()
 */
 void	Request::add( char* to_add, size_t bytes_read ) {
 	
@@ -149,7 +151,6 @@ void	Request::add( char* to_add, size_t bytes_read ) {
 /*! \brief clears all containers and resets all values to intial state
 *       
 *	All attributes are cleared so client can reuse the object for the next request.
-*  
 */
 void	Request::clear( void ) {
 
@@ -174,11 +175,10 @@ void	Request::clear( void ) {
 }
 
 /*! \brief prints to standard output `REQUEST:` followed by
-*				each request element on a newline.
+*			each request element on a newline.
 *
 *	Prints to standard output `REQUEST:` followed by each request element on a newline.
 *	Each version of the body that is stored is printed or indicates that it is empty.
-*  
 */
 void	Request::printRequest( void ) const {
 
@@ -223,6 +223,7 @@ void	Request::printRequest( void ) const {
 *	Returns bool indicating if the body should be url encoded if saved to a query string.
 *	by default it is false and set to true in parseBody_ if multipart form is present.
 *  
+*	@return @b bool indicating if the body should be url encoded if saved to a query string
 */
 bool	Request::getQueryEncode( void ) const {
 
@@ -230,19 +231,17 @@ bool	Request::getQueryEncode( void ) const {
 }
 
 /*! \brief returns const reference to the hostname from the Host header
-*
-*	Returns const reference tot the hostname from the Host header
-*  
+* 
+*	@return @b const @b std::string& of the hostname from the Host header
 */
 const std::string&	Request::getRequestHostName( void ) const {
 
 	return this->host_name_;
 }
 
-/*! \brief returns bool indicating if this request is for a cgi script
+/*! \brief returns int of request's port number
 *
-*	Returns bool indicating if this request is for a cgi script.
-*  
+*	@return @b int representing the request's port number
 */
 int	Request::getRequestPort( void ) const {
 
@@ -252,7 +251,8 @@ int	Request::getRequestPort( void ) const {
 /*! \brief returns bool indicating if this request is for a cgi script
 *
 *	Returns bool indicating if this request is for a cgi script.
-*  
+*
+*	@return @b bool that indicates if the request is for a cgi script 
 */
 bool	Request::getCgiFlag( void ) const {
 
@@ -260,9 +260,8 @@ bool	Request::getCgiFlag( void ) const {
 }
 
 /*! \brief returns size_t of the body size indicated by the request header
-*
-*	Returns size_t of the body size indicated by the request header
 *  
+*	@return @b size_t of the body size indicated by the request header
 */
 size_t		Request::getBodySize( void ) const {
 	
@@ -271,8 +270,7 @@ size_t		Request::getBodySize( void ) const {
 
 /*! \brief returns size_t of the body size actually received
 *
-*	Returns size_t of the body size actually received so far.
-*  
+*	@return @b size_t of the body size actually received so far
 */
 size_t		Request::getBodyLengthReceived( void ) const {
 
@@ -284,16 +282,17 @@ size_t		Request::getBodyLengthReceived( void ) const {
 *	Returns bool indicating if request body is chunked based on the 
 *	value of the Transfer-Encoding header;
 *  
+*	@return @b bool indicating if the request body is chunked based on Transfer_encoding header
 */
 bool	Request::getChunked( void ) const {
 
 	return this->chunked_;
 }
 
-/*! \brief returns bool indicating requests Connetion header value for keep alive.
+/*! \brief returns bool indicating requests Connetion header value for keep alive
 *
-*	rRturns bool indicating requests Connetion header value for keep alive.
-*  
+*	Returns bool indicating request's Connection header value for keep alive.
+* 	@return @b bool indicating if client connection is to be kept alive after a response is sent
 */
 bool	Request::getKeepAlive( void ) const {
 
@@ -305,6 +304,7 @@ bool	Request::getKeepAlive( void ) const {
 *	Returns bool indicating if the request is considered complete.
 *	This is based on all headers and promised body length received.
 *  
+*	@return @b bool indicating if the request iis complete or not
 */
 bool	Request::getComplete( void ) const {
 
@@ -316,6 +316,7 @@ bool	Request::getComplete( void ) const {
 *	Returns request line value for key passed as parameter. If key is not in
 *	request line map, an empty string is returned.
 *  
+*	@return @b std::string request line value for key passed as parameter
 */
 std::string	Request::getRequestLineValue( std::string key ) const {
 
@@ -331,7 +332,8 @@ std::string	Request::getRequestLineValue( std::string key ) const {
 /*! \brief returns a const_iterator to the begining of request headers map
 *
 *	Returns a const_iterator to the request headers using the map begin() method.
-*  
+*
+*  @return @b std::map<std::string, @b std::string>::const_iterator to the request headers using the map begin() method
 */
 std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void ) const {
 
@@ -341,7 +343,8 @@ std::map<std::string, std::string>::const_iterator	Request::getHeaderBegin( void
 /*! \brief returns a const_iterator to the end of the request headers map
 *
 *	Returns a const_iterator to the request headers using the map end() method.
-*  
+*
+*	@return @b std::map<std::string, @b std::string>::const_iterator to the request headers using the map end() method
 */
 std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void ) const {
 
@@ -353,6 +356,7 @@ std::map<std::string, std::string>::const_iterator	Request::getHeaderEnd( void )
 *	Returns header value as std::string for header name passed as key. If header is not
 *	in request, an empty string is returned.
 *  
+*	@return @b std::string of header value for header name passed as key
 */
 std::string	Request::getHeaderValueByKey( std::string key ) const {
 
