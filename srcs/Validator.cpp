@@ -292,8 +292,6 @@ bool Validator::index( std::string value ) {
 		Logger::log(E_ERROR, COLOR_RED, "index has to be a file with opening permission!");
 		return false;
 	}
-	//push back to its server
-	// servers[servers.size() - 1].setIndex(temp);
 	return true;
 }
 

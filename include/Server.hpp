@@ -43,7 +43,7 @@ class Server {
 
 	public:
 
-		/*TYPEDEFS*/
+		/* TYPEDEFS */
 		typedef std::map<std::string, std::vector<std::string> >					map_of_str_vec_of_str;
 		typedef std::map<std::string, std::vector<std::string> >::const_iterator	const_it_for_map_of_str_vec_of_str;
 		typedef std::map<std::string, std::map<std::string, std::vector<std::string> > >::const_iterator const_it_for_map_of_str_map_of_str_vec_of_str;
@@ -53,6 +53,7 @@ class Server {
 		Server& operator=( const Server& rhs );
 		~Server();
 
+		/* SETTERS */
 		void							setListeningPort( int port );
 		void							setServerName( std::string serverName );
 		void							setRoot( std::string root );
@@ -63,6 +64,8 @@ class Server {
 		void							setLocation( map_of_str_vec_of_str	innerBlock, std::string key );
 		int								setupServer();
 		bool							setUploadStore( std::string upload_dir );
+
+		/* GETTERS */
 		std::string						getServerIdforLog() const;
 		int								getListeningPortInt( void ) const;
 		std::string						getListeningPortString( void ) const;
