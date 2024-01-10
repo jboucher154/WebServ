@@ -133,10 +133,13 @@ void	Server::setErrorPage( std::string error_code, std::string error_page ) {
 *	If the location exist and the key doesn't exist in the location block creats the key and value pair
 *	If the location block doesn't exist creates it and adds the key and value pair
 *
-*	@param 
+*	@param location_block_key name of the location from the config file
+*	@param key	key to add to the location given
+*	@param values values to assign to the passed key
 */
-void Server::setKeyValueInLocation(std::string locationBlockKey, std::string key, std::vector<std::string> values) {
-    std::map<std::string, std::map<std::string, std::vector<std::string> > >::iterator outerMapIt = this->location_.find(locationBlockKey);
+void Server::setKeyValueInLocation(std::string location_block_key, std::string key, std::vector<std::string> values) {
+
+    std::map<std::string, std::map<std::string, std::vector<std::string> > >::iterator outerMapIt = this->location_.find(location_block_key);
 
     if (outerMapIt != this->location_.end()) {
         std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
@@ -150,71 +153,77 @@ void Server::setKeyValueInLocation(std::string locationBlockKey, std::string key
     } else {
         std::map<std::string, std::vector<std::string> > newInnerMap;
         newInnerMap[key] = values;
-        this->location_[locationBlockKey] = newInnerMap;
+        this->location_[location_block_key] = newInnerMap;
     }
 }
 
-/*! \brief returns the listening port as an int
+/*! \brief setter for adding a location with its map of key and values
 *       
-*  Returns the listening port as an int.
+*	Adds key as location and inner_block as the values in the server objects location map.
 *
+*	@param inner_block map of key and values for the location
+*	@param key name of location to be added
 */
-void	Server::setLocation( map_of_str_vec_of_str innerBlock, std::string key ) {
+void	Server::setLocation( map_of_str_vec_of_str inner_block, std::string key ) {
 
-	(this->location_)[key] = innerBlock;
+	(this->location_)[key] = inner_block;
 }
 
 /*************ssalmi's functions for server management*************/
 
-/*! \brief returns the listening port as an int
+/*! \brief sets up server object socket and address information
 *       
-*  Returns the listening port as an int.
+*	Server socket and address are intialized in this function. 
+*	- TCP socket is opened and set to non-blocking. 
+*	- sockaddr_in is populated with server information
+*	- setsockopt() is set to supress error messages if a port is reused
+*	- the socket and address are bound together with bind()
+*	- Lastly, listen() is called on the socket fd to prepare for incoming requests
+*	
+*	If all function calls are successful, the logger will print out a success message
 *
+*	@return @b int file descriptor to the socket created for the server object
 */
 int	Server::setupServer( void ) {
 
 	int	listener_fd;
-	int	yes = 1;	// for setsockopt()
+	int	yes_for_setsockopt = 1;
 
 	if ((listener_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "server socket error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		return -1;
 	}
-
 	if (fcntl(listener_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "server fcntl error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		close(listener_fd);
 		return -1;
 	}
-
 	this->address_.sin_family = AF_INET;
 	this->address_.sin_port = htons(this->listening_port_);
 	this->address_.sin_addr.s_addr = inet_addr(this->host_.c_str());
 	memset(this->address_.sin_zero, '\0', sizeof this->address_.sin_zero);
-
-	setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));	// supresses error message if port is reused
-
+	setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &yes_for_setsockopt, sizeof(int));
 	if (bind(listener_fd, (struct sockaddr *)&this->address_, sizeof this->address_) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "server bind error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		close(listener_fd);
 		return -1;
 	}
-
 	if (listen(listener_fd, LISTEN_BACKLOG) == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "server listern error: %s, %s", strerror(errno), this->getServerIdforLog().c_str());
 		close(listener_fd);
 		return -1;
 	}
-
 	Logger::log(E_INFO, COLOR_WHITE, "%s initialized successfully...", this->getServerIdforLog().c_str());
 	return listener_fd;
 }
 
-/*! \brief sets the upload store directory
+/*! \brief verifies the upload store directory existence and creates it if needed
 *       
-*  Creats a directory with the string passed to it,
-*  and sets the private upload_store variable.
+*	Creats a directory for temporary files using hte server root, name, port and postfixed with the 
+*	string passed to it. Sets the private upload_store variable.
 *
+*	@param upload_dir string to postfix to directory name
+*	@return @b bool false if directory could not be made, otherwise true
 */
 bool	Server::setUploadStore( std::string upload_dir) {
 	std::string upload_store = this->getRoot() + "/." + this->getServerName() + this->getListeningPortString() + upload_dir;
@@ -231,9 +240,9 @@ bool	Server::setUploadStore( std::string upload_dir) {
 
 }
 
-/*! \brief returns the listening port as an int
+/*! \brief getter that formats the servid id information to be printed to the logging
 *       
-*  Returns the listening port as an int.
+*  @return @b std::string formated id for server object
 *
 */
 std::string	Server::getServerIdforLog( void ) const {
@@ -252,9 +261,9 @@ std::string	Server::getServerIdforLog( void ) const {
 
 /**************************/
 
-/*! \brief returns the listening port as an int
+/*! \brief getter for server object listening_port_
 *       
-*  Returns the listening port as an int.
+*	@return @b int of server listening port
 *
 */
 int	Server::getListeningPortInt( void ) const {
@@ -262,9 +271,9 @@ int	Server::getListeningPortInt( void ) const {
 	return this->listening_port_;
 }
 
-/*! \brief returns the listening port as a string
+/*! \brief getter for the listening port as a string
 *       
-*  Returns the listening port as a string.
+*  @return @b std::string the listening port as a string.
 *
 */
 std::string	Server::getListeningPortString( void ) const {
@@ -275,9 +284,9 @@ std::string	Server::getListeningPortString( void ) const {
 	return strStream.str();
 }
 
-/*! \brief returns the server name
+/*! \brief getter for the server object server name
 *       
-*  Returns the server name.
+*  @return @b std::string of the server name
 *
 */
 std::string		Server::getServerName( void ) const {
@@ -285,9 +294,9 @@ std::string		Server::getServerName( void ) const {
 	return this->server_name_;
 }
 
-/*! \brief returns the root
+/*! \brief getter for the server object root
 *       
-*  Returns the root.
+*  @return @b std::string of the server object root
 *
 */
 std::string	Server::getRoot( void ) const {
@@ -295,9 +304,9 @@ std::string	Server::getRoot( void ) const {
 	return this->root_;
 }
 
-/*! \brief returns the host
+/*! \brief getter for the server ip from config
 *       
-*  Returns the host.
+*  @return @b std::string of server ip from config file
 *
 */
 std::string	Server::getHost( void ) const {
@@ -386,10 +395,10 @@ std::vector<std::string>	Server::getLocationBlockKeys( void ) const {
 *  Returns a list keys within a certain location block.
 *
 */
-const std::vector<std::string> Server::getLocationKeys(std::string locationBlockKey) const {
+const std::vector<std::string> Server::getLocationKeys(std::string location_block_key) const {
 
     std::vector<std::string> locationKeys;
-    const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(locationBlockKey);
+    const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(location_block_key);
 
     if (outerMapIt != this->location_.end()) {
         const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
@@ -406,10 +415,10 @@ const std::vector<std::string> Server::getLocationKeys(std::string locationBlock
 *  Returns the number of location block keys.
 *
 */
-int	Server::getLocationBlockCount( std::string locationBlockKey ) const {
+int	Server::getLocationBlockCount( std::string location_block_key ) const {
 
 	int locationKeysCout = 0;
-    const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(locationBlockKey);
+    const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(location_block_key);
 
     if (outerMapIt != this->location_.end()) {
         const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
@@ -428,9 +437,9 @@ int	Server::getLocationBlockCount( std::string locationBlockKey ) const {
 *  and else NULL will be returned.
 *
 */
-const std::vector<std::string>*	Server::getLocationValue( std::string locationBlockKey, std::string key ) const{
+const std::vector<std::string>*	Server::getLocationValue( std::string location_block_key, std::string key ) const{
 	
-	const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(locationBlockKey);
+	const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(location_block_key);
 	if (outerMapIt != this->location_.end()) {
 		const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
 		const_it_for_map_of_str_vec_of_str innerMapIt = innerMap.find(key);
@@ -468,8 +477,8 @@ std::string	Server::getCgiExecutor( std::string extension ) const{
 *  If the value is not null the key exists in the location in question.
 *
 */
-bool Server::isKeyInLocation( std::string locationBlockKey, std::string key ) const {
-	if (this->getLocationValue( locationBlockKey, key))
+bool Server::isKeyInLocation( std::string location_block_key, std::string key ) const {
+	if (this->getLocationValue( location_block_key, key))
 		return true;
 	else 
 		return false;
@@ -481,10 +490,10 @@ bool Server::isKeyInLocation( std::string locationBlockKey, std::string key ) co
 *  If the location in question exists returns ture, else it retuns false.
 *
 */
-bool	Server::isLocationInServer( std::string locationBlockKey ) const {
+bool	Server::isLocationInServer( std::string location_block_key ) const {
 
 	for ( const_it_for_map_of_str_map_of_str_vec_of_str it = this->location_.begin(); it != this->location_.end(); it++ ) {
-		if (locationBlockKey.compare( it->first ) == 0)
+		if (location_block_key.compare( it->first ) == 0)
 			return true;
 	}
 	return false;
@@ -495,9 +504,9 @@ bool	Server::isLocationInServer( std::string locationBlockKey ) const {
 *  checks if a certain value is listed for a certain key in a certan location.
 *
 */
-bool	Server::isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const {
+bool	Server::isValueListedForKey( std::string location_block_key, std::string key, std::string value ) const {
 
-	const std::vector<std::string>*	values = this->getLocationValue(locationBlockKey, key);
+	const std::vector<std::string>*	values = this->getLocationValue(location_block_key, key);
 		
 		if (!values || values->empty())
 			return false;

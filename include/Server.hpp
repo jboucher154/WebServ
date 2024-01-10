@@ -62,7 +62,7 @@ class Server {
 		void							setHost( std::string host );
 		void							setClientMaxBodySize( double client_max_body_size );
 		void							setErrorPage( std::string error_code, std::string error_page );
-		void							setKeyValueInLocation( std::string locationBlockKey, std::string key, std::vector<std::string> values );
+		void							setKeyValueInLocation( std::string location_block_key, std::string key, std::vector<std::string> values );
 		void							setLocation( map_of_str_vec_of_str	innerBlock, std::string key );
 		int								setupServer();
 		bool							setUploadStore( std::string upload_dir );
@@ -83,12 +83,12 @@ class Server {
 		int								getLocationBlockCount( void ) const;
 		int								getLocationBlockCount( std::string locationBlockKey ) const;
 		std::vector<std::string>		getLocationBlockKeys( void ) const;
-		const std::vector<std::string>	getLocationKeys( std::string locationBlockKey ) const;
-		const std::vector<std::string>*	getLocationValue( std::string locationBlockKey, std::string key ) const;
+		const std::vector<std::string>	getLocationKeys( std::string location_block_key ) const;
+		const std::vector<std::string>*	getLocationValue( std::string location_block_key, std::string key ) const;
 		std::string						getCgiExecutor( std::string extension ) const;
-		bool							isKeyInLocation( std::string locationBlockKey, std::string key ) const;
-		bool							isLocationInServer( std::string locationBlockKey ) const;
-		bool							isValueListedForKey( std::string locationBlockKey, std::string key, std::string value ) const;
+		bool							isKeyInLocation( std::string location_block_key, std::string key ) const;
+		bool							isLocationInServer( std::string location_block_key ) const;
+		bool							isValueListedForKey( std::string location_block_key, std::string key, std::string value ) const;
 		bool							isExtensionOnCgiList( std::string extension ) const;
 		bool							isScriptOnCgiList( std::string script ) const;
 
