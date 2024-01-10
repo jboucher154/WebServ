@@ -23,7 +23,7 @@
 /*! \brief stores server information from config and server setup
 *
 *	@class Server 
-*	
+*
 *	The server class is intialized by the Validator class and contains all 
 *	information for one server section from the config file.
 *
@@ -80,8 +80,6 @@ class Server {
 		bool							isErrorPage( std::string error_code ) const;
 		const std::string&				getUploadStore( void ) const;
 		struct sockaddr_in				getAddress( void ) const;
-		int								getLocationBlockCount( void ) const;
-		int								getLocationBlockCount( std::string locationBlockKey ) const;
 		std::vector<std::string>		getLocationBlockKeys( void ) const;
 		const std::vector<std::string>	getLocationKeys( std::string location_block_key ) const;
 		const std::vector<std::string>*	getLocationValue( std::string location_block_key, std::string key ) const;

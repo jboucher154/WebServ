@@ -314,9 +314,9 @@ std::string	Server::getHost( void ) const {
 	return this->host_;
 }
 
-/*! \brief returns the host as and in_addr_t
+/*! \brief getter for server object in_addr_t
 *       
-*  Returns the host as and in_addr_t.
+*  @return @b in_addr_t the host as and in_addr_t struct
 *
 */
 in_addr_t	Server::getHostInAddr_t( void ) const {
@@ -324,9 +324,9 @@ in_addr_t	Server::getHostInAddr_t( void ) const {
 	return static_cast<in_addr_t>(ft_stoi(this->host_));
 }
 
-/*! \brief returns the lient max body size
+/*! \brief gtter for the server object client max body size
 *       
-*  Returns the lient max body size.
+*  @return @b double the client max body size allowed
 *
 */
 double	Server::getClientMaxBodySize( void ) const {
@@ -334,9 +334,10 @@ double	Server::getClientMaxBodySize( void ) const {
 	return this->client_max_body_size_;
 }
 
-/*! \brief returns if there is an html page for the given error code
-*       
-*  Returns if there is an html page for the given error code.
+/*! \brief getter that returns if an error page has been provided for the status code given
+*  
+*	@param error_code string of numeric HTPP status code representing an error status
+*	@return @b bool true  if there is an html page for the given error code, false is none exists.
 *
 */
 bool	Server::isErrorPage( std::string error_code ) const {
@@ -346,9 +347,9 @@ bool	Server::isErrorPage( std::string error_code ) const {
 	return false;
 }
 
-/*! \brief returns upload_store_ variable
+/*! \brief getter for the server's upload_store_ path for temporary files
 *       
-*  Returns upload_store_ variable.
+*	@return @b std::string& the path to the server object upload_store_
 *
 */
 const std::string&	Server::getUploadStore( void ) const {
@@ -356,9 +357,10 @@ const std::string&	Server::getUploadStore( void ) const {
 	return this->upload_store_;
 }
 
-/*! \brief returns the html page for the given error code
-*       
-*  Returns the html page for the given error code.
+/*! \brief getter for paths to custom html error pages
+*  
+*	@param error_code string representaiton of the HTTP status code for an error
+*	@return @b std::string the path to the html page for the given error code
 *
 */
 std::string	Server::getErrorPage( std::string error_code ) const {
@@ -366,19 +368,9 @@ std::string	Server::getErrorPage( std::string error_code ) const {
 	return (this->error_pages.find(error_code)->second);
 }
 
-/*! \brief returns the number of location blocks
+/*! \brief getter for all locations belonging to the server object
 *       
-*  Returns the number of location blocks.
-*
-*/
-int	Server::getLocationBlockCount( void ) const {
-
-	return (this->location_.size());
-}
-
-/*! \brief returns a list of location block keys
-*       
-*  Returns a list of location block keys.
+*  @return @b std::vector<std::string> with list all existing location keys for the server
 *
 */
 std::vector<std::string>	Server::getLocationBlockKeys( void ) const {
@@ -390,9 +382,10 @@ std::vector<std::string>	Server::getLocationBlockKeys( void ) const {
 	return locationBlockKeys;
 }
 
-/*! \brief returns a list keys within a certain location block
-*       
-*  Returns a list keys within a certain location block.
+/*! \brief getter for all keys belonging to one location
+*  
+*	@param location_block_key name of location to return the keys for
+*	@return @b const @b std::vector<std::string> of a list keys within a certain location block.
 *
 */
 const std::vector<std::string> Server::getLocationKeys(std::string location_block_key) const {
@@ -410,34 +403,18 @@ const std::vector<std::string> Server::getLocationKeys(std::string location_bloc
     return locationKeys;
 }
 
-/*! \brief returns the number of location block keys
-*       
-*  Returns the number of location block keys.
-*
-*/
-int	Server::getLocationBlockCount( std::string location_block_key ) const {
-
-	int locationKeysCout = 0;
-    const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(location_block_key);
-
-    if (outerMapIt != this->location_.end()) {
-        const std::map<std::string, std::vector<std::string> >& innerMap = outerMapIt->second;
-
-        for (const_it_for_map_of_str_vec_of_str innerMapIt = innerMap.begin(); innerMapIt != innerMap.end(); ++innerMapIt) {
-            locationKeysCout++;
-        }
-    }
-    return locationKeysCout;
-}
-
-/*! \brief return the value for a certain key in a certain location
-*       
+/*! \brief getter for values of specified key in a given location
+* 
 *  Looks for the location in the server with map::find() if the location is found 
 *  looks for the key in the location with map::find() and if it is found it's value is returned
 *  and else NULL will be returned.
 *
+*	@param location_block_key location to seach for key in
+*	@param key	key whose values are to be returned
+*	@return @b const @b std::vector<std::string>* all values for the given key
+*
 */
-const std::vector<std::string>*	Server::getLocationValue( std::string location_block_key, std::string key ) const{
+const std::vector<std::string>*	Server::getLocationValue( std::string location_block_key, std::string key ) const {
 	
 	const_it_for_map_of_str_map_of_str_vec_of_str outerMapIt = this->location_.find(location_block_key);
 	if (outerMapIt != this->location_.end()) {
@@ -458,8 +435,10 @@ const std::vector<std::string>*	Server::getLocationValue( std::string location_b
 *  this method loops through the extentions and at the same time increments
 *  the cgi path iterator, returning the matched path to the extention.
 *
+*	@param extension file extension from script in uri
+*	@return @b std::string path of executer given in config
 */
-std::string	Server::getCgiExecutor( std::string extension ) const{
+std::string	Server::getCgiExecutor( std::string extension ) const {
 	
 	std::vector<std::string>::const_iterator pathtIt = (getLocationValue("/cgi-bin", "cgi_path"))->begin();
 	for (std::vector<std::string>::const_iterator extIt = (getLocationValue("/cgi-bin", "cgi_ext"))->begin(); extIt != (getLocationValue("/cgi-bin", "cgi_ext"))->end(); extIt++) {
@@ -476,8 +455,12 @@ std::string	Server::getCgiExecutor( std::string extension ) const{
 *  If the value is null then either the key didn't exist or the location 
 *  If the value is not null the key exists in the location in question.
 *
+*	@param location_block_key name of location in server object from config
+*	@param key to search for in given location
+*	@return @b bool true if key exists in location, otherwise false
 */
 bool Server::isKeyInLocation( std::string location_block_key, std::string key ) const {
+
 	if (this->getLocationValue( location_block_key, key))
 		return true;
 	else 
@@ -486,9 +469,10 @@ bool Server::isKeyInLocation( std::string location_block_key, std::string key ) 
 
 /*! \brief checks if a certain location exists
 *       
-*  loops through all the location blocks of the server
-*  If the location in question exists returns ture, else it retuns false.
+*  loops through all the location blocks of the server to find location.
 *
+*	@param location_block_key name of location to search for in server locations
+*	@return @b bool true if the location in question exists, else false.
 */
 bool	Server::isLocationInServer( std::string location_block_key ) const {
 
@@ -501,8 +485,12 @@ bool	Server::isLocationInServer( std::string location_block_key ) const {
 
 /*! \brief checks if a certain value is listed for a certain key in a certan location
 *       
-*  checks if a certain value is listed for a certain key in a certan location.
+*	searches for a value and checks if it already exists for the specified key in the given location
 *
+*	@param location_block_key name of the location key is in
+*	@param key	name of the key in the location given
+*	@param value to search for in the existing values of the key
+*	@return @b bool true if value already exists, otherwise false
 */
 bool	Server::isValueListedForKey( std::string location_block_key, std::string key, std::string value ) const {
 
@@ -520,6 +508,8 @@ bool	Server::isValueListedForKey( std::string location_block_key, std::string ke
 *       
 *  checks if a certain extention is listed under cgi extentions .
 *
+*	@param extension extension of cgi script requested
+*	@result @b bool true if the extension is on the approved list from config
 */
 bool	Server::isExtensionOnCgiList( std::string extension ) const {
 
@@ -528,8 +518,10 @@ bool	Server::isExtensionOnCgiList( std::string extension ) const {
 
 /*! \brief checks if a certain script is listed under cgi scripts 
 *       
-*  checks if a certain script is listed under cgi scripts .
+*  checks if a certain script is listed under cgi scripts.
 *
+*	@param script name of script from request
+*	@return	@b bool true if script is on list of approved scripts from config
 */
 bool	Server::isScriptOnCgiList( std::string script ) const {
 
