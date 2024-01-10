@@ -32,7 +32,6 @@ Server& Server::operator=( const Server& rhs ) {
 		this->root_ = rhs.getRoot();
 		this->address_ = rhs.getAddress();
 		this->client_max_body_size_ = rhs.getClientMaxBodySize();
-		this->index_ = rhs.getIndex();
 		this->error_pages = rhs.error_pages;
 		this->location_ = rhs.location_;
 		this->upload_store_ = rhs.upload_store_;
@@ -95,16 +94,6 @@ void	Server::setHost( std::string host ) {
 void	Server::setClientMaxBodySize( double clientMaxBodySize ) {
 
 	this->client_max_body_size_ = clientMaxBodySize;
-}
-
-/*! \brief sets a vlaue for the index html
-*       
-*  sets a vlaue for the index html.
-*
-*/
-void	Server::setIndex( std::string index ) {
-
-	this->index_ = index;
 }
 
 /*! \brief gets address
@@ -322,16 +311,6 @@ in_addr_t	Server::getHostInAddr_t( void ) const {
 double	Server::getClientMaxBodySize( void ) const {
 
 	return this->client_max_body_size_;
-}
-
-/*! \brief returns the index html
-*       
-*  Returns the index html.
-*
-*/
-std::string	Server::getIndex( void ) const {
-
-	return this->index_;
 }
 
 /*! \brief returns if there is an html page for the given error code

@@ -293,7 +293,7 @@ bool Validator::index( std::string value ) {
 		return false;
 	}
 	//push back to its server
-	servers[servers.size() - 1].setIndex(temp);
+	// servers[servers.size() - 1].setIndex(temp);
 	return true;
 }
 

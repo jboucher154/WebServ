@@ -18,10 +18,12 @@
 // Macro used for listen()
 # define LISTEN_BACKLOG	20
 
-/*! \brief
+/*! \brief stores server information from config and server setup
 *
-*	@class Server
+*	@class Server 
 *	
+*	The server class is intialized by the Validator class and contains all 
+*	information for one server section from the config file.
 *
 */
 class Server {
@@ -32,9 +34,8 @@ class Server {
 		std::string								server_name_; /*!< \brief string of server name from config file */
 		std::string								host_; /*!< \brief string of ip address that server is bound to */
 		std::string								root_; /*!< \brief relative path from server root to the root of the website to be served */
-		struct sockaddr_in						address_; /*!< \brief  */
+		struct sockaddr_in						address_; /*!< \brief struct of ip address information for server, intialized in Validator */
 		double									client_max_body_size_; /*!< \brief maximum request body size the server should accept */
-		std::string								index_; /*!< \brief  */
 		std::string								upload_store_; /*!< \brief path to the directory the server uses for temporary file storage  */
 		std::map<std::string, std::string>		error_pages; /*!< \brief map of error page ids and paths for custom error pages listed in config */
 		std::map<std::string, std::map<std::string, std::vector<std::string> > >	location_; /*!< \brief map of locations from config, each with a map of their keys and values (in a vector) */                                                
@@ -57,7 +58,6 @@ class Server {
 		void							setRoot( std::string root );
 		void							setHost( std::string host );
 		void							setClientMaxBodySize( double clientMaxBodySize );
-		void							setIndex( std::string index );
 		void							setErrorPage( std::string error_code, std::string errorPage );
 		void							setKeyValueInLocation( std::string locationBlockKey, std::string key, std::vector<std::string> values );
 		void							setLocation( map_of_str_vec_of_str	innerBlock, std::string key );
@@ -71,7 +71,6 @@ class Server {
 		std::string						getHost( void ) const;
 		in_addr_t						getHostInAddr_t( void ) const;
 		double							getClientMaxBodySize( void ) const;
-		std::string						getIndex( void ) const;
 		std::string						getErrorPage( std::string error_code ) const;
 		bool							isErrorPage( std::string error_code ) const;
 		const std::string&				getUploadStore( void ) const;
