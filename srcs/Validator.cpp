@@ -590,7 +590,7 @@ bool Validator::cgiScript( std::string value ) {
 	std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock_.find("script");
     // Find the member in the vector
     std::vector<std::string>::iterator vecIt = std::find(outerIt->second.begin(), outerIt->second.end(), value);
-    *vecIt = temp;
+    *vecIt = value;
 
 	if (!isFile(temp)) {
 		Logger::log(E_ERROR, COLOR_RED, "Script has to be an existing file!");
