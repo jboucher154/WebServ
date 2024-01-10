@@ -10,7 +10,9 @@ Server::Server() {}
 
 /*! \brief Server class copy constructor
 *       
-*  Server class copy constructor, calls on assignment operator to asign the instance.
+* 	Server class copy constructor, calls on assignment operator to asign the instance.
+*	
+*	@param src server object to copy
 *
 */
 Server::Server( const Server& src ) {
@@ -20,8 +22,10 @@ Server::Server( const Server& src ) {
 
 /*! \brief Server class asignment operator
 *       
-*  Server class asignment operator, initializes all existing values with passed values from rhs instance.
+* 	Server class asignment operator, initializes all existing values with passed values from rhs instance.
 *
+*	@param rhs server object whose values are copied into the current instance
+*	@return @b Server& reference to current instance
 */
 Server& Server::operator=( const Server& rhs ) {
 
@@ -46,82 +50,90 @@ Server& Server::operator=( const Server& rhs ) {
 */
 Server::~Server() {}
 
-/*! \brief sets a vlaue for the listening port
+/*! \brief sets a value for the listening port
 *       
-*  sets a vlaue for the listening port.
-*
+*  	Sets a value for the listening port.
+*	
+*	@param port integer to be set as listening port
 */
 void	Server::setListeningPort( int port ) {
 
 	this->listening_port_ = port;
 }
 
-/*! \brief sets a vlaue for the server name
+/*! \brief sets a value for the server name
 *       
-*  sets a vlaue for the server name.
+*  sets a value for the server name.
 *
+*	@param new_server_name string to set the server name as
 */
-void	Server::setServerName( std::string serverName ) {
+void	Server::setServerName( std::string new_server_name ) {
 
-	this->server_name_ = serverName;
+	this->server_name_ = new_server_name;
 }
 
-/*! \brief sets a vlaue for the root
+/*! \brief sets a value for the root
 *       
-*  sets a vlaue for the root.
+*  sets a value for the root.
 *
+*	@param root string to set the root location of served content
 */
 void	Server::setRoot( std::string root ) {
 
 	this->root_ = root;
 }
 
-/*! \brief sets a vlaue for the host
+/*! \brief sets a value for the host
 *       
-*  sets a vlaue for the host.
+*  sets a value for the host.
 *
+*	@param host string of host ip from config
 */
 void	Server::setHost( std::string host ) {
 
 	this->host_ = host;
 }
 
-/*! \brief sets a vlaue for the client max body size
+/*! \brief sets a value for the client max body size
 *       
-*  sets a vlaue for the client max body size.
+*	sets a value for the client max body size.
 *
+*	@param client_max_body_size double from config main block for max body size from client
 */
-void	Server::setClientMaxBodySize( double clientMaxBodySize ) {
+void	Server::setClientMaxBodySize( double client_max_body_size ) {
 
-	this->client_max_body_size_ = clientMaxBodySize;
+	this->client_max_body_size_ = client_max_body_size;
 }
 
-/*! \brief gets address
+/*! \brief getter for sockaddr_in address info for server object
 *       
-* details here
-*
+*	@return @b sockaddr_in returns copy of server address
 */
 struct sockaddr_in	Server::getAddress( void ) const {
 
 	return this->address_;
 }
 
-/*! \brief sets a vlaue for error page
+/*! \brief sets a value for error page
 *       
-*  sets a vlaue for error page.
+*	sets a value for error page in the erro_pages map with string of error 
+*	code as key and path to custom page as the value.
 *
+*	@param error_code string representation of an HTPP error code
+*	@param error_page string of path to the custom error page provided in config
 */
-void	Server::setErrorPage( std::string error_code, std::string errorPage ) {
+void	Server::setErrorPage( std::string error_code, std::string error_page ) {
 
-	this->error_pages[error_code] = errorPage;
+	this->error_pages[error_code] = error_page;
 }
 
 /*! \brief add a new element to the location map
 *       
-*  If the location exist and the key exist in the location block, updates the value'
-*  If the location exist and the key doesn't exist in the location block creats the key and value pair
-*  If the location block doesn't exist creats it and adds the key and value pair
+*	If the location exist and the key exist in the location block, updates the value'
+*	If the location exist and the key doesn't exist in the location block creats the key and value pair
+*	If the location block doesn't exist creates it and adds the key and value pair
 *
+*	@param 
 */
 void Server::setKeyValueInLocation(std::string locationBlockKey, std::string key, std::vector<std::string> values) {
     std::map<std::string, std::map<std::string, std::vector<std::string> > >::iterator outerMapIt = this->location_.find(locationBlockKey);

@@ -15,7 +15,9 @@
 # include "Logger.hpp"
 # include "Color.hpp"
 
-// Macro used for listen()
+/*! \brief Macro used for listen()
+*
+*/
 # define LISTEN_BACKLOG	20
 
 /*! \brief stores server information from config and server setup
@@ -55,11 +57,11 @@ class Server {
 
 		/* SETTERS */
 		void							setListeningPort( int port );
-		void							setServerName( std::string serverName );
+		void							setServerName( std::string new_server_name );
 		void							setRoot( std::string root );
 		void							setHost( std::string host );
-		void							setClientMaxBodySize( double clientMaxBodySize );
-		void							setErrorPage( std::string error_code, std::string errorPage );
+		void							setClientMaxBodySize( double client_max_body_size );
+		void							setErrorPage( std::string error_code, std::string error_page );
 		void							setKeyValueInLocation( std::string locationBlockKey, std::string key, std::vector<std::string> values );
 		void							setLocation( map_of_str_vec_of_str	innerBlock, std::string key );
 		int								setupServer();
