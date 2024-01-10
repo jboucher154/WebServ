@@ -1,0 +1,18 @@
+[2024-01-10 16:23:36]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:36]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:36]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:36]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:37]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:37]	[DEBUG]	boundry from header : multipart/form-data; boundary=----WebKitFormBoundarypz4AoQFrPLAZbdMI, parsed: ----WebKitFormBoundarypz4AoQFrPLAZbdMI
+[2024-01-10 16:23:37]	[DEBUG]	valid cgi request, going to startCgiResponse
+[2024-01-10 16:23:37]	[DEBUG]	cgi pipe added to servermanager pollfds
+[2024-01-10 16:23:37]	[DEBUG]	pipe fd 16 activity spotted, calling handleClientCgi client 12!
+[2024-01-10 16:23:44]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:44]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:44]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:44]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:45]	[DEBUG]	Request Host Name: localhost, Request Port: 8080
+[2024-01-10 16:23:45]	[DEBUG]	getMethod_ cgiFlag true
+[2024-01-10 16:23:45]	[DEBUG]	valid cgi request, going to startCgiResponse
+[2024-01-10 16:23:45]	[DEBUG]	cgi pipe added to servermanager pollfds
+[2024-01-10 16:23:45]	[DEBUG]	pipe fd 16 activity spotted, calling handleClientCgi client 12!

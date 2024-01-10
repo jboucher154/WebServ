@@ -543,5 +543,5 @@ bool	Server::isExtensionOnCgiList( std::string extension ) const {
 */
 bool	Server::isScriptOnCgiList( std::string script ) const {
 
-	return isValueListedForKey("/cgi-bin", "index", script);
+	return isValueListedForKey("/cgi-bin", "script", script);
 }

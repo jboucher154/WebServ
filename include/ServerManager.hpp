@@ -40,6 +40,7 @@ class	ServerManager {
 		void	SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out );
 		void	SELECT_removeClientCgiFdsFromSets_( int client_fd );
 		void	SELECT_handleClientCgi_( int client_fd );
+		void 	signalHandler(int signum);
 
 	public:
 		ServerManager( void );
