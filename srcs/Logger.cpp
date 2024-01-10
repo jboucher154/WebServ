@@ -73,9 +73,10 @@ void	Logger::initLogger( void ) {
 *	written to the std_out or std_err  and the appropriate logfile if file
 *	logging is enabled.
 *
-*   @param msg_type, *msg_color, *msg, and ..., . msg_type could be INFO, ERROR, or DEBUG for instance.
-*   *msg_color could be RED, GREEN, and so on. *msg is a text including C-Style %d, %s, %i, %p and so on that
-*   will make the ... part of the param.
+*   @param msg_type could be INFO, ERROR, or DEBUG for instance.
+*   @param *msg_color could be INFO, ERROR, or DEBUG for instance.
+*   @param *msg is a text including C-Style %d, %s, %i, %p and so on.
+*   @param ... is the text that will make the  %d, %s, %i, %pof the message.
 *
 */
 void	Logger::log( e_log_msg_type msg_type, const char *msg_color, const char *msg, ... ) {
