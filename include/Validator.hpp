@@ -18,10 +18,14 @@
 # include "utility.hpp"
 
 /*! \brief a static class used to parse and validate a webserver config file.
+ *
+ *	@class Validator
+ * 
  *	
  *	The static class Validator handles the parsing of the webserver configuration file.
  *	During this parsing it validates that everything is formatted correctly in the config file.
- * 
+ *	If parsing is successful, it will result in a vector of servers that the ServerManager will use.
+ *	If parsing is unsuccessful, the error will be logged and the program ends with EXIT_FAILURE.
  * 
  */
 class Validator
