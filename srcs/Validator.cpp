@@ -573,8 +573,11 @@ bool Validator::cgiScript( std::string value ) {
 /*! \brief returns the number of elements aka lines in the server block
 *       
 *
-*  counts how many lines there are in this server block up until the
-*  next server block or the end. 
+* 	counts how many lines there are in this server block up until the
+* 	next server block or the end.
+*
+*	@param lines vector of the config file's lines (no empty lines or comments) 
+*	@return @b size_t number of the lines that are a part of a server block
 */
 size_t Validator::countServerLines(std::vector<std::string>* lines) {
 
@@ -1016,11 +1019,14 @@ bool Validator::validate_server(std::vector<std::string>* lines) {
 /*! \brief validates server blocks one by one
 *       
 *
-*  checks that the first element aka first line of the config file says server
-*  calls a function that returns how many lines there are in this server block
-*  calls a function that validates this server block and if valid pops the 
-*  elements from lines vector. If this block is valid and there are more 
-*  elements left in lines it calls itself to validate the rest of the config file. 
+* 	Checks that the first element aka first line of the config file says server.
+* 	Calls a function that returns how many lines there are in this server block.
+* 	Calls a function that validates this server block and if valid pops the 
+* 	elements from lines vector. If this block is valid and there are more 
+* 	elements left in lines it calls itself recursively to validate the rest of the config file.
+*
+*	@param lines vector of the config file's lines (no comments or empty lines).
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::validate_lines(std::vector<std::string>* lines) {
 
@@ -1039,9 +1045,9 @@ bool Validator::validate_lines(std::vector<std::string>* lines) {
 /*! \brief reads and stores the config file
 *       
 * 	reads and stores the config file into a string and a vector of strings.
-*	Ignores comments.
+*	Ignores empty lines and comments.
 *	
-*	@return @b bool - @b true if no errors encountered, otherwise @b false.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::store_lines(std::string	input) {
 
@@ -1131,8 +1137,8 @@ bool Validator::checkListenServernameUniqueness( void ) {
 *	If the everything went accordingly, the program will proceed to creating the server sockets
 *	and running the servers.
 *  
-*	@param input string of the input file's name.
-*	@return @b bool - @b true if the validation was successful, @b false if not.
+*	@param input string of the input file's name
+*	@return @b bool - @b true if the validation was successful, @b false if not
 */
 bool Validator::validate(std::string input) {
 
