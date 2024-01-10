@@ -48,7 +48,7 @@ ResponseCodes&	ResponseCodes::operator=( const ResponseCodes& rhs ) {
 	return (*this);
 }
 
-/*! \brief creats an html element out of Response Code passed to it 
+/*! \brief creates an html element out of Response Code passed to it 
 *
 *	This static method generates an html element including the response code and the 
 *   coresponding string, out of Response Code passed to it.
@@ -68,7 +68,7 @@ std::string	ResponseCodes::getCodeStatusLine( int code ) {
 	return (element);
 }
 
-/*! \brief creats an html text out of Response Code passed to it 
+/*! \brief creates an html text out of Response Code passed to it 
 *
 *	This static method generates an html text out of Response Code passed to it.
 *   
