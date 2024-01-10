@@ -229,8 +229,11 @@ bool Validator::host( std::string value ) {
 
 /*! \brief validates root value
 *       
-*  Checks if root has a value and that it is a directory
-*  when root is checkd its value is pushed back to its server.
+*  Checks if root has a value and that it is a directory.
+*  When root is checked its value is pushed back to its server.
+*
+*	@param value string of root's value.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::root( std::string value ) {
 
@@ -250,8 +253,11 @@ bool Validator::root( std::string value ) {
 /*! \brief validates client max body size's value
 *       
 *  Checks if client max body size has a value and that it is 
-*  a number and that number is an int and that it is within the valid range.
-*  when client max body size is checkd its value is pushed back to its server.
+*  a number and an int and that it is within the valid range.
+*  When client max body size is checked its value is pushed back to its server.
+*
+*	@param value string of client max body size's value.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::clientMaxBodySize( std::string value ) {
 
@@ -282,8 +288,11 @@ bool Validator::clientMaxBodySize( std::string value ) {
 *  
 *  Builds up the full path by adding root to index.     
 *  Checks if the index is an existing
-*  Opens the file and checks if openning permission is there.
-*  when index is checkd its value is pushed back to its server.
+*  Opens the file and checks if opening permission is there.
+*  when index is checked its value is pushed back to its server.
+*
+*	@param value string of index's value.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::index( std::string value ) {
 
@@ -313,9 +322,13 @@ bool Validator::index( std::string value ) {
 /*! \brief validates indexes for error pages
 *  
 *  Builds up the full path by adding root to index.     
-*  Checks if the index for a specific error pages exists
+*  Checks if the index for a specific error pages exists.
 *  Opens the file and checks if openning permission is there.
-*  when index is checkd its value is pushed back to its server.
+*  When index is checked its value is pushed back to its server.
+*
+*	@param value string of error page's name.
+*	@param key string of error page's key.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::errorPage( std::string value, std::string key ) {
 	if (value.empty()) {
@@ -344,7 +357,9 @@ bool Validator::errorPage( std::string value, std::string key ) {
 *  
 *  Checks that the saving directory is an existing one and 
 *  validates if it is, rejecting if it is not.     
-* 
+*
+*	@param value string of saving directory.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::saveDir( std::string value ) {
 
@@ -363,7 +378,9 @@ bool Validator::saveDir( std::string value ) {
 *  
 *  Checks against the list of valid methods and returns false
 *  if the value passed is not on the list, and true if it is. 
-*  
+*
+*	@param value string of method value.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::allowedMethods( std::string value ) {
 
@@ -382,7 +399,9 @@ bool Validator::allowedMethods( std::string value ) {
 *  
 *  Autoindex can only have 2 valid values, on and off.
 *  Returns true if value is either one of these and false otherwise. 
-*  
+* 
+*	@param value string of autoindex value.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::autoIndex( std::string value ) {
 
@@ -398,12 +417,14 @@ bool Validator::autoIndex( std::string value ) {
 
 /*! \brief validates return key's value for location blocks
 *  
-*  Cofig file for this server has to be written in order meaning
-*  that if a location block returns another location block the
+*  Config file for this server has to be written in order, meaning
+*  that if a location block returns another location block, the
 *  returned block has to have been written above the block with 
-*  the return key. So this method searches for the block that is
+*  the return key. This method searches for the block that is
 *  to be returned and if it is found returns true and false otherwise.
 *  
+*	@param value string of return key's value.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::returnKey( std::string value ) {
 
@@ -419,13 +440,15 @@ bool Validator::returnKey( std::string value ) {
 
 /*! \brief validates alias for location blocks
 *  
-*  Cofig file for this server has to be written in order meaning
-*  that if a location block aliases another location block the
+*  Config file for this server has to be written in order, meaning
+*  that if a location block aliases another location block, the
 *  aliased block has to have been written above the block with 
 *  the alias key. So this method searches for the block that is
-*  to be aliased and if it is found the method checks for nested
+*  to be aliased and if it is found, the method checks for nested
 *  aliasing and returns false if it finds nested aliases and true otherwise.
-*  
+* 
+*	@param value string of alias
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::alias( std::string value ) {
 
@@ -444,18 +467,20 @@ bool Validator::alias( std::string value ) {
 		return false;
 }
 
-/*! \brief validates cgi exetensions for location blocks
+/*! \brief validates cgi extensions for location blocks
 *  
 *  This server has implications to execute .py and .sh
 *  extentions so these are the only valid values for now
 *  if the value is either one of these this method returns
 *  true, and otherwise it returns false. 
-*  
+* 
+*	@param value string of cgi extension.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::cgiExt( std::string value ) {
 
 	if (value.empty()) {
-		Logger::log(E_ERROR, COLOR_RED, "The field for cgi extentions value can not be empty!");
+		Logger::log(E_ERROR, COLOR_RED, "The field for cgi extensions value can not be empty!");
 		return false;
 	}
 	if (value.compare(".sh") == 0 || value.compare(".py") == 0)
@@ -470,7 +495,9 @@ bool Validator::cgiExt( std::string value ) {
 *  has to be accessable and executable so this methods
 *  checkes for accessability and returns true or false
 *  accordingly.
-*  
+*
+*	@param value string of cgi path.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::cgiPath( std::string value ) {
 
@@ -490,7 +517,9 @@ bool Validator::cgiPath( std::string value ) {
 *  If a location block overwrites the main root the
 *  replacement has to be a directory, so this method
 *  checks for that.
-*  
+* 
+*	@param value string of location root.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::locationRoot( std::string value ) {
 
@@ -510,7 +539,9 @@ bool Validator::locationRoot( std::string value ) {
 *  This method first updates the index value, attaching
 *  the full path to it and then checks for existance of
 *  thr index file and opening access right.
-*  
+* 
+*	@param value string of location index value.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::locationIndex( std::string value ) {
 
@@ -543,7 +574,9 @@ bool Validator::locationIndex( std::string value ) {
 *  This method first updates the script value, attaching
 *  the full path to it and then checks for existance of
 *  thr script file and opening access right.
-*  
+*
+*	@param value string of cgi script's name.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::cgiScript( std::string value ) {
 
@@ -588,12 +621,14 @@ size_t Validator::countServerLines(std::vector<std::string>* lines) {
 	return serverLines_;
 }
 
-/*! \brief checks if all open braces are closed
-*       
+/*! \brief checks if all open braces are closed  
 *
-*  checks that the first element aka first line of the server block says {
-*  checks that the open braces are closed. checks that no more than 2 braces are
-*  left open at any point. and checks that there are not more close braces than open ones.
+*  Checks that the first element aka first line of the server block says {
+*  Checks that the open braces are closed. Checks that no more than 2 braces are
+*  left open at any point. Checks that there are not more close braces than open ones.
+*
+*	@param lines vector of the config file's lines (no comments or empty lines).
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::checkBraces(std::vector<std::string>* lines) {
 	size_t i = 1;
@@ -628,16 +663,20 @@ bool Validator::checkBraces(std::vector<std::string>* lines) {
 }
 
 /*! \brief checks the main block
-*       
-*
+*      
 *  If innerBlock is not empty loops through and earase all. 
 *  reading elements from opening braces on, which we pass the index for
 *  till the closing braces,first checks that line ends in semicolon and
 *  has key and value seperated by a space. Then splits the lines with spaces and saves
 *  lines into the mainBlock map. 
 *  When innerBlock is saved in inner block map, removes the coresponding lines from lines
+*
+*	@param lines vector of the config file's lines (no comments or empty lines).
+*	@param i size_t that represents the line number.
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
-bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i) {
+bool  Validator::storeInnerBlock( std::vector<std::string>*	lines, size_t i ) {
+
 	//if innerBlock is not empty loop through and earases all 
 	while (!innerBlock_.empty())
 		innerBlock_.erase(innerBlock_.begin());
@@ -694,14 +733,16 @@ bool  Validator::storeInnerBlock(std::vector<std::string>*	lines, size_t i) {
 /*! \brief validates cgi location block key and values
 *  
 *  The first line of cgi block has to be an opening curly
-*  braces. If so storeInner will be called, and if it returns
+*  braces. If so, storeInner will be called and if it returns
 *  true it means that the closing curly braces is found and the
 *  format of key and value being seperated by a space is maintained.
-*  from there we check that storeInnerBlock actually created a non_empty
+*  From there we check that storeInnerBlock actually created a non_empty
 *  block and call the coresponding function to validate each key's value.
 *  One last check is to see if that the mandatory keys are validated,
 *  and that this is the only cgi block in this server. If all checks
 *  are passed cgi block is added to the server.
+*
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
 bool Validator::checkCgiBlockKeyValues( void ) {
 
@@ -772,14 +813,16 @@ bool Validator::checkCgiBlockKeyValues( void ) {
 	return true;
 }
 
-/*! \brief validates cgi location block key and values
+/*! \brief Set up location root and index
 *  
-*  If this block doesn't have a return or/and alias key
-*  the default value for its root and index have to be added, and verified.
+*  If this block doesn't have a return or/and alias key,
+*  the default value for its root and index have to be added and verified.
 *  OtherWise location key will be added to root.
 *  Default root is the location specific key, and default index is index.html.
+*
+*	@param locationKey a string that represents a location block
 */
-void Validator::setUpLocationRootAndIndex(std::string	locationKey) {
+void Validator::setUpLocationRootAndIndex( std::string locationKey ) {
 
 	if (innerBlock_.find("return") == innerBlock_.end() && innerBlock_.find("alias") == innerBlock_.end()) {
 		//add default root value if no root value is specified
@@ -809,22 +852,24 @@ void Validator::setUpLocationRootAndIndex(std::string	locationKey) {
 	}
 }
 
-/*! \brief validates cgi location block key and values
+/*! \brief Check location block key's values
 *  
-*  cgi block will be validated by its own validator.
-*  location specific key can not contain spaces or #
-*  -that is coment indicator.it has to begin with an opening curly
-*  braces. If so storeInner will be called, and if it returns
+*  Cgi block will be validated by its own validator.
+*  Location specific key can not contain spaces or #
+*  -that is comment indicator. It has to begin with an opening curly
+*  braces. If so, storeInner will be called, and if it returns
 *  true it means that the closing curly braces is found and the
 *  format of key and value being seperated by a space is maintained.
-*  from there we check that storeInnerBlock actually created a non_empty
-*  block. 
-*  Now we call the coresponding function to validate each key's value.
+*  From there we check that storeInnerBlock actually created a non_empty block. 
+*  Now we call the corresponding function to validate each key's value.
 *  One last check is to see if that this is the only location block with this
 *  location specift key in this server. If all checks
 *  are passed cgi block is added to the server.
+*
+*	@param locationKey a string that represents a location block
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
-bool Validator::checkLocationBlockKeyValues(std::string	locationKey) {
+bool Validator::checkLocationBlockKeyValues( std::string locationKey ) {
 
 	if (locationKey.compare("/cgi-bin") == 0) {
 		return checkCgiBlockKeyValues();
@@ -849,6 +894,7 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey) {
 	t_location_block_functs  locationFunct[] = {&Validator::saveDir, &Validator::autoIndex, &Validator::returnKey,
 				&Validator::alias, &Validator::locationIndex, &Validator::allowedMethods,
 				&Validator::locationRoot};
+
 	//validate key values till the closing `}'
 	for (std::map<std::string, std::vector<std::string> >::iterator outerIt = innerBlock_.begin(); outerIt != innerBlock_.end(); outerIt++) {
 		int i = 0;
@@ -869,13 +915,15 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey) {
 			}
 		}
 	}
+
 	//if inner block allowed method has post or delete and not get reject
 	if (std::find(innerBlock_["allow_methods"].begin(), innerBlock_["allow_methods"].end(), "GET") == innerBlock_["allow_methods"].end()
 		&& (std::find(innerBlock_["allow_methods"].begin(), innerBlock_["allow_methods"].end(), "PUT") != innerBlock_["allow_methods"].end()
 		|| std::find(innerBlock_["allow_methods"].begin(), innerBlock_["allow_methods"].end(), "DELETE") != innerBlock_["allow_methods"].end())) {
 			Logger::log(E_ERROR, COLOR_RED, "post or delete can not be allowed without get being allowed on %s!", locationKey.c_str());
 			return false;
-	}	
+	}
+
 	//check for no deplication
 	//add to server vector
 	if ( servers[servers.size() - 1].isLocationInServer(locationKey)) {
@@ -889,13 +937,16 @@ bool Validator::checkLocationBlockKeyValues(std::string	locationKey) {
 
 /*! \brief validates location blocks
 *  
-*  First line in a location block has to say location /
-*  plus the location specific key that will be validated
-*  by checkLocationBlockKeyValues. First location block
-*  has to be the root, after that as long as there are locations
-*  in this server they have to be validated by checkLocationBlockKeyValues.
+* 	First line in a location block has to say location /
+* 	plus the location specific key that will be validated
+* 	by checkLocationBlockKeyValues. First location block
+* 	has to be the root, after that as long as there are locations
+* 	in this server they have to be validated by checkLocationBlockKeyValues.
+*
+*	@param lines vector of the config file's lines (no comments or empty lines).
+*	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
-bool Validator::checkLocationBlock(std::vector<std::string>* lines) {
+bool Validator::checkLocationBlock( std::vector<std::string>* lines ) {
 
 	if ((*lines)[0] == lines->back() || (*lines)[0].compare(0, 10,"location /") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to at least have a location block for root!");
@@ -919,11 +970,14 @@ bool Validator::checkLocationBlock(std::vector<std::string>* lines) {
 /*! \brief checks the main block key and value
 *       
 *
-*  loops through the keys and ckecks if the key is a valid key.
-*  Then calls the coresponding validator for the key if it is a valid one.
-*  returns true if all the values for all the keys are valid and false otherwise.
+*  Loops through the keys and ckecks if the key is a valid key.
+*  Then calls the corresponding validator for the key if it is a valid one.
+*  Returns true if all the values for all the keys are valid and false otherwise.
+*
+*	@param lines vector of the config file's lines (no comments or empty lines).
+*	@return @b bool - @b true if no errors encountered, otherwise @b false	
 */
-bool Validator::checkMainBlockKeyValues(void) {
+bool Validator::checkMainBlockKeyValues( void ) {
 
 	t_main_block_functs  mainFunct[] = { &Validator::listen, &Validator::serverName, &Validator::host, &Validator::root,
 				&Validator::clientMaxBodySize, &Validator::index };
@@ -963,17 +1017,18 @@ bool Validator::checkMainBlockKeyValues(void) {
 	return true;
 }
 
-/*! \brief checks the main block
+/*! \brief checks the main server block
 *       
 *
-*  checks that the third element of config file aka the third line says main
-*  then checks if the forth element aka the forth line says "{" and starts
-*  reading elements from then on till the closing braces, spliting and saving
-*  lines into the mainBlock map. 
+* 	Checks that the third element of config file aka the third line says main
+* 	then checks if the fourth element aka the fourth line says "{" and starts
+* 	reading elements from then on until the closing braces, splitting and saving
+* 	lines into the mainBlock map. 
 *  
-*   
+*	@param lines vector of the config file's lines (no comments or empty lines).
+*	@return @b bool - @b true if no errors encountered, otherwise @b false	 
 */
-bool Validator::checkMainBlock(std::vector<std::string>* lines) {
+bool Validator::checkMainBlock( std::vector<std::string>* lines ) {
 
 	if ((*lines)[2] == lines->back() || (*lines)[2].compare("main") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Server block has to begin with a main block!");
@@ -998,11 +1053,14 @@ bool Validator::checkMainBlock(std::vector<std::string>* lines) {
 /*! \brief validates one server
 *       
 *
-*  checks if the braces macht for this server block, then calls on
-*  main block validator and then location block validators if they
-*  return true then this server block is valid, otherwise it' not. 
+* 	Checks if the braces match for this server block, then calls on
+* 	main block validator and then location block validators if they
+* 	return true then this server block is valid, otherwise it's not.
+*
+*	@param lines vector of the config file's lines (no comments or empty lines).
+*	@return @b bool - @b true if no errors encountered, otherwise @b false	 
 */
-bool Validator::validate_server(std::vector<std::string>* lines) {
+bool Validator::validate_server( std::vector<std::string>* lines ) {
 
 	if (!checkBraces(lines)) {
 		Logger::log(E_ERROR, COLOR_RED, "Please also note that lines with braces can not be followed by any charachters, even whitespace!");
@@ -1028,7 +1086,7 @@ bool Validator::validate_server(std::vector<std::string>* lines) {
 *	@param lines vector of the config file's lines (no comments or empty lines).
 *	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
-bool Validator::validate_lines(std::vector<std::string>* lines) {
+bool Validator::validate_lines( std::vector<std::string>* lines ) {
 
 	if ( lines->front().compare("server") != 0) {
 		Logger::log(E_ERROR, COLOR_RED, "Config file should start with a server block!");
@@ -1047,9 +1105,10 @@ bool Validator::validate_lines(std::vector<std::string>* lines) {
 * 	reads and stores the config file into a string and a vector of strings.
 *	Ignores empty lines and comments.
 *	
+*	@param input string of the the config file's name.
 *	@return @b bool - @b true if no errors encountered, otherwise @b false
 */
-bool Validator::store_lines(std::string	input) {
+bool Validator::store_lines( std::string input ) {
 
 	std::ifstream				infile;
 	std::string					line;
@@ -1140,7 +1199,7 @@ bool Validator::checkListenServernameUniqueness( void ) {
 *	@param input string of the input file's name
 *	@return @b bool - @b true if the validation was successful, @b false if not
 */
-bool Validator::validate(std::string input) {
+bool Validator::validate( std::string input ) {
 
 	if (!validIpHostBuilder()) {
 		Logger::log(E_ERROR, COLOR_RED, "Server failed to read host name and/or ip addresses from the system!");
