@@ -3,31 +3,60 @@
 
 std::map<int, std::string> ResponseCodes::codes_;
 
-/* CONSTRUCTORS */
+/*! \brief ResponseCodes class default constructor
+*
+*	instanciates an instance of the ResponseCodes class.
+*   This constructor is private.
+*
+*/
+ResponseCodes::ResponseCodes( void ) { 
 
-ResponseCodes::ResponseCodes( void ) { /* default constructor */ }
+}
 
+/*! \brief ResponseCodes's class copy constructor
+*       
+*  This copy constructor calls on the operator overload to copy the instance. 
+*  This copy constructor is private.
+*  
+*   @param to_copy, a  reference to an instance of the ResponseCodes class that is to be coppied.
+*/
 ResponseCodes::ResponseCodes( const ResponseCodes& to_copy ) {
 
 	*this = to_copy;
 } 
 
-/* DESTRUCTOR */
+/*! \brief ResponseCodes's class destructor
+*       
+*  Destructs an instance of the class. 
+*  This destructor is private.
+*/
+ResponseCodes::~ResponseCodes( void ) {
 
-ResponseCodes::~ResponseCodes( void ) {	/* destructor */ } 
+} 
 
-/* OPERATOR OVERLOADS */
-
+/*! \brief ResponseCodes's assignment operator overload
+*       
+*  Returns a pointer to the current instance. 
+*  This assignment operator overload is private.
+*
+*   @param rhs, a  reference to an instance of the ResponseCodes class.
+*   @return a  reference to an instance of the ResponseCodes class created(copied) out of rhs.
+*/
 ResponseCodes&	ResponseCodes::operator=( const ResponseCodes& rhs ) {
 
-	if (this != &rhs ) {
-		return (*this);
-	}
+	(void)rhs;
 	return (*this);
 }
 
-/* CLASS PUBLIC METHODS */
-
+/*! \brief creates an html element out of Response Code passed to it 
+*
+*	This static method generates an html element including the response code and the 
+*   coresponding string, out of Response Code passed to it.
+*   
+*   @param code, which will be used to generate an html element out of.
+*   @return element, an html text made out of the code passed to the method.
+*
+*/
 std::string	ResponseCodes::getCodeStatusLine( int code ) {
 
 	if (ResponseCodes::codes_.empty())
@@ -35,31 +64,55 @@ std::string	ResponseCodes::getCodeStatusLine( int code ) {
 	if (ResponseCodes::codes_[code].empty())
 		return ("HTTP/1.1 500 Internal Server Error\r\n");
 	std::string element = "HTTP/1.1 " + std::to_string(code) + " " + ResponseCodes::codes_[code] + "\r\n";
+	
 	return (element);
 }
 
+/*! \brief creates an html text out of Response Code passed to it 
+*
+*	This static method generates an html text out of Response Code passed to it.
+*   
+*   @param code, which will be used to generate an html text out of.
+*   @return element, an html text made out of the code passed to the method.
+*
+*/
 std::string	ResponseCodes::getCodeElementBody( int code ) {
 
 	if (ResponseCodes::codes_.empty())
 		ResponseCodes::initialize_codes();
 	std::string message = ResponseCodes::codes_[code];
+
 	if (message.empty())
 		message = "Unknown Error";
 	std::string element = "\r\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<title>" + std::to_string(code) + " ";
+	
 	element += message + "</title>\n</head>\n<body>\n<h1>" + std::to_string(code) + " " + message + "</h1>\n</body>\n</html>\r\n";
 	return (element);
 }
 
+/*! \brief Returns a string made out of the elements returned from 
+*    getCodeStatusLine + the element returned from getCodeElementBody of this class.
+*
+*
+*   @param code, which will be used to generate a string made out of 2 html elements.
+*   @return element, combination of 2 other html elements made out of the code passed to the method.
+*
+*/
 std::string	ResponseCodes::getCombinedStatusLineAndBody( int code ) {
 
 	if (ResponseCodes::codes_.empty())
 		ResponseCodes::initialize_codes();
 	std::string element = ResponseCodes::getCodeStatusLine(code) + ResponseCodes::getCodeElementBody(code);
+	
 	return (element);
 }
 
-/* CLASS PRIVATE METHODS */
-
+/*! \brief Initializes map of Response Codes 
+*
+*	Initializes map of Response Codes by assigning the corresponding string to Response Codes
+*   This static method is private.
+*
+*/
 void	ResponseCodes::initialize_codes( void ) {
 
 	// Information responses

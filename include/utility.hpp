@@ -1,4 +1,9 @@
 #ifndef UTILITY_HPP
+/*! \brief utility header collects prototype of methods that can be used throught the project.
+*  
+*  Methods collected in this header do not belong together, hence utility not being a class.
+*
+*/
 # define UTILITY_HPP
 
 #include "Logger.hpp"

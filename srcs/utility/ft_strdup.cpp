@@ -4,6 +4,8 @@
 *       
 *	Returns allocated copy of c-style string argument. Will return NULL if 
 *	allocation fails.
+*   @param str which will be duplicated if tpossible.
+*   @return a char pointer, an allocated copy of c-style string argument.
 *
 */
 char*	ft_strdup(const char* str) {

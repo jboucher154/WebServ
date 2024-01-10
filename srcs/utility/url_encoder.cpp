@@ -5,7 +5,8 @@
 /*! \brief returns url encoded string of the to_encode argument
 *       
 *	Returns url encoded string of the to_encode argument.
-*
+*   @param to_encode, string that will be url decoded.
+*   @return string encoded as a string.
 */
 std::string	urlEncode( std::string to_encode ) {
 
