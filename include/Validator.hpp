@@ -29,10 +29,10 @@ class Validator
 private:
 	static std::multimap<std::string, std::string>			validIpHostMap_; /*!< \brief static map of IP-address and its hostname */
 	static std::vector<std::string>							lines_;			/*!< \brief static vector of the config file's lines */
-	static size_t 											serverLines_;	/*!< \brief size_t for the */
-	static std::string 										mainRootPath_;
-	static std::string 										rootPath_;
-	static std::map<std::string, std::vector<std::string> >	innerBlock_;
+	static size_t 											serverLines_;	/*!< \brief static size_t for the server's lines */
+	static std::string 										mainRootPath_;	/*!< \brief static string of main root path */
+	static std::string 										rootPath_;		/*!< \brief static string of root path */
+	static std::map<std::string, std::vector<std::string> >	innerBlock_;	/*!< \brief static map of server's inner blocks and the values in them */
 
 	static std::vector<std::string> valid_main_keys_;
 	static std::string valid_main_keys_array;
