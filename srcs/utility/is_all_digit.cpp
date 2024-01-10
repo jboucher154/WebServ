@@ -3,7 +3,7 @@
 /*! \brief returns bool indicating if string passed is composed of all digits
 *       
 *	Returns bool indicating if string passed is composed of all digits.
-*   @param s, a refrance to a string which will be probed for possible non digit characters.
+*   @param s, a  reference to a string which will be probed for possible non digit characters.
 *   @return true/false a bool indicating if the string was all digits or not.
 *
 */

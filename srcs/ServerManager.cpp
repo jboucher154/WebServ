@@ -51,8 +51,8 @@ ServerManager::~ServerManager( void ) {
 *       
 *  Returns a pointer to a copy of current instance. 
 *
-*   @param rhs, a refrance to an instance of the ServerManager class.
-*   @return a refrance to an instance of the ServerManager class created(copied) out of rhs.
+*   @param rhs, a  reference to an instance of the ServerManager class.
+*   @return a  reference to an instance of the ServerManager class created(copied) out of rhs.
 */
 ServerManager&	ServerManager::operator=(const ServerManager& rhs) {
 

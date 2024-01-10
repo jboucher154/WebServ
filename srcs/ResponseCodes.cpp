@@ -21,7 +21,7 @@ ResponseCodes::ResponseCodes( void ) {
 *  This copy constructor calls on the operator overload to copy the instance. 
 *  This copy constructor is private.
 *  
-*   @param to_copy, a refrance to an instance of the ResponseCodes class that is to be coppied.
+*   @param to_copy, a  reference to an instance of the ResponseCodes class that is to be coppied.
 *   @return no return.
 */
 ResponseCodes::ResponseCodes( const ResponseCodes& to_copy ) {
@@ -45,8 +45,8 @@ ResponseCodes::~ResponseCodes( void ) {
 *  Returns a pointer to the current instance. 
 *  This assignment operator overload is private.
 *
-*   @param rhs, a refrance to an instance of the ResponseCodes class.
-*   @return a refrance to an instance of the ResponseCodes class created(copied) out of rhs.
+*   @param rhs, a  reference to an instance of the ResponseCodes class.
+*   @return a  reference to an instance of the ResponseCodes class created(copied) out of rhs.
 */
 ResponseCodes&	ResponseCodes::operator=( const ResponseCodes& rhs ) {
 

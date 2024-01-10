@@ -1,10 +1,4 @@
 #ifndef	SERVERMANAGER_HPP
-# define	SERVERMANAGER_HPP
-
-# include "WebServ.hpp"
-# include "Server.hpp"
-# include "Client.hpp"
-
 /*! \brief Server Manager class.
  *         This class handles managing the server and client sockets + client cgi pipes.
  *
@@ -12,6 +6,12 @@
  *	and switching of the client between receiving requests and sending responses, adding possible cgi pipes to the monitored file descriptors,
  *	monitoring that inactive client connections are cut after a certain, and shutting down the program if there is no activity for a certain time.
  */
+# define	SERVERMANAGER_HPP
+
+# include "WebServ.hpp"
+# include "Server.hpp"
+# include "Client.hpp"
+
 class	ServerManager {
 	private:
 		std::vector<Server>&				servers_;
