@@ -130,8 +130,8 @@ void	Server::setErrorPage( std::string error_code, std::string error_page ) {
 /*! \brief add a new element to the location map
 *       
 *	If the location exist and the key exist in the location block, updates the value'
-*	If the location exist and the key doesn't exist in the location block creats the key and value pair
-*	If the location block doesn't exist creates it and adds the key and value pair
+*	If the location exist and the key doesn't exist in the location block, creates the key and value pair
+*	If the location block doesn't exist, creates it and adds the key and value pair
 *
 *	@param location_block_key name of the location from the config file
 *	@param key	key to add to the location given
@@ -182,7 +182,7 @@ void	Server::setLocation( map_of_str_vec_of_str inner_block, std::string key ) {
 *	
 *	If all function calls are successful, the logger will print out a success message
 *
-*	@return @b int file descriptor to the socket created for the server object
+*	@return @b int file descriptor to the socket created for the server object or -1 in case of error
 */
 int	Server::setupServer( void ) {
 
@@ -219,7 +219,7 @@ int	Server::setupServer( void ) {
 
 /*! \brief verifies the upload store directory existence and creates it if needed
 *       
-*	Creats a directory for temporary files using hte server root, name, port and postfixed with the 
+*	Creates a directory for temporary files using the server root, name, port and postfixed with the 
 *	string passed to it. Sets the private upload_store variable.
 *
 *	@param upload_dir string to postfix to directory name
@@ -413,12 +413,12 @@ const std::vector<std::string> Server::getLocationKeys(std::string location_bloc
 
 /*! \brief getter for values of specified key in a given location
 * 
-*  Looks for the location in the server with map::find() if the location is found 
-*  looks for the key in the location with map::find() and if it is found it's value is returned
-*  and else NULL will be returned.
+*  Looks for the location in the server with map::find() if the location is found. 
+*  Looks for the key in the location with map::find() and if it is found, it's value is returned,
+*  else NULL will be returned.
 *
 *	@param location_block_key location to seach for key in
-*	@param key	key whose values are to be returned
+*	@param key key whose values are to be returned
 *	@return @b const @b std::vector<std::string>* all values for the given key
 *
 */
@@ -439,7 +439,7 @@ const std::vector<std::string>*	Server::getLocationValue( std::string location_b
 /*! \brief finds the cgi executer's path and returns it
 *       
 *  Given that the config file requires same indexes for allowed extentions 
-*  and their associated executer's path(for example the pyhton3 interpreter)
+*  and their associated executer's path(for example the python3 interpreter),
 *  this method loops through the extentions and at the same time increments
 *  the cgi path iterator, returning the matched path to the extention.
 *
@@ -468,9 +468,9 @@ time_t	Server::getLatestServerActivity( void ) {
 
 /*! \brief checks if a certain key exists in a certain location
 *       
-*  calls the getter that would return the value for the key in question
-*  If the value is null then either the key didn't exist or the location 
-*  If the value is not null the key exists in the location in question.
+*  Calls the getter that would return the value for the key in question.
+*  If the value is null, then either the key didn't exist or the location 
+*  If the value is not null, the key exists in the location in question.
 *
 *	@param location_block_key name of location in server object from config
 *	@param key to search for in given location
@@ -486,7 +486,7 @@ bool Server::isKeyInLocation( std::string location_block_key, std::string key ) 
 
 /*! \brief checks if a certain location exists
 *       
-*  loops through all the location blocks of the server to find location.
+*  Loops through all the location blocks of the server to find location.
 *
 *	@param location_block_key name of location to search for in server locations
 *	@return @b bool true if the location in question exists, else false.
@@ -502,10 +502,10 @@ bool	Server::isLocationInServer( std::string location_block_key ) const {
 
 /*! \brief checks if a certain value is listed for a certain key in a certan location
 *       
-*	searches for a value and checks if it already exists for the specified key in the given location
+*	searches for a value and checks if it already exists for the specified key in the given location.
 *
 *	@param location_block_key name of the location key is in
-*	@param key	name of the key in the location given
+*	@param key name of the key in the location given
 *	@param value to search for in the existing values of the key
 *	@return @b bool true if value already exists, otherwise false
 */
@@ -523,7 +523,7 @@ bool	Server::isValueListedForKey( std::string location_block_key, std::string ke
 
 /*! \brief checks if a certain extention is listed under cgi extentions 
 *       
-*  checks if a certain extention is listed under cgi extentions .
+*  Checks if a certain extention is listed under cgi extentions.
 *
 *	@param extension extension of cgi script requested
 *	@result @b bool true if the extension is on the approved list from config
@@ -535,7 +535,7 @@ bool	Server::isExtensionOnCgiList( std::string extension ) const {
 
 /*! \brief checks if a certain script is listed under cgi scripts 
 *       
-*  checks if a certain script is listed under cgi scripts.
+*  Checks if a certain script is listed under cgi scripts.
 *
 *	@param script name of script from request
 *	@return	@b bool true if script is on list of approved scripts from config
