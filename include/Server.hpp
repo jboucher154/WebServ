@@ -41,7 +41,7 @@ class Server {
 		std::string								upload_store_; /*!< \brief path to the directory the server uses for temporary file storage  */
 		std::map<std::string, std::string>		error_pages; /*!< \brief map of error page ids and paths for custom error pages listed in config */
 		std::map<std::string, std::map<std::string, std::vector<std::string> > >	location_; /*!< \brief map of locations from config, each with a map of their keys and values (in a vector) */                                                
-		time_t									latest_server_activity_time_; /*< \brief time_t struct set set to last activity the server had */
+		time_t									latest_server_activity_time_; /*< \brief time_t struct set to last activity the server had */
 
 	public:
 
