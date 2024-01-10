@@ -33,7 +33,7 @@ class	Request {
 		std::string							file_content_;			/*!< \brief string of a file's contents */
 		std::string							file_name_;				/*!< \brief string of a file's name */
 		std::vector<u_int8_t>				body_vector_;			/*!< \brief vector consisting of unsigned 8-bit integers of the body */
-		bool								file_upload_;			/*!< \brief bool that represents if a file will (or has?) be uploaded or not*/
+		bool								file_upload_;			/*!< \brief bool indicating if a file has been stored for upload */
 		std::string							file_mime_;				/*!< \brief string of the mime type of a file */
 		unsigned int						status_code_;			/*!< \brief unsigned int that represents the status code */
 		time_t								request_start_time_;	/*!< \brief time_t that represents the time of when the request was received; used for request timeout */
