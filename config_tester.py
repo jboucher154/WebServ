@@ -40,6 +40,6 @@ def test_config_validator(bad_config_files, executable_path):
 
 # Example usage
 bad_config_files = './config/bad/'
-executable_path = './WebServ'
+executable_path = './webserv'
 
 test_config_validator(bad_config_files, executable_path)
