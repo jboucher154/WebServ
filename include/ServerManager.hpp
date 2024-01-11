@@ -17,29 +17,17 @@ class	ServerManager {
 		std::vector<Server>&				servers_;
 
 		std::map<int, std::vector<int> >	client_cgi_map_;
-
-		#if POLL_TRUE_SELECT_FALSE
-			std::vector<struct pollfd>		pollfds_;
-			int								pollfds_size_;
-		#else
-			fd_set							read_fd_set_;
-			fd_set							write_fd_set_;
-			int								biggest_fd_;
-		#endif
-
-		std::map<int, Server*>			server_map_;
-		std::map<int, Client>			client_map_;
-		time_t							latest_server_time_;
+		std::vector<struct pollfd>			pollfds_;
+		int									pollfds_size_;
+		std::map<int, Server*>				server_map_;
+		std::map<int, Client>				client_map_;
+		time_t								latest_server_time_;
 
 		void	addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out );
-
 		void	POLL_addClientCgiFdsToPollfds_( int pipe_in, int pipe_out );
 		void	POLL_removeClientCgiFdsFromPollfds_( int client_fd );
 		void	POLL_handleClientCgi_( int client_fd );
 
-		void	SELECT_addClientCgiFdsToSets_( int pipe_in, int pipe_out );
-		void	SELECT_removeClientCgiFdsFromSets_( int client_fd );
-		void	SELECT_handleClientCgi_( int client_fd );
 	
 	public:
 		ServerManager( std::vector<Server>& server_vector );
@@ -57,26 +45,7 @@ class	ServerManager {
 		bool	sendResponseToClient( int client_fd );
 		int		getClientFdByItsCgiPipeFd( int pipe_fd );
 		void	checkIfClientTimeout( int client_fd );
-		void	checkServerAssignmentBasedOnRequest( Client& client );//
-
-
-		bool	SELECT_initializeServers( void );
-		void	SELECT_initializeFdSets( void );
-		int		SELECT_getBiggestFd( int max_fd_size );
-		bool	SELECT_runServers( void );
-		void	SELECT_runServersLoopStart( timeval& select_timeout, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy );
-		void	SELECT_handleEvent( int fd, fd_set& read_fd_set_copy, fd_set& write_fd_set_copy );
-		void	SELECT_acceptNewClientConnection( int server_fd );
-		void	SELECT_removeFdFromSets( int fd );
-		void	SELECT_removeClient( int client_fd );
-		void	SELECT_switchClientToReadSet( int client_fd );
-		void	SELECT_switchClientToWriteSet( int client_fd );
-		void	SELECT_receiveFromClient( int client_fd );
-		void	SELECT_sendResponseToClient( int client_fd );
-		void	SELECT_printSetData( void );
-		void	SELECT_addFdsToFdSets( Client& client );
-		void	SELECT_removeFdsFromFdSets( Client& client );
-
+		void	checkServerAssignmentBasedOnRequest( Client& client );
 
 		bool	POLL_initializeServers( void );
 		bool	POLL_runServers( void );

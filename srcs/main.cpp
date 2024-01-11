@@ -36,33 +36,17 @@ int	main( int argc, char *argv[]) {
 		if (!Validator::servers[i].setUploadStore(".temp_files"))
 			return EXIT_FAILURE;
 	}
-	#if POLL_TRUE_SELECT_FALSE
-		// POLL VERSION
-		while (true) {
-			ServerManager server_manager(Validator::servers);
-			if (!server_manager.POLL_initializeServers()) {  
-				server_manager.closeServerSockets();
-				Logger::closeLogFiles();
-				return EXIT_FAILURE;
-			}
-			if (server_manager.POLL_runServers())
-				break;
-			Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an poll error, RESTARTING SERVERS!!!");
+	while (true) {
+		ServerManager server_manager(Validator::servers);
+		if (!server_manager.POLL_initializeServers()) {  
+			server_manager.closeServerSockets();
+			Logger::closeLogFiles();
+			return EXIT_FAILURE;
 		}
-	#else
-	//SELECT VERSION
-		while (true) {
-			ServerManager server_manager(Validator::servers);
-			if (!server_manager.SELECT_initializeServers()) {  
-				server_manager.closeServerSockets();
-				Logger::closeLogFiles();
-				return EXIT_FAILURE;
-			}
-			if (server_manager.SELECT_runServers())
-				break;
-			Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an select error, RESTARTING SERVERS!!!");
-		}
-	#endif
+		if (server_manager.POLL_runServers())
+			break;
+		Logger::log(E_INFO, COLOR_BRIGHT_CYAN, "Servers stopped running because of an poll error, RESTARTING SERVERS!!!");
+	}
 	Logger::closeLogFiles();
 	return EXIT_SUCCESS;
 }

@@ -11,17 +11,6 @@
 */
 # define WEBSERV_HPP
 
-/*! \brief Macro for selecting POLL or SELECT Version of Program
-*
-*   Marco for selecting POLL or SELECT Version of Program. 
-*   true = compile with POLL veresion
-*   false = compile with SELECT version
-*   
-*/
-# ifndef POLL_TRUE_SELECT_FALSE
-#  define POLL_TRUE_SELECT_FALSE true
-# endif
-
 /*! \brief Macro for logging debug statements
 *
 *   Macro for logging debug statements. The output will follow the Logger settings,
