@@ -18,17 +18,17 @@
 # include "Logger.hpp"
 # include "MimeTypes.hpp"
 
-# ifndef CRLF
-#  define CRLF "\r\n"
-# endif
-
+/*! \brief File size limit for pipes
+ * 
+ */
 # define FILE_SIZE_LIMIT_FOR_PIPE 64000
 
 /*! \brief Class for handling HTTP responses.
 *       
+*	@class Response
 *
 *  Response class handle HTTP responses. It is responsible for generating the response
-*  given a Request object.
+*  to a request.
 *  
 *  Public Methods:
 *  - generate: generate the response given a Request object
@@ -41,21 +41,21 @@ class	Response {
 		Response( void );
 
 		/* PRIVATE METHODS AND MEMBERS */
-		std::string			response_;
-		std::string			body_;
-		std::string			response_mime_;
-		std::string			resource_path_; //path for opening/ manipulating etc
-		std::string			alias_location_;
-		std::string			resource_location_; // location for looking up in server
-		int					status_code_;
-		Server*				server_;
-		Request*			request_;
-		bool				redirect_;
-		bool				alias_;
-		bool				directory_listing_;
-		std::string			query_string_;
-		std::string			temp_filepath_;
-		bool				temp_file_;
+		std::string			response_;			/*!< string of the response */
+		std::string			body_;				/*!< string of the body of the response */
+		std::string			response_mime_;		/*!< string of the response's mime type */
+		std::string			resource_path_; 	/*!< string of the resource path for something in the response */
+		std::string			alias_location_;	/*!< string of the alias location */
+		std::string			resource_location_; /*!< string or the resource location */
+		int					status_code_;		/*!< status code of the response */
+		Server*				server_;			/*!< pointer to the server the response gets its resources from*/
+		Request*			request_;			/*!< pointer to request this response is tied to */
+		bool				redirect_;			/*!< bool that represents if there is a redirection or not */
+		bool				alias_;				/*!< bool that represents if there is an alias or not */
+		bool				directory_listing_;	/*!< bool that represents if there is directory listing or not */
+		std::string			query_string_;		/*!< string of the query string */
+		std::string			temp_filepath_;		/*!< string of the temporary filepath */
+		bool				temp_file_;			/*!< bool that represents if there is a temporary file */
 
 		/* HEADER GENERATORS */
 		std::string&	addHeaders_( std::string& response) const;
