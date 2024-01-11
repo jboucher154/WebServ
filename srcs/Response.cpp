@@ -640,12 +640,12 @@ void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slas
 			//make case for root here so no extra / is added if location == /
 			this->resource_path_ =  this->server_->getRoot() + location + "/" + filename;
 		}
-		else if (this->request_->getCgiFlag()) {
-			this->resource_path_ = (this->server_->getLocationValue("/cgi-bin", "root"))->front() + "/" + filename;
-		}
 		else if (this->request_->getCgiFlag() && !this->server_->isScriptOnCgiList(filename)) {
 			this->status_code_ = E_NOT_FOUND;
 			Logger::log(E_DEBUG, COLOR_CYAN, "404 CGI script given by request was not on approved list: `%s'", uri.c_str());
+		}
+		else if (this->request_->getCgiFlag()) {
+			this->resource_path_ = (this->server_->getLocationValue("/cgi-bin", "root"))->front() + "/" + filename;
 		}
 	}
 }

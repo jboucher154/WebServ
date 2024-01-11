@@ -12,11 +12,17 @@
 # include <string>
 # include <signal.h>
 
-// forward declaration
+/*! \brief forward declaration for client class
+*/
 class Client;
 
-// macro for size of the buffer used in storeCgiOutput_
+/*! \brief macro for size of the buffer used in storeCgiOutput_
+*/
 # define BUFFER_SIZE 4096
+
+/*! \brief macro for size argument array for execve() call
+*/
+# define MAX_ARGS 3
 
 enum	e_pipe_ends {
 	E_PIPE_END_READ,
@@ -48,21 +54,22 @@ class	CgiHandler {
 
 		std::map<std::string, std::string>	metavariables_map_; /*!< @brief Map of environment variables to create the metavariables_ */
 		std::string							cgi_output_; /*!< @brief used to store response returned from cgi process */
-		char**								metavariables_; /*!< @brief c-style array of environment variables to pass to cgi execve() call */
-		char**								args_; /*!< @brief c-style string array for arguments to pass to execve() */
 		std::string							path_; /*!< @brief string for path to cgi-script from the request uri */
 		int									pid_; /*!< @brief for result of fork, used by parent to track child result */
 		int									pipe_into_cgi_[2]; /*!< @brief stores pipe fds for content directed into the cgi process */
 		int									pipe_from_cgi_[2]; /*!< @brief stores pipe fds for content coming from the cgi child process */
+		int									number_args_; /*< @brief number of arguments to send to execve()*/
+		std::string							executor_path_; /*< @brief path to executer for the cgi script */
 
 		void	fillMetavariablesMap_( Client& client );
 		char**	convertMetavariablesMapToCStringArray_( void );
-		int		createCgiArguments_( std::string uri, Client& client );
+		void	saveCgiArguments_( std::string uri, Client& client );
 		int		cgiTimer_( int& status );
 
 		int		setUpCgiPipes_( void );
 		int		executeCgi_( const std::string& body_string );
 		int		storeCgiOutput_( void );
+		void	deleteInnerArgs_( char** args );
 
 	public:
 
@@ -73,15 +80,13 @@ class	CgiHandler {
 
 		CgiHandler&	operator=( const CgiHandler& to_copy );
 
-		void	ClearCgiHandler( void );
+		void	clearCgiHandler( void );
 		void	closeCgiPipes( void );
 		int		initializeCgi( Client& client );
 		int		cgiFinish( Response& response );
 		void	clearCgiOutputs( void );
 
 		// getters
-		std::vector<std::string, std::string>&	getMetavariablesVector( void ) const;
-		std::vector<std::string, std::string>&	getCgiVector( void ) const;
 		std::string					getExtension( std::string uri );
 		const std::string&			getCgiOutputAsString( void ) const;
 		const int*	getPipeIn( void ) const;
