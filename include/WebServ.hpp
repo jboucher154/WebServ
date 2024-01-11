@@ -19,7 +19,7 @@
 *   false = no debug output logged
 */
 # ifndef GET_DEBUG_LOG
-#  define GET_DEBUG_LOG	true
+#  define GET_DEBUG_LOG	false
 # endif
 
 /*! \brief Macro for enabling/disabling the getting of fd info for main server loop
@@ -87,6 +87,12 @@
 */
 # define CLIENT_TIMEOUT_SEC 1 * 10
 
+/*! \brief bytes size of buffer set for client with setsockopt()
+*
+*	After accepting the client the buffer will be set to this using the SO_SNDBUF option.
+*	This should be checked with each new system and adjusted to meet system limitations.
+*/
+# define CLIENT_BUFFER_SIZE 4409640
 
 /*********************************************** CGI macros ***********************************************/
 

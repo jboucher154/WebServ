@@ -14,15 +14,15 @@
  */
 class	ServerManager {
 	private:
-		std::vector<Server>&				servers_;
+		std::vector<Server>&				servers_; /*!< @brief servers_ is a reference to Validator class generated servers passed to ServerManager constructor.*/
 
-		std::map<int, std::vector<int> >	client_cgi_map_;
-		std::vector<struct pollfd>			pollfds_;
-		int									pollfds_size_;
-		std::map<int, Server*>				server_map_;
-		std::map<int, Client>				client_map_;
-		time_t								latest_server_time_;
-
+		std::map<int, std::vector<int> >	client_cgi_map_; /*!< @brief client_cgi_map_ is a map of client_fd and the vector of in and out pipes accoiciated to each client_fd .*/
+		std::vector<struct pollfd>		pollfds_; /*!< @brief pollfds_, a vector of pull fds created from server_sockets.*/
+		int								pollfds_size_; /*!< @brief pollfds_size_, is the size of the pull fds.*/
+		std::map<int, Server*>			server_map_; /*!< @brief server_map_ is a map of server fd and the server accoiciated to each fd .*/
+		std::map<int, Client>			client_map_; /*!< @brief client_map_ is a map of client_fd and the client accoiciated to each client_fd .*/
+		time_t							latest_server_time_; /*!< @brief latest_server_time_ is the lastest time any server had any activity. latest_server_time_ is always checked againest SERVER_SHUTDOWN_TIME_SEC to see if webserver should still sit idle or not*/
+		
 		void	addClientCgiFdsToCgiMap_( int client_fd, int pipe_in, int pipe_out );
 		void	POLL_addClientCgiFdsToPollfds_( int pipe_in, int pipe_out );
 		void	POLL_removeClientCgiFdsFromPollfds_( int client_fd );

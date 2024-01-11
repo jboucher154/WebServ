@@ -8,8 +8,10 @@
 *   
 */
 typedef	enum	e_StatusCode {
+	
 	E_UNSET = 0,
 	E_SERVER_PROCESSING = 1,
+
 	// Information responses
 	E_CONTINUE = 100,
 	E_SWITCHING_PROTOCOLS = 101,
@@ -85,7 +87,9 @@ typedef	enum	e_StatusCode {
 }				t_StatusCode;
 
 /*! \brief This static class creates a map of Response Codes and creates
-*         and prepares html responses out of them when appropriate methods are clled.
+*         and prepares html responses out of them when appropriate methods are called.
+*	
+*	@class ResponseCodes
 */
 class	ResponseCodes {
 
@@ -95,7 +99,7 @@ class	ResponseCodes {
 		~ResponseCodes( void );
 		ResponseCodes&	operator=( const ResponseCodes& to_copy );
 
-		static std::map<int, std::string>	codes_; /*!< @brief a map of matching pairs of codes and the dscriptive string associated to them. */
+		static std::map<int, std::string>	codes_; /*!< \brief a static map of matching pairs of codes and the descriptive strings associated with them. */
 
 		static void	initialize_codes( void );
 
