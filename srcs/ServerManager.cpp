@@ -473,12 +473,19 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			close(client_fd);
 			return;
 		}
+		try
+		{
+			Client client(server_fd, server);
 
-		Client client(server_fd, server);
-
-		this->client_map_[client_fd] = client;
-		this->client_map_[client_fd].setLatestTimeForClientAndServer();
-
+			this->client_map_[client_fd] = client;
+			this->client_map_[client_fd].setLatestTimeForClientAndServer();
+		}
+		catch(const std::exception& e)
+		{
+			Logger::log(E_ERROR, COLOR_RED, "allocation error: %s, socket %d connection rejected", e.what(), client_fd);
+			close(client_fd);
+			return;
+		}
 		pollfd new_pollfd = {client_fd, POLLIN, 0};	
 		this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
 	}
