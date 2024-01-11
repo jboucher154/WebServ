@@ -92,7 +92,7 @@ class	Response {
 		void	handelAlias_( void );
 
 		void	setMimeType_( void );
-		bool	validateResource_( void );
+		void	validateResource_( void );
 		void	createErrorBody_( void );
 
 

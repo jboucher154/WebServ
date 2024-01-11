@@ -4,18 +4,16 @@
 
 /* CONSTRUCTORS */
 
-/*! \brief Default constructor is private.
+/*! \brief Response's default constructor that is private
 *       
-*  Default constructor is private.
-*  
+*  This default constructor is private.
 */
 Response::Response( void ) {}
 
-/*! \brief Constructor intializes empty response and body; sets status code to 0.
+/*! \brief Constructor intializes empty response and body; sets status code to 0
 *       
-*
-*  Default constructor intializes empty response and body. Default status code set to 501 for MVP.
-*  More details to be filled as project progresses.
+*  Default constructor intializes empty response and body.
+*  Zeroes all attributes on construction.
 */
 Response::Response( Server* server )
 : response_(""), 
@@ -38,9 +36,6 @@ temp_file_(false) {
 
 /*! \brief Copy constructor calls assignment operator.
 *       
-*
-*  More details to be filled as project progresses.
-*  
 */
 Response::Response( const Response& to_copy ) {
 
@@ -51,19 +46,16 @@ Response::Response( const Response& to_copy ) {
 
 /*! \brief Default destructor has no special actions.
 *       
-*
-*  More details to be filled as project progresses.
-*  
 */
 Response::~Response( void ) {} 
 
 /* OPERATOR OVERLOADS */
 
-/*! \brief Assignment operator copies all non static values.
+/*! \brief Assignment operator copies all non-static values.
 *       
 *
-*   Assignment operator is now public.
-*  
+*   @param rhs a reference to the Response object whose values are to be copied
+* 	@return @b Response& the response object that copies the values (left-hand side)
 */
 Response&	Response::operator=( const Response& rhs ) {
 
@@ -91,12 +83,33 @@ Response&	Response::operator=( const Response& rhs ) {
 /* CLASS PUBLIC METHODS */
 
 
-/*! \brief phase 1 of response checks if request is possible and calls the function for 
-*				the method requestsed given a Request object.
+/*! \brief phase 1 of response checks if request is valid and calls the function for 
+*				the method requested given a Request object
 *       
+*	This is the first phase (of two, second phase is Response::buildAndGetResponsePhase2)
+*	of creating a response to a client request.
+*	First the function checks that the Response's server and request are not NULL
+*	and if they are, set the status code to 500 (E_INTERNAL_SERVER_ERROR) and the function ends.
+*	Then the the initial status code that the request has possibly set is checked and
+*	if the status code denotes an error, the function ends.
+*	Then the request's body size is compared with the server's max body and if it's
+*	too large, the status code is set to  413 (E_PAYLOAD_TOO_LARGE) and the function ends.
+*	Then the Response::setResourceLocation function is called and specific status codes
+*	are checked for POST methods and if it doesn't pass these check, the function ends.
+*	Then it is checked if the method is allowed and if not, the status code is set
+*	to 405 (E_METHOD_NOT_ALLOWED) and the function ends.
+*	If the function passes this point, the Response::validateResource_ is called which might
+*	set an error code if something goes wrong.
+*	The following things are checked if status code is less than 400 and the request is not yet complete:
+*		The request's time limit is checked and if it has passed, set 408 (E_REQUEST_TIMEOUT) and end function.
+*		Else it is checked if the request is chunked and if it is, the status code is set to 100 (E_CONTINUE).
+*		Else the it is checked if the expect header is included in the request's headers and if it is,
+*		the status code is set to 100 (E_CONTINUE).
+*		Else the status code is set to 1 E_SERVER_PROCESSING.
+*	If the function gets to this point and the status code is less than 400 (no errors), then the function 
+*	for whatever method the request had is called.
 *
-*  
-*  
+* 	@param request a pointer to the Request object that the response is created for
 */
 void	Response::createResponsePhase1( Request* request ) {
 
@@ -104,9 +117,6 @@ void	Response::createResponsePhase1( Request* request ) {
 	response_methods_	methods = { &Response::getMethod_, &Response::headMethod_, &Response::postMethod_, &Response::deleteMethod_ };
 
 	this->request_ = request;
-	this->status_code_ = request->getStatusCode();
-	if (this->status_code_ >= 400)
-		return ;
 	if (this->server_ == NULL) {
 		Logger::log(E_ERROR, COLOR_RED, "Response has no server");
 		this->status_code_ = E_INTERNAL_SERVER_ERROR;
@@ -117,6 +127,9 @@ void	Response::createResponsePhase1( Request* request ) {
 		this->status_code_ = E_INTERNAL_SERVER_ERROR;
 		return ;
 	}
+	this->status_code_ = request->getStatusCode();
+	if (this->status_code_ >= 400)
+		return ;
 	if (this->server_->getClientMaxBodySize() < static_cast<double>(request->getBodySize())) {
 		this->status_code_ = E_PAYLOAD_TOO_LARGE;
 		return ;
@@ -159,13 +172,15 @@ void	Response::createResponsePhase1( Request* request ) {
 }
 
 
-/*! \brief returns a reference to the response string built.
+/*! \brief phase 2 of response returns a reference to the response string built
 *       
-*
+*	This is the second phase (of two, first phase is Response::createResponsePhase1)
+*	of creating a response to a client request.
 *	Builds and returns response, checking if there has been an error, adding headers as 
 *	required, and appending the body. All are separated by the CRLF or "/r/n" per HTTP 
 *	guidelines.
-*
+*	
+*	@return @b string& the built response string
 */
 std::string&	Response::buildAndGetResponsePhase2( void ) {
 
@@ -184,7 +199,8 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 	return this->response_;
 }
 
-/*! \brief takes a reference to the body returned from a cgi process and returns a 
+/*! \brief \brief phase 2 of response returns a reference to the response string built.
+			takes a reference to the body returned from a cgi process and returns a 
 *			reference to the response string built.
 *       
 *
@@ -193,6 +209,8 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 *	response, adding headers as required, and appending the body passed to the function. 
 *	All are separated by the CRLF or "/r/n" per HTTP guidelines.
 *  
+*	@param body returned from a cgi process
+*	@return @b string& the built response string	
 */
 std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
@@ -221,8 +239,7 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 /*! \brief clear method resets the response for next use
 *       
 *
-*  More details to be filled as project progresses.
-*  
+* 	Zeroes out all the attributes for the next time the response is used.
 */
 void	Response::clear( void ) { 	/* reset for next use */
 
@@ -244,17 +261,21 @@ void	Response::clear( void ) { 	/* reset for next use */
 
 /******************************* SETTERS ******************************/
 
-/*! \brief	setter for the response status code
+/*! \brief setter for the response status code
 *
 *
 *	Allows for client and cgi handler to set the response status code.
-*
+*	@param new_code a new status code for the response
 */
-void	Response::setStatusCode( unsigned int	new_code ) {
+void	Response::setStatusCode( unsigned int new_code ) {
 
 	this->status_code_ = new_code;
 }
 
+/*! \brief setter for the response's server pointer attribute
+ * 
+ * @param server pointer to the server that is to be set for the response
+ */
 void	Response::setServer( Server* server ) {
 
 	if (server) {
@@ -266,9 +287,7 @@ void	Response::setServer( Server* server ) {
 
 /*! \brief	returns http status code set for the response
 *
-*
-*	returns http status code set for the response
-*
+*	@return @b int http status code set for the response
 */
 int	Response::getStatusCode( void ) const {
 
@@ -278,10 +297,7 @@ int	Response::getStatusCode( void ) const {
 
 /*! \brief returns the filepath to the requested resource
 *
-*
-*	returns the filepath to the requested resource
-*
-*
+*	@return @b const @b std::string& which is filepath to the requested resource
 */
 const std::string&	Response::getResourcePath( void ) const {
 
@@ -290,20 +306,16 @@ const std::string&	Response::getResourcePath( void ) const {
 
 /*! \brief returns const reference to the query string for a CGI script
 *
-*
-*	returns const reference to the query string for a CGI script
-*
+*	@return @b const @b std::string& to the query string for a CGI script
 */
 const std::string&	Response::getQueryString( void ) const {
 
 	return this->query_string_;
 }
 
-/*! \brief returns begin iterator for the stored filedata for upload
+/*! \brief returns const reference to the stored filedata string meant for upload
 *
-*
-*	returns begin iterator for the stored filedata for upload
-*
+*	@return @b const @b std::string& of the stored filedata meant for upload
 */
 const std::string&	Response::getUploadData( void ) {
 
@@ -314,32 +326,28 @@ const std::string&	Response::getUploadData( void ) {
 
 /*! \brief checks for existance and file access rights for requested resource
 *
-*	
 *	Checks for existance and access rights for requested resource.
-*	Error codes may be set, 404 - not found, 403 - access not allowed
-*
+*	Error codes may be set, 404 - not found or 403 - access not allowed.
 */
-bool	Response::validateResource_( void ) {
+void	Response::validateResource_( void ) {
 
 	if (access(this->resource_path_.c_str(), F_OK) != 0) {
 		this->status_code_ = E_NOT_FOUND;
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->resource_path_.c_str());
-		return false;
+		return;
 	}
 	if (!this->request_->getCgiFlag() && this->request_->getRequestLineValue("method") == "DELETE") {
-		return true;
+		return;
 	}
 	else if (this->request_->getCgiFlag() && access(this->resource_path_.c_str(), X_OK) != 0) {
 		this->status_code_ = E_FORBIDDEN;
 		Logger::log(E_DEBUG, COLOR_CYAN, "403 execution access not allowed for cgi file: `%s'", this->request_->getRequestLineValue("uri").c_str());
-		return false;
+		return;
 	}
 	else if (access(this->resource_path_.c_str(), R_OK) != 0) {
 		this->status_code_ = E_FORBIDDEN;
 		Logger::log(E_DEBUG, COLOR_CYAN, "403 read access not allowed for resource file: `%s'", this->request_->getRequestLineValue("uri").c_str());
-		return false;
 	}
-	return true;
 }
 
 /****************************************** HEADER GENERATORS ******************************************/
@@ -349,7 +357,9 @@ bool	Response::validateResource_( void ) {
 *	Appends each header to the response as needed. No errors are set here. 
 *	Returns a reference to the response string. All are separated by the CRLF or "/r/n" 
 *	per HTTP guidelines.
-*
+*	
+*	@param response the response string
+*	@return @b std::string& the response with the headers added
 */
 std::string&	Response::addHeaders_( std::string& response) const {
 
@@ -375,7 +385,9 @@ std::string&	Response::addHeaders_( std::string& response) const {
 *       
 *	`Retry-After' header returned with default value in seconds for client to wait
 *	before sending a request again.
-*  
+*	
+*	@param connection_continue a bool which determines which header value should be set
+*	@return @b std::string the 'Connection' header
 */
 std::string	Response::connectionHeader_( bool connection_continue ) const {
 
@@ -389,7 +401,8 @@ std::string	Response::connectionHeader_( bool connection_continue ) const {
 *       
 *	`Retry-After' header returned with default value in seconds for client to wait
 *	before sending a request again.
-*  
+*
+*	@return @b std::string the 'Retry-Header'  
 */
 std::string	Response::retryAfterHeader_( void ) const {
 
