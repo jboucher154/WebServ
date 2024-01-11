@@ -474,16 +474,30 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			close(client_fd);
 			return;
 		}
-		
-		Client client(server_fd, server);//could throw exception
+		try
+		{
+			Client client(server_fd, server);
 
-		this->client_map_[client_fd] = client;//could throw exception
-		this->client_map_[client_fd].setLatestTimeForClientAndServer();
-
+			this->client_map_[client_fd] = client;
+			this->client_map_[client_fd].setLatestTimeForClientAndServer();
+		}
+		catch(const std::exception& e)
+		{
+			Logger::log(E_ERROR, COLOR_RED, "allocation error: %s, socket %d connection rejected", e.what(), client_fd);
+			close(client_fd);
+			return;
+		}
 		pollfd new_pollfd = {client_fd, POLLIN, 0};	
 		this->pollfds_.push_back(new_pollfd);		// push a new pollfd into pollfds_ vector
 	}
 
+	/*! \brief Removes fds from pull fd vector.
+	 *	
+	 *	Loops through pull fds and finds the passed fd and earases it when it is found, updating
+	 *  the pull fd vector's size.
+	 * 
+	 * @param fd the file descriptor that has to be removed.
+	 */
 	void	ServerManager::POLL_removeFdFromPollfds( int fd ) {
 
 		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
@@ -495,6 +509,16 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		this->pollfds_size_--;
 	}
 
+	/*! \brief Removes a client from client map or client
+	 *   cgi map depending on which map the client belongs to.
+	 *	
+	 *	If the client is part of the client cgi map calls
+	 *  POLL_removeClientCgiFdsFromPollfds_. And if not calls
+	 *  POLL_removeFdFromPollfds and removeClient consequently
+	 *  to remove the client from the appropriate map.
+	 * 
+	 * @param fd the client file descriptor that has to be removed.
+	 */
 	void	ServerManager::POLL_removeClient( int client_fd ) {
 
 		if (this->client_cgi_map_.count(client_fd)) {
@@ -504,7 +528,12 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		this->removeClient(client_fd);
 	}
 
-
+	/*! \brief Swiches client fds into POLLIN.
+	 *	
+	 *	Loops through pull client fds and swiches the passed client fds and into POLLIN when it is found.
+	 * 
+	 * @param fd the client file descriptor that has to be swiched.
+	 */
 	void	ServerManager::POLL_switchClientToPollin ( int client_fd ) {
 
 		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
@@ -515,7 +544,12 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		}
 	}
 
-
+	/*! \brief Swiches client fds into POLLOUT.
+	 *	
+	 *	Loops through pull client fds and swiches the passed client fds and into POLLOUT when it is found.
+	 * 
+	 * @param fd the client file descriptor that has to be swiched.
+	 */
 	void	ServerManager::POLL_switchClientToPollout( int client_fd ) {
 
 		for (std::vector<pollfd>::iterator it = this->pollfds_.begin(); it != this->pollfds_.end(); ++it) {
@@ -526,14 +560,7 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		}
 	}
 
-	/*	check the following lines, maybe scuffed
-
-	if (client.getRequest().getCgiFlag() && client.getResponse().getStatusCode() < 400) {
-				if ((client.POLL_startCgiResponse()) == true)
-					this->POLL_addCgiFdsToPollfds_(client);
-				return;
-
-	*/
+	
 	void	ServerManager::POLL_receiveFromClient( int client_fd ) {
 
 		Client&	client = this->client_map_[client_fd];
@@ -569,7 +596,12 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 		}
 	}
 
-
+	/*! \brief Prints PULL Data if the debug flag in on.
+	 *	
+	 *	Build 3 strings out of poll in s\fds, poll out fds and all fds
+	 *  and calls onto the loger to pring them.
+	 * 
+	 */
 	void	ServerManager::POLL_printData( void ) {
 
 		std::string	all_fds = "all pollfds currently handled: ";
