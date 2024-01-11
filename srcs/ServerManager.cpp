@@ -276,8 +276,8 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 		return false;
 	} else {
 		if (bytes_sent < static_cast<int>(response_string.length()))
-			Logger::log(E_ERROR, COLOR_RED, "incomplete response sent from server %s to socket %d ",
-				server->getServerIdforLog().c_str(), client_fd);
+			Logger::log(E_ERROR, COLOR_RED, "incomplete response sent from server %s to socket %d; %d bytes of %li sent",
+				server->getServerIdforLog().c_str(), client_fd, bytes_sent, response_string.length());
 		else
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
 				server->getServerName().c_str(), client_fd, response.getStatusCode());
@@ -464,16 +464,32 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			Logger::log(E_ERROR, COLOR_RED, "accept error: %s, tried to connect to server on port %d", strerror(errno), server->getListeningPortInt());
 			return;
 		}
-
 		Logger::log(E_INFO, COLOR_BRIGHT_BLUE, "New connection to server %s on port %d: assigned to socket %d [client host: %s]",
 			server->getServerName().c_str(), server->getListeningPortInt(), client_fd, inet_ntop(client_address.sin_family, (struct sockaddr*)&client_address, client_host, INET_ADDRSTRLEN));
-
 		if (fcntl(client_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
 			Logger::log(E_ERROR, COLOR_RED, "fcntl error: %s, socket %d connection rejected", client_fd);
 			close(client_fd);
 			return;
 		}
+		/////////
+		int currentBufferSize;
+		socklen_t bufferSizeSize = sizeof(currentBufferSize);
 
+		// Get the current buffer size
+		if (getsockopt(client_fd, SOL_SOCKET, SO_SNDBUF, &currentBufferSize, &bufferSizeSize) == -1) {
+			std::cerr << "Error getting socket buffer size." << std::endl;
+			close(client_fd);
+			return;
+		}
+		std::cout << "CURRENT BUFF SIZE = " << currentBufferSize << " * 20 : " << currentBufferSize * 20 << std::endl;
+		///////////
+		int maxBufferSize = currentBufferSize * 20;
+		if (setsockopt(client_fd, SOL_SOCKET, SO_SNDBUF, &maxBufferSize, sizeof(maxBufferSize)) == -1) {
+			Logger::log(E_ERROR, COLOR_RED, "sockopt error: %s,  socket %d buffer size could not be set", strerror(errno), client_fd);
+			close(client_fd);
+			return;
+		}
+		///////
 		Client client(server_fd, server);//could throw exception
 
 		this->client_map_[client_fd] = client;//could throw exception
