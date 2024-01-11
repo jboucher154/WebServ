@@ -56,6 +56,7 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 */
 Client::Client( const Client& to_copy ) : response_(NULL), cgi_handler_(NULL) {
 
+	//allocate cgi hanler here
 	*this = to_copy;
 } 
 
@@ -272,22 +273,13 @@ Response&	Client::getResponse( void ) {
 
 /********************************* OTHER PUBLIC METHODS **********************************/
 
-/*! \brief getter for the response string
+/*! \brief getter for the response as a string
 *
-*	@author ssalmi
-*
-*	CHECK LATER; at the current moment the ouput of the cgi output is stored into vector<char>,
-*	but this causes because getResponseString returns a string reference.
-*	I'm not sure what I should do, as fixing this issue goes on Jenny's turf that I'm unfamiliar with.
+*	Checks if the request was for a cgi process and calls appropriate phase2 of response
+*	creation from response class. In the case of cgi response, the output from cgi is passed
+*	to the Response object.
 *	
-*	Azzar's solution was to use new with the cgi_output, which solves the immediate issue,
-*	but the bigger original issue still has to be fixed,
-*	which is that this function returns a string, but won't this cause issues with non-string data?
-*	What I wonder is that should we return std::vector<char> reference so that the data will not be modified
-*	in conversion to a string?
-*
-*	As a temporary band-aid solution I've created is to simply create a member variable for the CgiHandler where
-*	the vector<char> is stored into, but we'll most likely want to change this later.
+*	@return @b const @b std::string& a reference to the response string built by the Response object
 */
 const std::string&	Client::getResponseString( void ) {
 
@@ -299,27 +291,30 @@ const std::string&	Client::getResponseString( void ) {
 	}
 }
 
-/*! \brief 
+/*! \brief caller for the Request object `add' method to add received message to request
 *
+*	Passes params to request `add' method.
 *
+*	@param message pointer to message from a recv() call to read from client
+*	@param bytes_read return from the recv() call for the message
 */
 void	Client::addToRequest( char* message, size_t bytes_read ) {
 	
 	this->request_.add(message, bytes_read);
 }
 
-/*! \brief 
+/*! \brief caller for the clearing of the Response object
 *
-*
+*	Calls the request's `clear' method.
 */
 void	Client::resetResponse( void ) {
 	
 	this->response_.clear();
 }
 
-/*! \brief 
+/*! \brief caller for the clearing of the Request object
 *
-*
+*	Calls the response's `clear' method.
 */
 void	Client::resetRequest( void ) {
 
