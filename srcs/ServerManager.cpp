@@ -474,9 +474,9 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			return;
 		}
 
-		Client client(server_fd, server);
+		Client client(server_fd, server);//could throw exception
 
-		this->client_map_[client_fd] = client;
+		this->client_map_[client_fd] = client;//could throw exception
 		this->client_map_[client_fd].setLatestTimeForClientAndServer();
 
 		pollfd new_pollfd = {client_fd, POLLIN, 0};	

@@ -3,11 +3,10 @@
 
 /*! \brief Construct a new Cgi Handler:: Cgi Handler object.
  * 
+ *	
  */
 CgiHandler::CgiHandler( void )
 	:	cgi_output_(""),
-		metavariables_(NULL),
-		args_(NULL),
 		path_(""),
 		pid_(-1) {
 
@@ -19,12 +18,11 @@ CgiHandler::CgiHandler( void )
 
 /*! \brief Copy constructor a new Cgi Handler:: Cgi Handler object.
  * 
+ *	
  *	@param to_copy CgiHandler object to be copied.
  */
 CgiHandler::CgiHandler( const CgiHandler& to_copy )
 	:	cgi_output_(""),
-		metavariables_(NULL),
-		args_(NULL),
 		path_(""),
 		pid_(-1) {
 
@@ -38,8 +36,6 @@ CgiHandler::CgiHandler( const CgiHandler& to_copy )
 CgiHandler::~CgiHandler( void ) {
 
 	this->closeCgiPipes();
-	deleteAllocatedCStringArray(this->metavariables_);
-	deleteAllocatedCStringArray(this->args_);
 } 
 
 /* OPERATOR OVERLOADS */
@@ -53,18 +49,6 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 
 	if (this != &rhs) {
 		this->metavariables_map_ = rhs.metavariables_map_;
-		if (this->metavariables_)
-			deleteAllocatedCStringArray(this->metavariables_);
-		if (rhs.metavariables_ != NULL)
-			this->metavariables_ = copyCStringArray(rhs.metavariables_);
-		else
-			this->metavariables_ = NULL;
-		if (this->args_)
-			deleteAllocatedCStringArray(this->args_);
-		if (rhs.args_ != NULL)
-			this->args_ = copyCStringArray(rhs.args_);
-		else
-			this->args_ = NULL;
 		this->path_ = rhs.path_;
 		for (int i = 0; i < 2; ++i) {
 			this->pipe_into_cgi_[i] = rhs.pipe_into_cgi_[i];
@@ -79,17 +63,12 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
 
 /*! \brief Prepare CgiHandler for next CGI call. 'Zeros' out the values of the CgiHandler.
  *       
- *	All class attributes are cleared other than the cgi_output_ (that happens in the beginning of CgiHandler::StoreCgiOutput_).
+ *	All class attributes are cleared other than the cgi_output_ (that happens in the 
+ *	beginning of CgiHandler::StoreCgiOutput_).
  */
 void	CgiHandler::ClearCgiHandler( void ) {
 	
 	this->metavariables_map_.clear();
-	if (this->metavariables_)
-		deleteAllocatedCStringArray(this->metavariables_);
-	this->metavariables_ = NULL;
-	if (this->args_)
-		deleteAllocatedCStringArray(this->args_);
-	this->args_ = NULL;
 	this->path_ = "";
 	this->closeCgiPipes();
 	for (int i = 0; i < 2; ++i) {
@@ -133,15 +112,7 @@ int	CgiHandler::initializeCgi( Client& client ) {
 
 	this->path_ = temp.erase(2, 8);
 	fillMetavariablesMap_(client);
-	this->metavariables_ = this->convertMetavariablesMapToCStringArray_();
-	if (this->metavariables_ == NULL) {
-		this->ClearCgiHandler();
-		return E_INSUFFICIENT_STORAGE;
-	}
-	if ((result = this->createCgiArguments_(uri, client)) != EXIT_SUCCESS) {
-		this->ClearCgiHandler();
-		return result;
-	}
+	this->saveCgiArguments_(uri, client);
 	if ((result = this->setUpCgiPipes_()) != EXIT_SUCCESS) {
 		this->ClearCgiHandler();
 	}
@@ -180,6 +151,19 @@ void	CgiHandler::clearCgiOutputs( void ) {
 
 /* CLASS PRIVATE METHODS */
 
+/*! \brief deletes inner arguments in args array passed
+*
+*	@param args char** array to free inner element of
+*/
+void	CgiHandler::deleteInnerArgs( char** args ) {
+
+	for (unsigned long i = 0; i < MAX_ARGS; i++) {
+		if (args[i]) {
+			delete args[i];
+			args[i] = nullptr;
+		}
+	}
+}
 
 /*! \brief Fills metavariables_map_ with key/value-data.
  *
@@ -311,44 +295,23 @@ const int*	CgiHandler::getPipeOut( void ) const {
  *	a program to run the script and can set the script as the first and only arg,
  *	but otherwise we need the path to the program to run the script
  *	(for example if bash, args_[0] should be "bin/bash"), and set the path to the
- *	actual script as the second argument. Last arg will be NULL!
+ *	actual script as the second argument.
  *
  * @param uri the uri of the of the client's request, should be path to cgi script.
  * @param client the client that has this CgiHandler object as an attribute.
- * @return @b int which tells if this function was successful or not.
  */
-int	CgiHandler::createCgiArguments_( std::string uri, Client& client ) {
+void	CgiHandler::saveCgiArguments_( std::string uri, Client& client ) {
 	
-	int size;
 	std::string	extension = this->getExtension(uri);
 
-	try {
-		if (extension == ".cgi")
-			size = 1;
-		else
-			size = 2;
-		this->args_ = new char*[size + 1];
-		this->args_[size] = NULL;
-	} catch (std::exception& e) {
-		Logger::log(E_ERROR, COLOR_RED, "CreateCgiArguments allocation error: %s", e.what());
-		return E_INSUFFICIENT_STORAGE;
-	}
-	if (size == 1){
-		this->args_[0] = ft_strdup(this->path_.c_str());
-		if (this->args_[0] == NULL)
-			goto cleanup;
-	}
-	else {
-		this->args_[0] = ft_strdup(client.getServer()->getCgiExecutor(extension).c_str());
-		this->args_[1] = ft_strdup(this->path_.c_str());
-		if (this->args_[0] == NULL || this->args_[1] == NULL)
-			goto cleanup;
-	}
-	return EXIT_SUCCESS;
-cleanup:
-	deleteAllocatedCStringArray(this->args_);
-	this->args_ = NULL;
-	return E_FAILED_DEPENDENCY;
+	if (extension == ".cgi")
+		this->number_args_ = 1;
+	else
+		this->number_args_ = 2;
+	if (this->number_args_ == 1)
+		this->executor_path_ = this->path_;
+	else
+		this->executor_path_ = client.getServer()->getCgiExecutor(extension);
 }
 
 /*! \brief This function monitors that the cgi process ends in a timely manner.
@@ -428,6 +391,21 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 	}
 	if (this->pid_ == 0) {
 
+		char** metavariables = this->convertMetavariablesMapToCStringArray_();
+		char*	args[MAX_ARGS];
+
+		if (metavariables == NULL)
+			std::exit(EXIT_FAILURE);
+		memset(args, 0, sizeof(args));
+		args[0] = ft_strdup(this->executor_path_.c_str());
+		if (this->number_args_ == 2)
+			args[1] = ft_strdup(this->path_.c_str());
+		if (args[0] == NULL || (this->number_args_ == 2 && args[1] == NULL)) {
+			deleteInnerArgs(args);
+			deleteAllocatedCStringArray(metavariables);
+			std::exit(EXIT_FAILURE);
+		}
+
 		dup2(this->pipe_into_cgi_[E_PIPE_END_READ], STDIN_FILENO);
 		dup2(this->pipe_from_cgi_[E_PIPE_END_WRITE], STDOUT_FILENO);
 
@@ -443,16 +421,16 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 		if (total_bytes_sent != msg_length) {
 			Logger::log(E_ERROR, COLOR_RED, "not all body_string bytes were sent; aborting cgi process");
-			deleteAllocatedCStringArray(this->args_);
-			deleteAllocatedCStringArray(this->metavariables_);
+			deleteInnerArgs(args);
+			deleteAllocatedCStringArray(metavariables);
 			std::exit(EXIT_FAILURE);
 		}
 		chdir("./cgi-bin");
-		execve(this->args_[0], this->args_, this->metavariables_);
+		execve(args[0], args, metavariables);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));
-		deleteAllocatedCStringArray(this->args_);
-		deleteAllocatedCStringArray(this->metavariables_);
+		deleteInnerArgs(args);
+		deleteAllocatedCStringArray(metavariables);
 		std::exit(EXIT_FAILURE);
 	} else {
 

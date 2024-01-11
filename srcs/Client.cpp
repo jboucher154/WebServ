@@ -18,11 +18,7 @@ Client::Client( void ) :
 	time(&this->latest_time_);
 	this->server_ = NULL;
 	this->server_fd_ = -1;
-	while (!this->cgi_handler_) {// should drop client connection if this fails
-		this->cgi_handler_ = new CgiHandler;
-		if (!this->cgi_handler_)
-			Logger::log(E_ERROR, COLOR_RED, "Client constructor new failure (CgiHandler)");
-	}
+	this->cgi_handler_ = new CgiHandler;
 }
 
 /*! \brief constructor with parameters for Client object
@@ -41,11 +37,7 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 	time(&this->latest_time_);
 	this->server_ = server;
 	this->server_fd_ = server_fd;
-	while (!this->cgi_handler_) {//
-		this->cgi_handler_ = new CgiHandler;
-		if (!this->cgi_handler_)
-			Logger::log(E_ERROR, COLOR_RED, "Client constructor new failure (CgiHandler), attempting again");
-	}
+	this->cgi_handler_ = new CgiHandler;
 }
 
 /*! \brief copy constructor for Client object, initializes response and cgi_handler to NULL
@@ -56,7 +48,7 @@ Client::Client( int server_fd, Server* server ) : response_(server), cgi_handler
 */
 Client::Client( const Client& to_copy ) : response_(NULL), cgi_handler_(NULL) {
 
-	//allocate cgi hanler here
+	this->cgi_handler_ = new CgiHandler;
 	*this = to_copy;
 } 
 
@@ -94,15 +86,10 @@ Client&	Client::operator=( const Client& rhs ) {
 		this->server_fd_ = rhs.server_fd_;
 		this->request_ = rhs.request_;
 		this->response_ = rhs.response_;
-		// if (this->cgi_handler_) {
-		// 	delete this->cgi_handler_;
-		// 	this->cgi_handler_ = NULL;
-		// }
-		// this->cgi_handler_ = new CgiHandler;
 		if (rhs.cgi_handler_) {
 			*(this->cgi_handler_) = *(rhs.cgi_handler_);
 		}
-		else { //added
+		else {
 			this->cgi_handler_->ClearCgiHandler();
 		}
 	}
