@@ -30,7 +30,7 @@
 *   false = no debug output logged
 */
 # ifndef GET_DEBUG_LOG
-#  define GET_DEBUG_LOG	true
+#  define GET_DEBUG_LOG	false
 # endif
 
 /*! \brief Macro for enabling/disabling the getting of fd info for main server loop
