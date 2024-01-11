@@ -227,6 +227,7 @@ int	Server::setupServer( void ) {
 */
 bool	Server::setUploadStore( std::string upload_dir) {
 	std::string upload_store = this->getRoot() + "/." + this->getServerName() + this->getListeningPortString() + upload_dir;
+	this->upload_store_ = upload_store;
 	if (access(upload_store.c_str(), F_OK) == 0){
 		return true;
 	}
@@ -234,7 +235,6 @@ bool	Server::setUploadStore( std::string upload_dir) {
 		Logger::log(E_ERROR, COLOR_RED, "server failed to create temprary upload directory");
 		return false;
 	}
-	this->upload_store_ = upload_store;
 	return true;
 
 }
