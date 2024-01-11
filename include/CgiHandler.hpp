@@ -87,8 +87,6 @@ class	CgiHandler {
 		void	clearCgiOutputs( void );
 
 		// getters
-		// std::vector<std::string, std::string>&	getMetavariablesVector( void ) const;
-		// std::vector<std::string, std::string>&	getCgiVector( void ) const;
 		std::string					getExtension( std::string uri );
 		const std::string&			getCgiOutputAsString( void ) const;
 		const int*	getPipeIn( void ) const;
