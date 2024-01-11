@@ -198,10 +198,6 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	client->setLatestTimeForClientAndServer();
 	memset(client_msg, 0, 500000);
 	int bytes_received = recv(client_fd, &client_msg, 500000 - 1, 0);
-
-	std::cout << "bytes received: " << bytes_received << std::endl;
-	std::cout << "messge:  \n" << client_msg << std::endl;
-
 	if (bytes_received == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "recv error from socket %d to server %s, disconnecting client", client_fd, server->getServerIdforLog().c_str());
 		return false;
@@ -213,7 +209,6 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 		client_msg[bytes_received] = '\0';
 		char* msg_ptr = client_msg;
 		client->addToRequest(msg_ptr, bytes_received);
-		//check for correct server
 		checkServerAssignmentBasedOnRequest(*client);
 		Logger::log(E_INFO, COLOR_WHITE, "server %s receives request from socket %d, METHOD=<%s>, URI=<%s>",
 			server->getServerName().c_str(), client_fd, request.getRequestLineValue("method").c_str(), request.getRequestLineValue("uri").c_str());
@@ -251,7 +246,6 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 	if (response_string.empty())
 		return keep_alive;
 	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
-	// std::cout << "response: \n" << response_string << std::endl;//
 	if (bytes_sent == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "send error from server %s to socket %d, disconnecting client", server->getServerIdforLog().c_str(), client_fd);
 		return false;
@@ -263,7 +257,6 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
 				server->getServerName().c_str(), client_fd, response.getStatusCode());
 	}
-	//only if complete reset FOR NOW
 	if (client->getRequest().getComplete()) {
 		client->resetResponse();
 		client->resetRequest();
