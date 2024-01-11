@@ -10,34 +10,56 @@
 # include "MimeTypes.hpp"
 # include "ResponseCodes.hpp"
 
-# define CRLF "\r\n" //make this project wide?
+/** \brief Carriage Return Line Feed
+ * 
+ * In the HTTP protocol, the CR-LF sequence is always used to terminate a line.
+ */
+# define CRLF "\r\n"
+
+/*! \brief macro for request's time limit (in seconds)
+ *
+ * The request must be fully received in the set time limit, otherwise the
+ * server will send an error code back to the client.
+ */
 # define REQUEST_TIMEOUT_SEC 10
 
+/*! \brief Class that handles the parsing and validation of client Requests
+ * 
+ *	@class Request
+ * 
+ *	The request class handles the parsing and validation of client requests.
+ *	It handles things like parsing the request line, headers and body of the request.
+ *	It is able to handle requests that come in multiple parts (ie. chunked).
+ *	If the client's request is valid, an appropriate response will be sent with
+ *	the contents that were requested.
+ *	If the client's request was invalid, the Request class will set the appropriate
+ *	error (status) code for the response to send back to the client.
+ */
 class	Request {
 
 	private:
 		/* PRIVATE METHODS AND MEMBERS */
-		size_t								body_size_;
-		size_t								body_len_received_;					
-		bool 								chunked_;
-		bool								keep_alive_;
-		bool								cgi_flag_;
-		bool								headers_complete;
-		bool								complete_;
-		std::string							host_name_;
-		int									port_;
-		std::map<std::string, std::string>	request_line_;
-		std::map<std::string, std::string>	headers_;
-		std::string							raw_body_;
-		std::string							processed_body_;
-		std::string							file_content_;
-		std::string							file_name_;
-		std::vector<u_int8_t>				body_vector_;
-		bool								file_upload_;
-		std::string							file_mime_;
-		unsigned int						status_code_;
-		time_t								request_start_time_;
-		bool								query_encode_;
+		size_t								body_size_;				/*!< \brief size_t that represents the size promised by the Content-Length header */
+		size_t								body_len_received_;		/*!< \brief size_t that represents the amount of bytes of the body received */
+		bool 								chunked_;				/*!< \brief bool that represents if the message is chunked or not */
+		bool								keep_alive_;			/*!< \brief bool that represents if the connection will be kept alive or shut down after a response is sent*/
+		bool								cgi_flag_;				/*!< \brief bool that represents if the request was for a cgi resource or not */
+		bool								headers_complete;		/*!< \brief bool that represents if all the headers are received or not */
+		bool								complete_;				/*!< \brief bool that represents if the request is fully received or not */
+		std::string							host_name_;				/*!< \brief string of the hostname */
+		int									port_;					/*!< \brief int of the port number */
+		std::map<std::string, std::string>	request_line_;			/*!< \brief map of the request line's parts and their values */
+		std::map<std::string, std::string>	headers_;				/*!< \brief map of the request's headers and their values */
+		std::string							raw_body_;				/*!< \brief string of the raw body */
+		std::string							processed_body_;		/*!< \brief string of the processed body */
+		std::string							file_content_;			/*!< \brief string of a file's contents */
+		std::string							file_name_;				/*!< \brief string of a file's name */
+		std::vector<u_int8_t>				body_vector_;			/*!< \brief vector consisting of unsigned 8-bit integers of the body */
+		bool								file_upload_;			/*!< \brief bool indicating if a file has been stored for upload */
+		std::string							file_mime_;				/*!< \brief string of the mime type of a file */
+		unsigned int						status_code_;			/*!< \brief unsigned int that represents the status code */
+		time_t								request_start_time_;	/*!< \brief time_t that represents the time of when the all of the headers have been received */
+		bool								query_encode_;			/*!< \brief bool that indicates if the response should encode or not */
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
@@ -47,14 +69,14 @@ class	Request {
 		void	parseChunkedBody_( void );
 		void 	storeFileContents_( const std::string& section_bound, const std::string& last_bound, size_t& body_index );
 		void	parseMultipartForm_( std::string boundary );
-		void	setFilename( const std::string& to_parse );
+		void	setFilename_( const std::string& to_parse );
 
-		void	setBodySize( void );
-		void	setChunked( void );
-		void	setKeepAlive( void );
-		void	setRequestAttributes( void );
-		void	setCgiFlag( void );
-		void	setHostNameAndPort( void );
+		void	setBodySize_( void );
+		void	setChunked_( void );
+		void	setKeepAlive_( void );
+		void	setRequestAttributes_( void );
+		void	setCgiFlag_( void );
+		void	setHostNameAndPort_( void );
 
 	public:
 		Request( void );
