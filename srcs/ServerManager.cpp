@@ -245,14 +245,14 @@ bool	ServerManager::sendResponseToClient( int client_fd ) {
 
 	if (response_string.empty())
 		return keep_alive;
-	int	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
+	ssize_t	bytes_sent = send(client_fd, response_string.c_str(), response_string.length(), 0);
 	if (bytes_sent == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "send error from server %s to socket %d, disconnecting client", server->getServerIdforLog().c_str(), client_fd);
 		return false;
 	} else {
-		if (bytes_sent < static_cast<int>(response_string.length()))
-			Logger::log(E_ERROR, COLOR_RED, "incomplete response sent from server %s to socket %d ",
-				server->getServerIdforLog().c_str(), client_fd);
+		if (static_cast<unsigned long>(bytes_sent) < response_string.length())
+			Logger::log(E_ERROR, COLOR_RED, "incomplete response sent from server %s to socket %d. %li bytes sent of %li",
+				server->getServerIdforLog().c_str(), client_fd, bytes_sent, response_string.length());
 		else
 			Logger::log(E_INFO, COLOR_WHITE, "server %s sent response to socket %d, STAT=<%d>",
 				server->getServerName().c_str(), client_fd, response.getStatusCode());

@@ -18,7 +18,16 @@
 				</ul>
 			</nav>
 		</header>
-		<form id="photoForm" action="../../cgi-bin/add_file.py" method="POST" enctype="multipart/form-data"> <!--action="../dog" -->
+		<h2>Form with CGI</h2>
+		<form id="photoForm" action="../../cgi-bin/add_file.py" method="POST" enctype="multipart/form-data">
+			<div>
+				<label for="photo">Upload photo</label>
+				<input type="file" required="required" name="photo" id="photo">
+				<input type="submit" value="Upload">
+			</div>
+		</form>
+		<h2>Form that POST using server directly, saves to /dog location</h2>
+		<form id="photoForm" action="../dog" method="POST" enctype="multipart/form-data">
 			<div>
 				<label for="photo">Upload photo</label>
 				<input type="file" required="required" name="photo" id="photo">
