@@ -18,17 +18,17 @@
 # include "Logger.hpp"
 # include "MimeTypes.hpp"
 
-# ifndef CRLF
-#  define CRLF "\r\n"
-# endif
-
+/*! \brief File size limit for pipes
+ * 
+ */
 # define FILE_SIZE_LIMIT_FOR_PIPE 64000
 
 /*! \brief Class for handling HTTP responses.
 *       
+*	@class Response
 *
-*  Response class handle HTTP responses. It is responsible for generating the response
-*  given a Request object.
+* 	Response class that handles the server's HTTP responses to its clients.
+*	It is responsible for generating the response to a client request.
 *  
 *  Public Methods:
 *  - generate: generate the response given a Request object
@@ -41,21 +41,21 @@ class	Response {
 		Response( void );
 
 		/* PRIVATE METHODS AND MEMBERS */
-		std::string			response_;
-		std::string			body_;
-		std::string			response_mime_;
-		std::string			resource_path_; //path for opening/ manipulating etc
-		std::string			alias_location_;
-		std::string			resource_location_; // location for looking up in server
-		int					status_code_;
-		Server*				server_;
-		Request*			request_;
-		bool				redirect_;
-		bool				alias_;
-		bool				directory_listing_;
-		std::string			query_string_;
-		std::string			temp_filepath_;
-		bool				temp_file_;
+		std::string			response_;			/*!< \brief string of the entire response */
+		std::string			body_;				/*!< \brief string of the body of the response */
+		std::string			response_mime_;		/*!< \brief string of the response's body's mime type */
+		std::string			resource_path_; 	/*!< \brief string of the path of the resource requested in the uri */
+		std::string			alias_location_;	/*!< \brief string of the actual location value a alias key points to */
+		std::string			resource_location_; /*!< \brief string of the name of the resource location in the uri */
+		int					status_code_;		/*!< \brief status code of the response */
+		Server*				server_;			/*!< \brief pointer to the server the response gets its resources from */
+		Request*			request_;			/*!< \brief pointer to request this response is tied to */
+		bool				redirect_;			/*!< \brief bool that represents if there is a redirection present in the location or not */
+		bool				alias_;				/*!< \brief bool that tells if there is an alias in the resource location */
+		bool				directory_listing_;	/*!< \brief bool that represents if there is autoindex is true in the requested location or not */
+		std::string			query_string_;		/*!< \brief string of the query string passed as a metavariable for a cgi-script */
+		std::string			temp_filepath_;		/*!< \brief string of the temporary filepath that may be included in the response */
+		bool				temp_file_;			/*!< \brief bool that represents if there is a temporary file involved in the response or not */
 
 		/* HEADER GENERATORS */
 		std::string&	addHeaders_( std::string& response) const;
@@ -92,7 +92,7 @@ class	Response {
 		void	handelAlias_( void );
 
 		void	setMimeType_( void );
-		bool	validateResource_( void );
+		void	validateResource_( void );
 		void	createErrorBody_( void );
 
 

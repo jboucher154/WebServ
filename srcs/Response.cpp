@@ -4,18 +4,16 @@
 
 /* CONSTRUCTORS */
 
-/*! \brief Default constructor is private.
+/*! \brief Response's default constructor that is private
 *       
-*  Default constructor is private.
-*  
+*  This default constructor is private.
 */
 Response::Response( void ) {}
 
-/*! \brief Constructor intializes empty response and body; sets status code to 0.
+/*! \brief Constructor intializes empty response and body; sets status code to 0
 *       
-*
-*  Default constructor intializes empty response and body. Default status code set to 501 for MVP.
-*  More details to be filled as project progresses.
+*  Default constructor intializes empty response and body.
+*  Zeroes all attributes on construction.
 */
 Response::Response( Server* server )
 : response_(""), 
@@ -38,9 +36,6 @@ temp_file_(false) {
 
 /*! \brief Copy constructor calls assignment operator.
 *       
-*
-*  More details to be filled as project progresses.
-*  
 */
 Response::Response( const Response& to_copy ) {
 
@@ -51,19 +46,16 @@ Response::Response( const Response& to_copy ) {
 
 /*! \brief Default destructor has no special actions.
 *       
-*
-*  More details to be filled as project progresses.
-*  
 */
 Response::~Response( void ) {} 
 
 /* OPERATOR OVERLOADS */
 
-/*! \brief Assignment operator copies all non static values.
+/*! \brief Assignment operator copies all non-static values.
 *       
 *
-*   Assignment operator is now public.
-*  
+*   @param rhs a reference to the Response object whose values are to be copied
+* 	@return @b Response& the response object that copies the values (left-hand side)
 */
 Response&	Response::operator=( const Response& rhs ) {
 
@@ -91,12 +83,33 @@ Response&	Response::operator=( const Response& rhs ) {
 /* CLASS PUBLIC METHODS */
 
 
-/*! \brief phase 1 of response checks if request is possible and calls the function for 
-*				the method requestsed given a Request object.
+/*! \brief phase 1 of response checks if request is valid and calls the function for 
+*				the method requested given a Request object
 *       
+*	This is the first phase (of two, second phase is Response::buildAndGetResponsePhase2)
+*	of creating a response to a client request.
+*	First the function checks that the Response's server and request are not NULL
+*	and if they are, set the status code to 500 (E_INTERNAL_SERVER_ERROR) and the function ends.
+*	Then the the initial status code that the request has possibly set is checked and
+*	if the status code denotes an error, the function ends.
+*	Then the request's body size is compared with the server's max body and if it's
+*	too large, the status code is set to  413 (E_PAYLOAD_TOO_LARGE) and the function ends.
+*	Then the Response::setResourceLocation function is called and specific status codes
+*	are checked for POST methods and if it doesn't pass these check, the function ends.
+*	Then it is checked if the method is allowed and if not, the status code is set
+*	to 405 (E_METHOD_NOT_ALLOWED) and the function ends.
+*	If the function passes this point, the Response::validateResource_ is called which might
+*	set an error code if something goes wrong.
+*	The following things are checked if status code is less than 400 and the request is not yet complete:
+*		The request's time limit is checked and if it has passed, set 408 (E_REQUEST_TIMEOUT) and end function.
+*		Else it is checked if the request is chunked and if it is, the status code is set to 100 (E_CONTINUE).
+*		Else the it is checked if the expect header is included in the request's headers and if it is,
+*		the status code is set to 100 (E_CONTINUE).
+*		Else the status code is set to 1 E_SERVER_PROCESSING.
+*	If the function gets to this point and the status code is less than 400 (no errors), then the function 
+*	for whatever method the request had is called.
 *
-*  
-*  
+* 	@param request a pointer to the Request object that the response is created for
 */
 void	Response::createResponsePhase1( Request* request ) {
 
@@ -104,9 +117,6 @@ void	Response::createResponsePhase1( Request* request ) {
 	response_methods_	methods = { &Response::getMethod_, &Response::headMethod_, &Response::postMethod_, &Response::deleteMethod_ };
 
 	this->request_ = request;
-	this->status_code_ = request->getStatusCode();
-	if (this->status_code_ >= 400)
-		return ;
 	if (this->server_ == NULL) {
 		Logger::log(E_ERROR, COLOR_RED, "Response has no server");
 		this->status_code_ = E_INTERNAL_SERVER_ERROR;
@@ -117,6 +127,9 @@ void	Response::createResponsePhase1( Request* request ) {
 		this->status_code_ = E_INTERNAL_SERVER_ERROR;
 		return ;
 	}
+	this->status_code_ = request->getStatusCode();
+	if (this->status_code_ >= 400)
+		return ;
 	if (this->server_->getClientMaxBodySize() < static_cast<double>(request->getBodySize())) {
 		this->status_code_ = E_PAYLOAD_TOO_LARGE;
 		return ;
@@ -159,13 +172,15 @@ void	Response::createResponsePhase1( Request* request ) {
 }
 
 
-/*! \brief returns a reference to the response string built.
+/*! \brief phase 2 of response returns a reference to the response string built
 *       
-*
+*	This is the second phase (of two, first phase is Response::createResponsePhase1)
+*	of creating a response to a client request.
 *	Builds and returns response, checking if there has been an error, adding headers as 
 *	required, and appending the body. All are separated by the CRLF or "/r/n" per HTTP 
 *	guidelines.
-*
+*	
+*	@return @b string& the built response string
 */
 std::string&	Response::buildAndGetResponsePhase2( void ) {
 
@@ -184,7 +199,8 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 	return this->response_;
 }
 
-/*! \brief takes a reference to the body returned from a cgi process and returns a 
+/*! \brief \brief phase 2 of response returns a reference to the response string built.
+			takes a reference to the body returned from a cgi process and returns a 
 *			reference to the response string built.
 *       
 *
@@ -193,6 +209,8 @@ std::string&	Response::buildAndGetResponsePhase2( void ) {
 *	response, adding headers as required, and appending the body passed to the function. 
 *	All are separated by the CRLF or "/r/n" per HTTP guidelines.
 *  
+*	@param body returned from a cgi process
+*	@return @b string& the built response string	
 */
 std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 	
@@ -221,8 +239,7 @@ std::string&	Response::buildAndGetResponsePhase2( const std::string& body ) {
 /*! \brief clear method resets the response for next use
 *       
 *
-*  More details to be filled as project progresses.
-*  
+* 	Zeroes out all the attributes for the next time the response is used.
 */
 void	Response::clear( void ) { 	/* reset for next use */
 
@@ -244,17 +261,21 @@ void	Response::clear( void ) { 	/* reset for next use */
 
 /******************************* SETTERS ******************************/
 
-/*! \brief	setter for the response status code
+/*! \brief setter for the response status code
 *
 *
 *	Allows for client and cgi handler to set the response status code.
-*
+*	@param new_code a new status code for the response
 */
-void	Response::setStatusCode( unsigned int	new_code ) {
+void	Response::setStatusCode( unsigned int new_code ) {
 
 	this->status_code_ = new_code;
 }
 
+/*! \brief setter for the response's server pointer attribute
+ * 
+ * @param server pointer to the server that is to be set for the response
+ */
 void	Response::setServer( Server* server ) {
 
 	if (server) {
@@ -266,9 +287,7 @@ void	Response::setServer( Server* server ) {
 
 /*! \brief	returns http status code set for the response
 *
-*
-*	returns http status code set for the response
-*
+*	@return @b int http status code set for the response
 */
 int	Response::getStatusCode( void ) const {
 
@@ -278,10 +297,7 @@ int	Response::getStatusCode( void ) const {
 
 /*! \brief returns the filepath to the requested resource
 *
-*
-*	returns the filepath to the requested resource
-*
-*
+*	@return @b const @b std::string& which is filepath to the requested resource
 */
 const std::string&	Response::getResourcePath( void ) const {
 
@@ -290,20 +306,16 @@ const std::string&	Response::getResourcePath( void ) const {
 
 /*! \brief returns const reference to the query string for a CGI script
 *
-*
-*	returns const reference to the query string for a CGI script
-*
+*	@return @b const @b std::string& to the query string for a CGI script
 */
 const std::string&	Response::getQueryString( void ) const {
 
 	return this->query_string_;
 }
 
-/*! \brief returns begin iterator for the stored filedata for upload
+/*! \brief returns const reference to the stored filedata string meant for upload
 *
-*
-*	returns begin iterator for the stored filedata for upload
-*
+*	@return @b const @b std::string& of the stored filedata meant for upload
 */
 const std::string&	Response::getUploadData( void ) {
 
@@ -314,32 +326,28 @@ const std::string&	Response::getUploadData( void ) {
 
 /*! \brief checks for existance and file access rights for requested resource
 *
-*	
 *	Checks for existance and access rights for requested resource.
-*	Error codes may be set, 404 - not found, 403 - access not allowed
-*
+*	Error codes may be set, 404 - not found or 403 - access not allowed.
 */
-bool	Response::validateResource_( void ) {
+void	Response::validateResource_( void ) {
 
 	if (access(this->resource_path_.c_str(), F_OK) != 0) {
 		this->status_code_ = E_NOT_FOUND;
 		Logger::log(E_DEBUG, COLOR_CYAN, "404 Location not found validating resource exists: `%s'", this->resource_path_.c_str());
-		return false;
+		return;
 	}
 	if (!this->request_->getCgiFlag() && this->request_->getRequestLineValue("method") == "DELETE") {
-		return true;
+		return;
 	}
 	else if (this->request_->getCgiFlag() && access(this->resource_path_.c_str(), X_OK) != 0) {
 		this->status_code_ = E_FORBIDDEN;
 		Logger::log(E_DEBUG, COLOR_CYAN, "403 execution access not allowed for cgi file: `%s'", this->request_->getRequestLineValue("uri").c_str());
-		return false;
+		return;
 	}
 	else if (access(this->resource_path_.c_str(), R_OK) != 0) {
 		this->status_code_ = E_FORBIDDEN;
 		Logger::log(E_DEBUG, COLOR_CYAN, "403 read access not allowed for resource file: `%s'", this->request_->getRequestLineValue("uri").c_str());
-		return false;
 	}
-	return true;
 }
 
 /****************************************** HEADER GENERATORS ******************************************/
@@ -349,7 +357,9 @@ bool	Response::validateResource_( void ) {
 *	Appends each header to the response as needed. No errors are set here. 
 *	Returns a reference to the response string. All are separated by the CRLF or "/r/n" 
 *	per HTTP guidelines.
-*
+*	
+*	@param response the response string
+*	@return @b std::string& the response with the headers added
 */
 std::string&	Response::addHeaders_( std::string& response) const {
 
@@ -375,7 +385,9 @@ std::string&	Response::addHeaders_( std::string& response) const {
 *       
 *	`Retry-After' header returned with default value in seconds for client to wait
 *	before sending a request again.
-*  
+*	
+*	@param connection_continue a bool which determines which header value should be set
+*	@return @b std::string the 'Connection' header
 */
 std::string	Response::connectionHeader_( bool connection_continue ) const {
 
@@ -389,7 +401,8 @@ std::string	Response::connectionHeader_( bool connection_continue ) const {
 *       
 *	`Retry-After' header returned with default value in seconds for client to wait
 *	before sending a request again.
-*  
+*
+*	@return @b std::string the 'Retry-Header'  
 */
 std::string	Response::retryAfterHeader_( void ) const {
 
@@ -397,15 +410,16 @@ std::string	Response::retryAfterHeader_( void ) const {
 }
 
 /*! \brief creates the location header for a redirection, sets redirect the index page of 
-*				redirect location found.
+*				redirect location found
 *	
 *	Creates `Location' header to instruct client that resources requested are at indicated
 *	location. If no index is found for the location, index is still returned as the location
 *	of the resource. 
 *
 *	NOTES:
-*	-  Index value is gaurenteed to be set by the validator.
+*	-  Index value is guaranteed to be set by the validator.
 *
+*	@return @b std::string the 'Location' header
 */
 std::string	Response::locationHeader_( void ) const {
 
@@ -432,9 +446,9 @@ std::string	Response::locationHeader_( void ) const {
 
 /*! \brief timeStampHeader private method returns header formated current time in GMT
 *       
+* 	Current time in GMT is prepended with `Date: ` in the HTTP 1.1 format.
 *
-*  Current time in GMT is prepended with `Date: ` in the HTTP 1.1 format.
-*  
+* 	@return @b std::string the timeStampHeader
 */
 std::string		Response::timeStampHeader_( void ) const {
 
@@ -451,33 +465,30 @@ std::string		Response::timeStampHeader_( void ) const {
 
 /*! \brief returns formated response header for Content-Type header
 *
-*	returns Content-Type header based on mime type set for the response
-*
-*
+*	@return @b std::string Content-Type header based on mime type set for the response
 */
 std::string	Response::contentTypeHeader_( void ) const {
 
 	return "Content-Type: " + this->response_mime_;
 }
 
-/*! \brief returns formated response header for Content-Length
+/*! \brief returns formatted response header for Content-Length
 *
-*	Returns formated response header for Content-Length
-*
-*
+*	@return @b std::string formatted response header for Content-Length
 */
 std::string Response::contentLengthHeader_( void ) const {
 	
 	return "Content-Length: "  + intToString(this->body_.length());
 }
 
-/*! \brief returns formated response header for Content-Location
+/*! \brief returns formatted response header for Content-Location
 *
 *
-*	Returns formated response header for Content-Location.
+*	Returns formatted response header for Content-Location.
 *	Resource_location is used always as it is overwritten in case of redirection 
 *	and in case of alias the aliased location should not be sent.
 *
+*	@return @b std::string formatted response header for Content-Location
 */
 std::string Response::contentLocationHeader_( void ) const {
 
@@ -490,7 +501,6 @@ std::string Response::contentLocationHeader_( void ) const {
 *	
 *	Creates the body of the error response either from a file given in the config or
 *	generates a default error page from the ResponseCodes class.
-*  
 */
 void	Response::createErrorBody_( void ) {
 	
@@ -527,11 +537,13 @@ void	Response::createErrorBody_( void ) {
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
 
 /*! \brief changes location if redirection found
-*	
-*	If `return' key is set in the origional location from the uri 
-*	- Handles a single redirection, if multiple are chained together the client
-*		must send a request for each.
+*		if `return' key is set in the original location from the uri.
+*
+*	NOTES:
+*	- Handles a single redirection; if multiple are chained together, the client
+*	must send a request for each.
 *  
+*	@return @b bool indicating if the location should be changed or not
 */
 bool	Response::handleRedirection_( void ) {
 
@@ -544,12 +556,11 @@ bool	Response::handleRedirection_( void ) {
 	return false;
 }
 
-/*! \brief checks for location alias and sets relvant variables
+/*! \brief checks for location alias and sets relevant variables
 *	
-*	If `alias' key is set in the origional location from the uri and sets
-*	alias bool to true if so. Will also check to see if the alias points
+*	If `alias' key is set in the original location from the uri, this function
+*	will sets alias bool to true. Will also check to see if the alias points
 *	to the /cgi-bin location, if so then sets flag in request.
-*  
 */
 void	Response::handelAlias_( void ) {
 
@@ -565,13 +576,16 @@ void	Response::handelAlias_( void ) {
 /*! \brief sets the location name in the server that relates to the request uri
 *	
 *    setResourceLocation_:
-*		-  checks if the request if for cgi, rejects as invalid for not specifying a specific script
+*		-  checks if the request is for cgi, rejects as invalid for not specifying a specific script
 *		-  check if location is valid
 *		-  calls `handlRedirection' to change location as needed
 *	Error codes:
 *		404 - Not Found if location does not exist
 *		400 - Invalid Request if no cgi script is defined
-*  
+*
+*	@param uri string of the uri
+*	@param is_dir bool that tells if it is directory or not
+*	@param last_slash_pos size_t of the last slash's position in uri string
 */
 void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
@@ -597,9 +611,6 @@ void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_
 		handelAlias_();
 }
 
-
-
-//only incase of no index will we assume index.html -> //TODO !!!this should be set when searching for the index not here. 
 /*! \brief sets resource path based on verified location from the uri
 *	
 *    setResourcePath_:
@@ -610,6 +621,9 @@ void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_
 *		404 - Not Found if location does not exist
 *		400 - Invalid Request if no cgi script is defined
 *  
+*	@param uri string of the uri
+*	@param is_dir bool that tells if it is directory or not
+*	@param last_slash_pos size_t of the last slash's position in uri string
 */
 void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
@@ -653,13 +667,14 @@ void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slas
 /*! \brief Extracts information from the request URI and validates 
 *				the location requested
 *       
-*
-* 	Check for the validitiy of the location and possible CGI information in 
+* 	Check for the validity of the location and possible CGI information in 
 *	the URI form the request. The existence of the files is not checked, only that 
 *	they have been entered into the server at this point.
 *	
-*	404 - Not Found will be set if location does not exist
-*  
+*	404 - Not Found will be set if location does not exist.
+*
+*	@param uri string of the uri
+*	@return @b int the status code  
 */
 int	Response::setResourceLocationAndName_( std::string uri ) {
 	
@@ -682,22 +697,15 @@ int	Response::setResourceLocationAndName_( std::string uri ) {
 	return this->status_code_;
 }
 
-/*
-- break apart uri to determine if it is a file or directory
-- find the location that corresponds to that uri
-	- save the location name for looking up location info
-	- save filepath to resource for access
-- if cgi is requested, verify the script is on the approved list
-*/
-
-
-/*! \brief returns true or false if requested method is allowd for the location
+/*! \brief returns true or false if requested method is allowed for the location
 *
 *	Uses getLocationValue from server to get the vector of allowed methods,
 *	searches them using find to see if requested method is contained in the vector.
 *
 *	Return : false if no methods listed or method not found and true if found.
 *
+*	@param method string of the method
+*	@return @b bool that tells if if requested method is allowed for the location
 */
 bool	Response::methodAllowed_( std::string method ) {
 
