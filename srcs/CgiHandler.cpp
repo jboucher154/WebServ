@@ -155,7 +155,7 @@ void	CgiHandler::clearCgiOutputs( void ) {
 *
 *	@param args char** array to free inner element of
 */
-void	CgiHandler::deleteInnerArgs( char** args ) {
+void	CgiHandler::deleteInnerArgs_( char** args ) {
 
 	for (unsigned long i = 0; i < MAX_ARGS; i++) {
 		if (args[i]) {
@@ -401,7 +401,7 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 		if (this->number_args_ == 2)
 			args[1] = ft_strdup(this->path_.c_str());
 		if (args[0] == NULL || (this->number_args_ == 2 && args[1] == NULL)) {
-			deleteInnerArgs(args);
+			deleteInnerArgs_(args);
 			deleteAllocatedCStringArray(metavariables);
 			std::exit(EXIT_FAILURE);
 		}
@@ -421,7 +421,7 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 
 		if (total_bytes_sent != msg_length) {
 			Logger::log(E_ERROR, COLOR_RED, "not all body_string bytes were sent; aborting cgi process");
-			deleteInnerArgs(args);
+			deleteInnerArgs_(args);
 			deleteAllocatedCStringArray(metavariables);
 			std::exit(EXIT_FAILURE);
 		}
@@ -429,7 +429,7 @@ int		CgiHandler::executeCgi_( const std::string& body_string ) {
 		execve(args[0], args, metavariables);
 
 		Logger::log(E_ERROR, COLOR_RED, "execve error: %s", strerror(errno));
-		deleteInnerArgs(args);
+		deleteInnerArgs_(args);
 		deleteAllocatedCStringArray(metavariables);
 		std::exit(EXIT_FAILURE);
 	} else {

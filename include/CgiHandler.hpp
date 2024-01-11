@@ -69,7 +69,7 @@ class	CgiHandler {
 		int		setUpCgiPipes_( void );
 		int		executeCgi_( const std::string& body_string );
 		int		storeCgiOutput_( void );
-		void	deleteInnerArgs( char** args );
+		void	deleteInnerArgs_( char** args );
 
 	public:
 
