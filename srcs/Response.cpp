@@ -410,15 +410,16 @@ std::string	Response::retryAfterHeader_( void ) const {
 }
 
 /*! \brief creates the location header for a redirection, sets redirect the index page of 
-*				redirect location found.
+*				redirect location found
 *	
 *	Creates `Location' header to instruct client that resources requested are at indicated
 *	location. If no index is found for the location, index is still returned as the location
 *	of the resource. 
 *
 *	NOTES:
-*	-  Index value is gaurenteed to be set by the validator.
+*	-  Index value is guaranteed to be set by the validator.
 *
+*	@return @b std::string the 'Location' header
 */
 std::string	Response::locationHeader_( void ) const {
 
@@ -445,9 +446,9 @@ std::string	Response::locationHeader_( void ) const {
 
 /*! \brief timeStampHeader private method returns header formated current time in GMT
 *       
+* 	Current time in GMT is prepended with `Date: ` in the HTTP 1.1 format.
 *
-*  Current time in GMT is prepended with `Date: ` in the HTTP 1.1 format.
-*  
+* 	@return @b std::string the timeStampHeader
 */
 std::string		Response::timeStampHeader_( void ) const {
 
@@ -464,33 +465,30 @@ std::string		Response::timeStampHeader_( void ) const {
 
 /*! \brief returns formated response header for Content-Type header
 *
-*	returns Content-Type header based on mime type set for the response
-*
-*
+*	@return @b std::string Content-Type header based on mime type set for the response
 */
 std::string	Response::contentTypeHeader_( void ) const {
 
 	return "Content-Type: " + this->response_mime_;
 }
 
-/*! \brief returns formated response header for Content-Length
+/*! \brief returns formatted response header for Content-Length
 *
-*	Returns formated response header for Content-Length
-*
-*
+*	@return @b std::string formatted response header for Content-Length
 */
 std::string Response::contentLengthHeader_( void ) const {
 	
 	return "Content-Length: "  + intToString(this->body_.length());
 }
 
-/*! \brief returns formated response header for Content-Location
+/*! \brief returns formatted response header for Content-Location
 *
 *
-*	Returns formated response header for Content-Location.
+*	Returns formatted response header for Content-Location.
 *	Resource_location is used always as it is overwritten in case of redirection 
 *	and in case of alias the aliased location should not be sent.
 *
+*	@return @b std::string formatted response header for Content-Location
 */
 std::string Response::contentLocationHeader_( void ) const {
 
@@ -503,7 +501,6 @@ std::string Response::contentLocationHeader_( void ) const {
 *	
 *	Creates the body of the error response either from a file given in the config or
 *	generates a default error page from the ResponseCodes class.
-*  
 */
 void	Response::createErrorBody_( void ) {
 	
@@ -540,11 +537,13 @@ void	Response::createErrorBody_( void ) {
 /****************************************** SHARED CHECKS BEFORE METHOD ******************************************/
 
 /*! \brief changes location if redirection found
-*	
-*	If `return' key is set in the origional location from the uri 
-*	- Handles a single redirection, if multiple are chained together the client
-*		must send a request for each.
+*		if `return' key is set in the original location from the uri.
+*
+*	NOTES:
+*	- Handles a single redirection; if multiple are chained together, the client
+*	must send a request for each.
 *  
+*	@return @b bool indicating if the location should be changed or not
 */
 bool	Response::handleRedirection_( void ) {
 
@@ -557,12 +556,11 @@ bool	Response::handleRedirection_( void ) {
 	return false;
 }
 
-/*! \brief checks for location alias and sets relvant variables
+/*! \brief checks for location alias and sets relevant variables
 *	
-*	If `alias' key is set in the origional location from the uri and sets
-*	alias bool to true if so. Will also check to see if the alias points
+*	If `alias' key is set in the original location from the uri, this function
+*	will sets alias bool to true. Will also check to see if the alias points
 *	to the /cgi-bin location, if so then sets flag in request.
-*  
 */
 void	Response::handelAlias_( void ) {
 
@@ -578,13 +576,16 @@ void	Response::handelAlias_( void ) {
 /*! \brief sets the location name in the server that relates to the request uri
 *	
 *    setResourceLocation_:
-*		-  checks if the request if for cgi, rejects as invalid for not specifying a specific script
+*		-  checks if the request is for cgi, rejects as invalid for not specifying a specific script
 *		-  check if location is valid
 *		-  calls `handlRedirection' to change location as needed
 *	Error codes:
 *		404 - Not Found if location does not exist
 *		400 - Invalid Request if no cgi script is defined
-*  
+*
+*	@param uri string of the uri
+*	@param is_dir bool that tells if it is directory or not
+*	@param last_slash_pos size_t of the last slash's position in uri string
 */
 void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
@@ -610,9 +611,6 @@ void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_
 		handelAlias_();
 }
 
-
-
-//only incase of no index will we assume index.html -> //TODO !!!this should be set when searching for the index not here. 
 /*! \brief sets resource path based on verified location from the uri
 *	
 *    setResourcePath_:
@@ -623,6 +621,9 @@ void	Response::setResourceLocation_( std::string& uri, bool is_dir, size_t last_
 *		404 - Not Found if location does not exist
 *		400 - Invalid Request if no cgi script is defined
 *  
+*	@param uri string of the uri
+*	@param is_dir bool that tells if it is directory or not
+*	@param last_slash_pos size_t of the last slash's position in uri string
 */
 void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slash_pos ) {
 
@@ -666,13 +667,14 @@ void	Response::setResourcePath_( std::string& uri, bool is_dir, size_t last_slas
 /*! \brief Extracts information from the request URI and validates 
 *				the location requested
 *       
-*
-* 	Check for the validitiy of the location and possible CGI information in 
+* 	Check for the validity of the location and possible CGI information in 
 *	the URI form the request. The existence of the files is not checked, only that 
 *	they have been entered into the server at this point.
 *	
-*	404 - Not Found will be set if location does not exist
-*  
+*	404 - Not Found will be set if location does not exist.
+*
+*	@param uri string of the uri
+*	@return @b int the status code  
 */
 int	Response::setResourceLocationAndName_( std::string uri ) {
 	
@@ -695,22 +697,15 @@ int	Response::setResourceLocationAndName_( std::string uri ) {
 	return this->status_code_;
 }
 
-/*
-- break apart uri to determine if it is a file or directory
-- find the location that corresponds to that uri
-	- save the location name for looking up location info
-	- save filepath to resource for access
-- if cgi is requested, verify the script is on the approved list
-*/
-
-
-/*! \brief returns true or false if requested method is allowd for the location
+/*! \brief returns true or false if requested method is allowed for the location
 *
 *	Uses getLocationValue from server to get the vector of allowed methods,
 *	searches them using find to see if requested method is contained in the vector.
 *
 *	Return : false if no methods listed or method not found and true if found.
 *
+*	@param method string of the method
+*	@return @b bool that tells if if requested method is allowed for the location
 */
 bool	Response::methodAllowed_( std::string method ) {
 
