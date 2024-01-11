@@ -39,7 +39,7 @@ class	Request {
 
 	private:
 		/* PRIVATE METHODS AND MEMBERS */
-		size_t								body_size_;				/*!< \brief size_t that represents the request body size */
+		size_t								body_size_;				/*!< \brief size_t that represents the size promised by the Content-Length header */
 		size_t								body_len_received_;		/*!< \brief size_t that represents the amount of bytes of the body received */
 		bool 								chunked_;				/*!< \brief bool that represents if the message is chunked or not */
 		bool								keep_alive_;			/*!< \brief bool that represents if the connection will be kept alive or shut down after a response is sent*/
@@ -50,8 +50,8 @@ class	Request {
 		int									port_;					/*!< \brief int of the port number */
 		std::map<std::string, std::string>	request_line_;			/*!< \brief map of the request line's parts and their values */
 		std::map<std::string, std::string>	headers_;				/*!< \brief map of the request's headers and their values */
-		std::string							raw_body_;				/*!< \brief string of the raw body (vis-a-vis processed_body_)*/
-		std::string							processed_body_;		/*!< \brief string of the processed body (vis-a-vis raw_body_)*/
+		std::string							raw_body_;				/*!< \brief string of the raw body */
+		std::string							processed_body_;		/*!< \brief string of the processed body */
 		std::string							file_content_;			/*!< \brief string of a file's contents */
 		std::string							file_name_;				/*!< \brief string of a file's name */
 		std::vector<u_int8_t>				body_vector_;			/*!< \brief vector consisting of unsigned 8-bit integers of the body */
@@ -59,7 +59,7 @@ class	Request {
 		std::string							file_mime_;				/*!< \brief string of the mime type of a file */
 		unsigned int						status_code_;			/*!< \brief unsigned int that represents the status code */
 		time_t								request_start_time_;	/*!< \brief time_t that represents the time of when the all of the headers have been received */
-		bool								query_encode_;			/*!< \brief bool that represents if there is a encoded query in the request or not */
+		bool								query_encode_;			/*!< \brief bool that indicates if the response should encode or not */
 
 		void	parseRequestLine_( std::string& to_parse );
 		void	parseHeader_( std::string& to_parse );
