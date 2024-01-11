@@ -10,12 +10,12 @@
 */
 char*	ft_strdup(const char* str) {
 	
-	char*	str_copy = NULL;
+	char*	str_copy = nullptr;
 	int		i = 0;
 
 	try {
-		if (str == NULL)
-			throw std::invalid_argument("argument is NULL");
+		if (str == nullptr)
+			return nullptr;
 		while (str[i])
 			i++;
 		str_copy = new char[i + 1];
@@ -27,6 +27,6 @@ char*	ft_strdup(const char* str) {
 	}
 	catch (std::exception& e) {
 		Logger::log(E_ERROR, COLOR_RED, "strdup: %s", e.what());
-		return NULL;
+		return nullptr;
 	}
 }
