@@ -218,9 +218,6 @@ bool	ServerManager::receiveFromClient( int client_fd ) {
 	memset(client_msg, 0, 500000);
 	int bytes_received = recv(client_fd, &client_msg, 500000 - 1, 0);
 
-	std::cout << "bytes received: " << bytes_received << std::endl;
-	std::cout << "messge:  \n" << client_msg << std::endl;
-
 	if (bytes_received == -1) {
 		Logger::log(E_ERROR, COLOR_RED, "recv error from socket %d to server %s, disconnecting client", client_fd, server->getServerIdforLog().c_str());
 		return false;
@@ -471,25 +468,13 @@ void	ServerManager::checkIfClientTimeout( int client_fd ) {
 			close(client_fd);
 			return;
 		}
-		/////////
-		int currentBufferSize;
-		socklen_t bufferSizeSize = sizeof(currentBufferSize);
-
-		// Get the current buffer size
-		if (getsockopt(client_fd, SOL_SOCKET, SO_SNDBUF, &currentBufferSize, &bufferSizeSize) == -1) {
-			std::cerr << "Error getting socket buffer size." << std::endl;
-			close(client_fd);
-			return;
-		}
-		std::cout << "CURRENT BUFF SIZE = " << currentBufferSize << " * 20 : " << currentBufferSize * 20 << std::endl;
-		///////////
-		int maxBufferSize = currentBufferSize * 20;
+		int maxBufferSize = CLIENT_BUFFER_SIZE;
 		if (setsockopt(client_fd, SOL_SOCKET, SO_SNDBUF, &maxBufferSize, sizeof(maxBufferSize)) == -1) {
 			Logger::log(E_ERROR, COLOR_RED, "sockopt error: %s,  socket %d buffer size could not be set", strerror(errno), client_fd);
 			close(client_fd);
 			return;
 		}
-		///////
+		
 		Client client(server_fd, server);//could throw exception
 
 		this->client_map_[client_fd] = client;//could throw exception
