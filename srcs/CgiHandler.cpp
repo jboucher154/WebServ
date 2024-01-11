@@ -66,7 +66,7 @@ CgiHandler&	CgiHandler::operator=( const CgiHandler& rhs ) {
  *	All class attributes are cleared other than the cgi_output_ (that happens in the 
  *	beginning of CgiHandler::StoreCgiOutput_).
  */
-void	CgiHandler::ClearCgiHandler( void ) {
+void	CgiHandler::clearCgiHandler( void ) {
 	
 	this->metavariables_map_.clear();
 	this->path_ = "";
@@ -114,7 +114,7 @@ int	CgiHandler::initializeCgi( Client& client ) {
 	fillMetavariablesMap_(client);
 	this->saveCgiArguments_(uri, client);
 	if ((result = this->setUpCgiPipes_()) != EXIT_SUCCESS) {
-		this->ClearCgiHandler();
+		this->clearCgiHandler();
 	}
 	return result;
 }
@@ -131,12 +131,12 @@ int	CgiHandler::cgiFinish( Response& response ) {
 	int	result;
 
 	if ((result = this->executeCgi_(response.getUploadData())) != EXIT_SUCCESS) {
-		this->ClearCgiHandler();
+		this->clearCgiHandler();
 		return result;
 	}
 
 	result = this->storeCgiOutput_();
-	this->ClearCgiHandler();
+	this->clearCgiHandler();
 	return result;
 }
 

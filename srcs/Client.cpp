@@ -90,7 +90,7 @@ Client&	Client::operator=( const Client& rhs ) {
 			*(this->cgi_handler_) = *(rhs.cgi_handler_);
 		}
 		else {
-			this->cgi_handler_->ClearCgiHandler();
+			this->cgi_handler_->clearCgiHandler();
 		}
 	}
 	return *this;

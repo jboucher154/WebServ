@@ -80,7 +80,7 @@ class	CgiHandler {
 
 		CgiHandler&	operator=( const CgiHandler& to_copy );
 
-		void	ClearCgiHandler( void );
+		void	clearCgiHandler( void );
 		void	closeCgiPipes( void );
 		int		initializeCgi( Client& client );
 		int		cgiFinish( Response& response );
