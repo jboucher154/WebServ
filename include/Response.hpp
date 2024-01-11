@@ -41,19 +41,19 @@ class	Response {
 		Response( void );
 
 		/* PRIVATE METHODS AND MEMBERS */
-		std::string			response_;			/*!< string of the response */
+		std::string			response_;			/*!< string of the entire response */
 		std::string			body_;				/*!< string of the body of the response */
-		std::string			response_mime_;		/*!< string of the response's mime type */
-		std::string			resource_path_; 	/*!< string of the resource path for something in the response */
-		std::string			alias_location_;	/*!< string of the alias location */
-		std::string			resource_location_; /*!< string or the resource location */
+		std::string			response_mime_;		/*!< string of the response's body's mime type */
+		std::string			resource_path_; 	/*!< string of the path of the resource requested in the uri */
+		std::string			alias_location_;	/*!< string of the actual location value a alias key points to */
+		std::string			resource_location_; /*!< string of the name of the resource location in the uri */
 		int					status_code_;		/*!< status code of the response */
-		Server*				server_;			/*!< pointer to the server the response gets its resources from*/
+		Server*				server_;			/*!< pointer to the server the response gets its resources from */
 		Request*			request_;			/*!< pointer to request this response is tied to */
-		bool				redirect_;			/*!< bool that represents if there is a redirection or not */
-		bool				alias_;				/*!< bool that represents if there is an alias or not */
-		bool				directory_listing_;	/*!< bool that represents if there is directory listing or not */
-		std::string			query_string_;		/*!< string of the query string */
+		bool				redirect_;			/*!< bool that represents if there is a redirection present in the location or not */
+		bool				alias_;				/*!< bool that tells if there is an alias in the resource location */
+		bool				directory_listing_;	/*!< bool that represents if there is autoindex is true in the requested location or not */
+		std::string			query_string_;		/*!< string of the query string passed as a metavariable for a cgi-script */
 		std::string			temp_filepath_;		/*!< string of the temporary filepath */
 		bool				temp_file_;			/*!< bool that represents if there is a temporary file */
 
