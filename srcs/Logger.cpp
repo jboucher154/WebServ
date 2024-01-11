@@ -101,7 +101,7 @@ void	Logger::log( e_log_msg_type msg_type, const char *msg_color, const char *ms
 			Logger::error_log_file_ << "[" << timestamp << "]\t[ERROR]\t" << buffer << std::endl;
 		}
 	}
-	if (msg_type == E_INFO) {
+	else if (msg_type == E_INFO) {
 		if (Logger::log_to_console_) {
 			std::cout << msg_color << "[" << timestamp << "]\t[INFO]\t" << buffer << COLOR_RESET << std::endl;
 		}
@@ -110,7 +110,7 @@ void	Logger::log( e_log_msg_type msg_type, const char *msg_color, const char *ms
 			Logger::info_log_file_ << "[" << timestamp << "]\t[INFO]\t" << buffer << std::endl;
 		}
 	}
-	if (msg_type == E_DEBUG && GET_DEBUG_LOG == true) {
+	else if (msg_type == E_DEBUG && GET_DEBUG_LOG == true) {
 		if (Logger::log_to_console_) {
 			std::cout << msg_color << "[" << timestamp << "]\t[DEBUG]\t" << buffer << COLOR_RESET << std::endl;
 		}
