@@ -710,11 +710,13 @@ int	Response::setResourceLocationAndName_( std::string uri ) {
 bool	Response::methodAllowed_( std::string method ) {
 
 	const std::vector<std::string>*	methods;
+	const std::vector<std::string>*	aliased_loc_methods;
 	
-	this->alias_ ? 
-	methods = this->server_->getLocationValue(this->alias_location_, "allow_methods") 
-	: methods = this->server_->getLocationValue(this->resource_location_, "allow_methods");
-	
+	methods = this->server_->getLocationValue(this->resource_location_, "allow_methods") ;
+	if (this->alias_)
+		aliased_loc_methods = this->server_->getLocationValue(this->resource_location_, "allow_methods");
+	if (methods->empty())
+		methods = aliased_loc_methods;
 	if (!methods || methods->empty()) {
 		return false;
 	}
