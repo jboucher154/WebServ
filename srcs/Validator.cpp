@@ -946,8 +946,8 @@ bool Validator::checkLocationBlockKeyValues( std::string locationKey ) {
 */
 bool Validator::checkLocationBlock( std::vector<std::string>* lines ) {
 
-	if ((*lines)[0] == lines->back() || (*lines)[0].compare(0, 10,"location /") != 0) {
-		Logger::log(E_ERROR, COLOR_RED, "Server block has to at least have a location block for root!");
+	if ((*lines)[0] == lines->back() || ((*lines)[0].compare(0, 10,"location /") != 0 || (*lines)[0].length() != 10)) {
+		Logger::log(E_ERROR, COLOR_RED, "Server block has to start with a location block for root!");
 		return false;
 	}
 	if (!checkLocationBlockKeyValues("/")) {
