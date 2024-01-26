@@ -39,7 +39,7 @@ The project began with guidelines to use C++98 standard. The limit was lifted to
 
 ### Configuration File
 
-Multiple servers can be configured in on `.conf` file and examples can be found in the directory [config](config) of this project.
+Multiple servers can be configured in a `.conf` file and examples can be found in the directory [config](config) of this project.
 
 - Each block must be enclosed in curley braces `{}`.
 - Each  line in a `main` or `location` block must end with a `;`.
@@ -59,7 +59,7 @@ The `main` block must have the following directives designated:
 The `main` block may have error pages designated with this format
 - error_page_404 followed/by/path/to/error_page.html;
 
-If nothing is is designated for a `location` block the following defaults will be set:
+If nothing is designated for a `location` block the following defaults will be set:
 - index: will be set to index.html for the default file
 - allow_methods: default will be no methods allowed
 - autoindex: default will be off, no directory listing will be shown the client will be directed to the default file set in the index directive
@@ -141,6 +141,7 @@ Currently there is no support for cookies.
 
 The project can me compilied with `make` then run `./webserv config_file_here`.
 If no config file is given the default designated in the `Webserv.hpp` will be used.
+- The config file can be custom and need not be one of the provided examples as long as if follows the guidelines for what is required.
 
 ## Robusticity
 
