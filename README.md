@@ -140,7 +140,7 @@ Currently there is no support for cookies.
 
 ## How To Use
 
-The project can me compilied with `make` then run `./webserv config_file_here`.
+The project can be compilied with `make` and ran `./webserv config_file_here`.
 If no config file is given the default designated in the `Webserv.hpp` will be used.
 - The config file can be custom and need not be one of the provided examples as long as if follows the guidelines for what is required.
 
