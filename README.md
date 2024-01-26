@@ -84,6 +84,7 @@ HTTP Status Codes are designated my the RFC and used to communicate specific mes
 ### HTTP Request/ Response
 
 General notes on request and response handling by the JAS Server:
+- The server honours reactive negotiation request/ response pattern
 - Chunked requests will be unchunked. Once all the chunks are received the request will be processed and a response made
 - Currently Responses are not sent as chunked.
 - If not all parts of a request have not been recieved in the REQUEST_TIMEOUT_SEC (default set to 10) a timeout response will be sent to client and the connection closed.
