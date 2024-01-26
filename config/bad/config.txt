@@ -1,0 +1,180 @@
+server
+{
+    main
+    {
+		listen 8080;
+        server_name localhost;
+        host 127.0.0.1;
+        root ./website;
+        client_max_body_size 900000;
+        index index.html;
+        error_page_404 errors/404.html;
+        error_page_405 errors/405.html;
+        error_page_500 errors/500.html;
+    }
+
+    location /
+    {
+        allow_methods GET HEAD;
+        client_body_size 900007;
+        autoindex on;
+    }
+
+    location /dog
+    {
+        autoindex on;
+		allow_methods GET POST DELETE HEAD;
+        index index.html;
+	}
+
+    location /cat
+    {
+		allow_methods GET POST DELETE HEAD;
+		index index.html;
+	}
+
+	location /add_post
+    {
+		allow_methods GET POST HEAD;
+		index form.html;
+	}
+
+    location /pet
+    {
+        return /dog;
+    }
+
+	location /pishoo
+    {
+        autoindex on;
+        alias /cat;
+    }
+    
+    location /cgi-bin
+    {
+        allow_methods GET POST DELETE;
+        script add_post.py delete_post.sh;
+        cgi_path /usr/local/bin/python3 /bin/bash;
+        cgi_ext .py .sh;
+    }
+}
+
+server
+{
+    main
+    {
+		listen 9090;
+        server_name localhost;
+        host 127.0.0.1;
+        root ./website;
+        client_max_body_size 900000;
+        index index.html;
+        error_page_404 errors/404.html;
+        error_page_405 errors/405.html;
+        error_page_500 errors/500.html;
+    }
+
+    location /
+    {
+        allow_methods GET HEAD;
+        client_body_size 900007;
+        autoindex off;
+    }
+
+    location /dog
+    {
+        #root ./website/my_folder
+        #autoindex on
+		allow_methods GET HEAD;
+        index index.html;
+	}
+
+    location /cat
+    {
+		allow_methods GET HEAD;
+		index index.html;
+	}
+
+	location /add_post
+    {
+		allow_methods GET HEAD;
+		index form.html;
+	}
+
+    location /labrador
+    {
+        return /dog;
+    }
+
+	location /Persiancat
+    {
+        alias /cat;
+    }
+    
+    location /cgi-bin
+    {
+        allow_methods GET POST DELETE;
+        script add_post.py delete_post.sh;
+        cgi_path /usr/local/bin/python3 /bin/bash;
+        cgi_ext .py .sh;
+    }
+}
+
+server
+{
+    main
+    {
+		listen 8000;
+        server_name localhost;
+        host 127.0.0.1;
+        root ./website;
+        client_max_body_size 900000;
+        index index.html;
+        error_page_404 errors/404.html;
+        error_page_405 errors/405.html;
+        error_page_500 errors/500.html;
+    }
+
+    location /
+    {
+        allow_methods GET HEAD;
+        client_body_size 900007;
+        autoindex off;
+    }
+
+    location /dog
+    {
+		allow_methods GET POST HEAD;
+        index index.html;
+	}
+
+    location /cat
+    {
+		allow_methods GET POST HEAD;
+		index index.html;
+	}
+
+	location /add_post
+    {
+		allow_methods GET POST HEAD;
+		index form.html;
+	}
+
+    location /musti
+    {
+        return /dog;
+    }
+
+	location /miri
+    {
+        alias /cat;
+    }
+    
+    location /cgi-bin
+    {
+        allow_methods GET POST DELETE;
+        script add_post.py delete_post.sh;
+        cgi_path /usr/local/bin/python3 /bin/bash;
+        cgi_ext .py .sh;
+    }
+}
