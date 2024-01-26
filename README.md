@@ -37,6 +37,10 @@ The project began with a restiction to use only C++98 standard. The restriction 
 - Follows HTTP 1.1, though not fully compliant
 - Server settings can be confirgured in header file [Webserv.hpp](include/WebServ.hpp)
 
+### Logger
+
+logger info here
+
 ### Configuration File
 
 Multiple servers can be configured in a `.conf` file and examples can be found in the directory [config](config) of this project.
