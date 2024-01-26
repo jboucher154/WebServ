@@ -73,6 +73,7 @@ If nothing is designated for a `location` block, the following defaults will be 
 The following are optional `location` directives that will not have a default set:
 - return: set to the name of another location for a redirection to be sent to client
 - alias: set to name of location for server to refence for resources, other directive set here will override directive in the other location.
+- upload_store: filepath for a directory to save files from POST requests
 
 At least one directive needs to be set for a `location` to be valid.
 
