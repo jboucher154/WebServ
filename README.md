@@ -37,6 +37,22 @@ The project began with a restiction to use only C++98 standard. The restriction 
 - Follows HTTP 1.1, though not fully compliant
 - Server settings can be confirgured in header file [Webserv.hpp](include/WebServ.hpp)
 
+The program can be switched between using poll() or select() in I/O multiplexing of the file descriptors (server and client sockets, pipe file descriptors). Highly recommended to use poll(). This is the default, but it can be changed by modifying the WebServ.hpp `POLL_TRUE_SELECT_FALSE` macro to false.
+
+### Logger
+
+The JAS Server provides a Logger that prints log messages in ERROR, INFO, and DEBUG categories.
+
+Settings for the Logger can be configured in [Logger.hpp](include/Logger.hpp). 
+
+The logging of DEBUG messages can be configured from [Webserv.hpp](include/WebServ.hpp) with the `GET_DEBUG_LOG` macro. 
+- There is an additional `GET_SELECT_POLL_LOOP_FD_INFO` macro can be turned true for additional debug messages.
+
+The `LOG_LOCATION` macro settings in Logger.hpp include:
+- logging to files only
+- loging to console only
+- logging to both
+
 ### Configuration File
 
 Multiple servers can be configured in a `.conf` file and examples can be found in the directory [config](config) of this project.
@@ -69,6 +85,7 @@ If nothing is designated for a `location` block, the following defaults will be 
 The following are optional `location` directives that will not have a default set:
 - return: set to the name of another location for a redirection to be sent to client
 - alias: set to name of location for server to refence for resources, other directive set here will override directive in the other location.
+- save_dir: filepath for a directory to save files from POST requests
 
 At least one directive needs to be set for a `location` to be valid.
 
