@@ -76,6 +76,7 @@ Special location `/cgi-bin` can be designated to configure CGI script. It must h
 - script: list of scripts existing in the /cgi-bin location
 - cgi_path: path to the interpreter/ executor for the scripts in same order as the extensions (below) e.g, /usr/local/bin/python3 /bin/bash
 - cgi_ext: extensions for CGI scripts in the same order as the paths e.g, .py .sh
+  - The extension `.cgi` may be included, but must come last on the list. If included it will allow any executable without extension to be run.
 
 ### HTTP Status Codes
 
