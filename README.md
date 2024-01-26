@@ -39,7 +39,14 @@ The project began with a restiction to use only C++98 standard. The restriction 
 
 ### Logger
 
-logger info here
+The JAS Server provides a Logger that categorizes ERROR, INFO, and DEBUG messages.
+
+Settings for the Logger can be configured in [Logger.hpp](/include/Logger.hpp). The logging of DEBUG messages can be configured from [Webserv.hpp](/include/WebServ.hpp).
+
+Settings include:
+- logging to files only
+- loging to console only
+- logging to both
 
 ### Configuration File
 
