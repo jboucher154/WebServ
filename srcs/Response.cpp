@@ -85,29 +85,10 @@ Response&	Response::operator=( const Response& rhs ) {
 
 /*! \brief phase 1 of response checks if request is valid and calls the function for 
 *				the method requested given a Request object
-*       
-*	This is the first phase (of two, second phase is Response::buildAndGetResponsePhase2)
-*	of creating a response to a client request.
-*	First the function checks that the Response's server and request are not NULL
-*	and if they are, set the status code to 500 (E_INTERNAL_SERVER_ERROR) and the function ends.
-*	Then the the initial status code that the request has possibly set is checked and
-*	if the status code denotes an error, the function ends.
-*	Then the request's body size is compared with the server's max body and if it's
-*	too large, the status code is set to  413 (E_PAYLOAD_TOO_LARGE) and the function ends.
-*	Then the Response::setResourceLocation function is called and specific status codes
-*	are checked for POST methods and if it doesn't pass these check, the function ends.
-*	Then it is checked if the method is allowed and if not, the status code is set
-*	to 405 (E_METHOD_NOT_ALLOWED) and the function ends.
-*	If the function passes this point, the Response::validateResource_ is called which might
-*	set an error code if something goes wrong.
-*	The following things are checked if status code is less than 400 and the request is not yet complete:
-*		The request's time limit is checked and if it has passed, set 408 (E_REQUEST_TIMEOUT) and end function.
-*		Else it is checked if the request is chunked and if it is, the status code is set to 100 (E_CONTINUE).
-*		Else the it is checked if the expect header is included in the request's headers and if it is,
-*		the status code is set to 100 (E_CONTINUE).
-*		Else the status code is set to 1 E_SERVER_PROCESSING.
-*	If the function gets to this point and the status code is less than 400 (no errors), then the function 
-*	for whatever method the request had is called.
+*
+*	The request is checked against its corresponding server's settings. If the request is allowed
+*	and the resource is available, the method is called. Within the methods,
+*	if it's a cgi method, it will be handled by the CgiHandler.
 *
 * 	@param request a pointer to the Request object that the response is created for
 */
@@ -733,8 +714,7 @@ bool	Response::methodAllowed_( std::string method ) {
 *	Retrieves the accepted format header fromt he request and splits on `,'
 *	removing references to OWS tokens as they are not currently used.
 *
-*	Return: vector of strings with the mimetypes of the accepted formats
-*
+*	@return @b accepted_formats a vector of strings with the mimetypes of the accepted formats
 */
 std::vector<std::string>	Response::getAcceptedFormats_( void ) {
 
@@ -761,7 +741,6 @@ std::vector<std::string>	Response::getAcceptedFormats_( void ) {
 *	- files without extensions are sent as `unknown` which is sent as octet stream
 *	- otherwise if extension was not in the mime_types_ map the response is set 
 *		set to error code of 415 - no supported media type
-*
 */
 void	Response::setMimeType_( void ) {
 
@@ -786,9 +765,13 @@ void	Response::setMimeType_( void ) {
 
 /*! \brief	implements the GET method
 *
+*	Implements the http GET method. Checks the resource against the accepted formats in the request.
+*	Sets the MIME type for the response.
+*	Will call the method to build the appropriate body.
 *
-*
-*
+*	In case of CGI, no body.
+*	In case of directory listing, builds list of linked files in body.
+*	Otherwise will call buildBody_ to copy directly from file.
 */
 void	Response::getMethod_( void ) {
 
@@ -822,11 +805,13 @@ void	Response::getMethod_( void ) {
 	}
 }
 
-/*! \brief saves body content to send in the body_ attribute
+/*! \brief saves body content to send in the body attribute
 *
+*	Opens file and copies the string to the body.
+*	If it's a text file or a binary file, it is handled differently.
 *
-*
-*
+*	@param path path to the file
+*	@param mode the ios_base open mode indicating if the file should be opened for binary or text file
 */
 void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 
@@ -858,10 +843,9 @@ void	Response::buildBody_( std::string& path, std::ios_base::openmode mode ) {
 /*! \brief	implements HEAD method, returns 200 if resource acceptable to client
 *				and 415 if not.
 *
-*	Checks the MIME type of the requested resource agains the acceptable formats
-*	from client. If MIME is unsuported or unacceptable the error status code 
-*	is set. Else to 200 OK status code is set.
-*
+*	Checks the MIME type of the requested resource against the acceptable formats
+*	from client. If MIME is unsuported or unacceptable, the error status code 
+*	is set. Else 200 OK status code is set.
 */
 void	Response::headMethod_( void ) {
 
@@ -890,7 +874,6 @@ void	Response::headMethod_( void ) {
 *	If no cgi present, calls remove() on resource path to delete file, otherwise sets
 *	query string to processed body. In case of failure 500, server error is set.
 *	The query string will be url encoded if the query_encode_ from the request is true.
-*
 */
 void	Response::deleteMethod_( void ) {
 
@@ -919,8 +902,8 @@ void	Response::deleteMethod_( void ) {
 *	If the filename is not given, no resource wil be created and a bad request will be flagged.
 *	if a save directory was set in the config file, the resource will be saved there.
 *	If successful, the 201 created status code is set.
-*	TODO: check if mime types is allowed (could be gotten around by users with cgi script)
 *  
+*	@param is_save_dir bool indicating if the location has an upload_store configured
 */
 void	Response::saveBodyToFile_( bool is_save_dir ) {
 
@@ -948,11 +931,10 @@ void	Response::saveBodyToFile_( bool is_save_dir ) {
 	this->status_code_ = E_CREATED;
 }
 
-/*! \brief	creates a temporary file in the server upload_store ad saves upload data there.
+/*! \brief	creates a temporary file in the server upload_store and saves upload data there.
 *
-*
-*	
-*
+*	Get's the filename from request. Will attempt to create file with that name
+*	and save upload data in there.	
 */
 void	Response::saveBodyToTempFile_( void ) {
 
@@ -981,9 +963,7 @@ void	Response::saveBodyToTempFile_( void ) {
 
 /*! \brief	post method will create resource or set query string for cgi script
 *
-*
 *	The query string will be url encoded if the query_encode_ from the request is true.
-*
 */
 void	Response::postMethod_( void ) {
 
@@ -1013,9 +993,7 @@ void	Response::postMethod_( void ) {
 
 /*! \brief	deletes temporary file used for cgi file uploads
 *
-*
 *	deletes temporary file used for cgi file uploads.
-*
 */
 void	Response::deleteTempFile_( void ) {
 
