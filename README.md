@@ -153,7 +153,7 @@ If no config file is given the default designated in the `Webserv.hpp` will be u
 
 ## Robusticity
 
-Siege was used to stress test the server. We achieved 99.8% availability.
+Siege was used to stress test the server. We achieved 99.8% availability on our local environment.
 
 ### To run this test
 
