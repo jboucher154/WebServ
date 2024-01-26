@@ -107,7 +107,7 @@ HEAD method is safe and idempotent. The response will indicate if the method is 
 #### POST
 
 POST method is not safe and not idempotent. The JAS server will only handle POST requests that are submitted with a form, either multipart/form-data or a default form type. 
-In the case of a POST request for a file, the JAS Server is capable of creating the resource without a CGI script in the location given in the `action` option of the html form. Otherwise, after verification of the validitiy of the request, the POST handling will be passed to the CGI Handler.
+In the case of a POST request for a file, the JAS Server is capable of creating the resource without a CGI script. The resource will be created in the location given in the `action` option of the html form. Otherwise, after verification of the validitiy of the request, the POST handling will be passed to the CGI Handler.
 
 #### DELETE
 
