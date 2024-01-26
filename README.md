@@ -33,7 +33,7 @@ The project began with guidelines to use C++98 standard. The limit was lifted to
 
 ### General
 
-- serve fully static websites
+- Serves fully static websites
 - Follows HTTP 1.1, though is not fully compliant
 - Server settings can be confirgured in header file [Webserv.hpp](include/WebServ.hpp)
 
