@@ -120,7 +120,7 @@ The Common Gateway Interface provides users of the JAS Server the ability to cre
 #### Limitations
 
 Due to system limitations for the project data sent to and responses returned from CGI scripts are limited to 60KB.
-In cases where a larger file is sent by POST to a cgi script the server will make a temporary file. The path to this fill can be parsed as a key=value pair from the QUERY_STRING in the the environment passed to the script. The temporary file will be deleted once the response is sent to the client.
+In cases where a larger file is sent by POST to a cgi script the server will make a temporary file. The path to this fill can be parsed as a key=value pair from the QUERY_STRING in the the environment passed to the script. The key will be `temp_filepath` The temporary file will be deleted once the response is sent to the client.
 
 #### Input to CGI
 
