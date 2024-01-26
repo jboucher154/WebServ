@@ -37,13 +37,15 @@ The project began with a restiction to use only C++98 standard. The restriction 
 - Follows HTTP 1.1, though not fully compliant
 - Server settings can be confirgured in header file [Webserv.hpp](include/WebServ.hpp)
 
+The program can be switched between using poll() or select() in I/O multiplexing of the file descriptors (server and client sockets, pipe file descriptors). Highly recommended to use poll(). This is the default, but it can be changed by modifying the WebServ.hpp `POLL_TRUE_SELECT_FALSE` bool.
+
 ### Logger
 
 The JAS Server provides a Logger that categorizes ERROR, INFO, and DEBUG messages.
 
-Settings for the Logger can be configured in [Logger.hpp](/include/Logger.hpp). The logging of DEBUG messages can be configured from [Webserv.hpp](/include/WebServ.hpp).
+Settings for the Logger can be configured in [Logger.hpp](/include/Logger.hpp). The logging of DEBUG messages can be configured from [Webserv.hpp](/include/WebServ.hpp) with the `GET_DEBUG_LOG` macro. There is an additional `GET_SELECT_POLL_LOOP_FD_INFO` macro can be turned true for additional debug messages.
 
-Settings include:
+The `LOG_LOCATION` macro settings in Logger.hpp include:
 - logging to files only
 - loging to console only
 - logging to both
